@@ -900,7 +900,7 @@ A website made with Scrabby. Bob built it from a plan of Blocks and Traits. The 
 **Files:** `src/onboarding.ts`, `src/shell/Onboarding.tsx`, `Onboarding.module.css`, `src/fixtures/dev.ts`. Behavior: PRD §8, §9. Look: DESIGN.md Speech bubble, Menus.
 
 - `isEmptyProject(p)`: at most 2 Blocks (canvas + Site), no Traits, no Assets, no files, no chat.
-- `replaceProject(project, checkpoints = [])`: `clearAll()`; for each Asset named in `DEMO_PHOTOS`, draw its placeholder (`OffscreenCanvas` 1200×800, fill its color, `#3A2A30` bold 96px sans-serif label centered at y 430, PNG), set `bytes`, `putAsset`; add the Checkpoints; `clearHistory()`; `setProject`; `setEditing(null)`; Canvas tab; Plan.
+- `replaceProject(project, checkpoints = [])`: first fetch every Asset named in `DEMO_PHOTOS` from `/demo/<file>` (a failed fetch throws before anything is cleared, so the saved Project stays); `clearAll()`; for each photo set `bytes` to the Blob's size, `putAsset`; add the Checkpoints; `clearHistory()`; `setProject`; `setEditing(null)`; Canvas tab; Plan.
 - `loadDemo()` = `replaceProject(demoProject())`; `newProject()` = `replaceProject(emptyProject())` (errors logged `Loading the demo failed` / `Starting a new Project failed`).
 - Ask store (`'demo' | 'new' | null`): `askDemo()` loads at once when `isEmptyProject`, else asks; `askNewProject()` always asks; `closeAsk()`.
 - **ReplaceWarning** (a fixed backdrop + modal; Escape closes): demo → title `Load the demo?`, text `This replaces your current Project, Blocks and all. Download code first to keep a copy of the website's code.`, go `Load the demo`; new → `Start a new Project?`, `Only one Project is saved, so this one will be replaced, Blocks and all. Download code first to keep a copy of the website's code.`, `Start a new Project`. Buttons: **Download code** (Secondary), **Cancel** (Text), the go button (Primary, autofocus: close, then run).
@@ -952,10 +952,10 @@ DESIGN.md's look was redone on 2026-09-26 (D-Q14 to D-Q27: Grape, Bob blue, Nuni
 
 **File:** `src/fixtures/fixtures.ts`. Test data and the demo. Build them in exactly this order so the ids match Appendix A.
 
-`DEMO_PHOTOS` (placeholders until real photos; §17 draws them): `cupcakes.png` "Cupcakes" `#F8BBD0`, `layer-cake.png` "Layer cake" `#FFE066`, `cookies.png` "Cookies" `#FFB74D`, `bake-stall.png` "Bake stall" `#A8E6CF`.
+`DEMO_PHOTOS` (real photos in `public/demo/`, credits in `public/demo/CREDITS.md`; each a 1200×800 JPEG under 250 KB; §17 fetches them): `cupcakes.jpg`, `layer-cake.jpg`, `cookies.jpg`, `bake-stall.jpg`, `lemon-drizzle.jpg`, `brownie.jpg`.
 
 **demoProject()** ("Maya's bake sale", PRD §7). `T(type, value?, extra?)` = `addTrait` then assign extra; `B(type, name, traits = [], children = [])` = `addBlock` then set traits and children (arguments are evaluated first, so inner Traits and Blocks get lower ids). Steps:
-1. `p = emptyProject()` (Site `b1`); `p.name = "Maya's bake sale"`; `p.assets` = the 4 photos as `{ id: 'a1'…'a4', file, kind:'image', mime:'image/png', bytes:0, width:1200, height:800 }`; `p.next.a = 5`.
+1. `p = emptyProject()` (Site `b1`); `p.name = "Maya's bake sale"`; `p.assets` = the 6 photos as `{ id: 'a1'…'a6', file, kind:'image', mime:'image/jpeg', bytes:0, width:1200, height:800 }`; `p.next.a = 7`.
 2. Site: name `Maya's bake sale`, traits `[T('color','#F8BBD0'), T('vibe','playful'), T('font','friendly')]`.
 3. `home = B('page','Home')`, `menu = B('page','Menu')`, `quiz = B('page','Quiz')`; Site children `[home, menu, quiz]`.
 4. Definitions (off the Canvas): `menuButton = B('button','Menu',[T('onclick','page:'+menu)])`; `quizButton = B('button','Quiz',[T('onclick','page:'+quiz)])`; `topBar = B('navbar','Top bar',[],[menuButton, quizButton])` with layout `{d:'col',k:[{d:'row',k:[menuButton, quizButton]}]}`; `bottom = B('footer','Bottom',[],[B('text', undefined)])`. `p.defs.d1 = { id:'d1', blockId: topBar, color:{h:345,s:90,l:82} }`, `d2` = bottom with `{h:15,s:90,l:82}`; set `defines`; `p.next.d = 3`.
@@ -1001,7 +1001,7 @@ It must show no Warnings, and its Build 1 document must equal Appendix A.
   const homeBody = (withHours: boolean) => `  <main>
     <section class="hero" data-block="${d.hero}">
       <h1 data-block="${ids(d.hero)[0]}">Fresh cakes every Saturday</h1>
-      <img data-block="${d.photo}" src="assets/cupcakes.png" alt="A tray of pink cupcakes">
+      <img data-block="${d.photo}" src="assets/cupcakes.jpg" alt="A tray of pink cupcakes">
       <button class="big" data-block="${d.orderButton}" data-open="order">Order</button>
     </section>${withHours ? `
     <section class="hours" data-block="${hours}">
@@ -1019,12 +1019,12 @@ It must show no Warnings, and its Build 1 document must equal Appendix A.
       </form>
     </div>
   </main>`
-  const cakes = [['Pink cupcake', '£1.50'], ['Lemon drizzle', '£2.00'], ['Chocolate slice', '£2.50'], ['Carrot cake', '£2.00'], ['Victoria sponge', '£3.00'], ['Brownie', '£1.80']]
+  const cakes = [['Pink cupcake', '£1.50', 'cupcakes'], ['Lemon drizzle', '£2.00', 'lemon-drizzle'], ['Chocolate slice', '£2.50', 'brownie'], ['Carrot cake', '£2.00', 'layer-cake'], ['Victoria sponge', '£3.00', 'layer-cake'], ['Brownie', '£1.80', 'brownie']]
   const menuBody = `  <main>
     <h1>Our cakes</h1>
     <div class="grid" data-block="${d.cakes}">
-${cakes.map(([n, price], i) => `      <article class="card" data-block="${d.card}">
-        <img src="assets/${['cupcakes', 'layer-cake', 'cookies', 'bake-stall'][i % 4]}.png" alt="${n}">
+${cakes.map(([n, price, photo]) => `      <article class="card" data-block="${d.card}">
+        <img src="assets/${photo}.jpg" alt="${n}">
         <h3>${n}</h3><p>${price}</p>
       </article>`).join('\n')}
     </div>
@@ -1213,7 +1213,7 @@ if (quiz) {
   - Textbox "Textbox" #b15
     - text (exact words to show, as written): "Fresh cakes every Saturday"
   - Frame "Frame" #b14
-    - image (show this picture): assets/cupcakes.png
+    - image (show this picture): assets/cupcakes.jpg
   - Button "Order" #b13
     - on click (when a visitor clicks this Block): open "Order" popup #b12
 - Popup "Order" #b12
@@ -1263,10 +1263,12 @@ if (quiz) {
 
 ## Library
 
-- assets/cupcakes.png: image, 1200×800 px, used by a Trait
-- assets/layer-cake.png: image, 1200×800 px
-- assets/cookies.png: image, 1200×800 px
-- assets/bake-stall.png: image, 1200×800 px
+- assets/cupcakes.jpg: image, 1200×800 px, used by a Trait
+- assets/layer-cake.jpg: image, 1200×800 px
+- assets/cookies.jpg: image, 1200×800 px
+- assets/bake-stall.jpg: image, 1200×800 px
+- assets/lemon-drizzle.jpg: image, 1200×800 px
+- assets/brownie.jpg: image, 1200×800 px
 ```
 
 (The document ends with one newline after the last Library line.)

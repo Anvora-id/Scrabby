@@ -6,12 +6,8 @@ import {
 } from '../model/project.ts'
 import type { Asset, BuiltBlocks, Checkpoint, Files, Project } from '../model/types.ts'
 
-export const DEMO_PHOTOS: { file: string; label: string; color: string }[] = [
-  { file: 'cupcakes.png',    label: 'Cupcakes',   color: '#F8BBD0' },
-  { file: 'layer-cake.png',  label: 'Layer cake', color: '#FFE066' },
-  { file: 'cookies.png',     label: 'Cookies',    color: '#FFB74D' },
-  { file: 'bake-stall.png',  label: 'Bake stall', color: '#A8E6CF' },
-]
+// Served from public/demo/ (credits in public/demo/CREDITS.md); all 1200×800 JPEGs.
+export const DEMO_PHOTOS = ['cupcakes.jpg', 'layer-cake.jpg', 'cookies.jpg', 'bake-stall.jpg', 'lemon-drizzle.jpg', 'brownie.jpg']
 
 // ── demoProject ───────────────────────────────────────────────────────────────
 
@@ -19,17 +15,17 @@ export function demoProject(): Project {
   const p = emptyProject()
   p.name = "Maya's bake sale"
 
-  // Assets (4 placeholder photos)
-  p.assets = DEMO_PHOTOS.map((ph, i) => ({
+  // Assets (6 photos)
+  p.assets = DEMO_PHOTOS.map((file, i) => ({
     id: `a${i + 1}` as string,
-    file: ph.file,
+    file,
     kind: 'image' as const,
-    mime: 'image/png',
+    mime: 'image/jpeg',
     bytes: 0,
     width: 1200,
     height: 800,
   } satisfies Asset))
-  p.next.a = 5
+  p.next.a = 7
 
   // Helpers: arguments evaluated before B/T calls, so inner ids come first
   function T(type: Parameters<typeof addTrait>[1], value?: string, extra?: Record<string, unknown>): string {
@@ -213,7 +209,7 @@ ${body}
   const homeBody = (withHours: boolean) => `  <main>
     <section class="hero" data-block="${d.hero}">
       <h1 data-block="${ids(d.hero)[0]}">Fresh cakes every Saturday</h1>
-      <img data-block="${d.photo}" src="assets/cupcakes.png" alt="A tray of pink cupcakes">
+      <img data-block="${d.photo}" src="assets/cupcakes.jpg" alt="A tray of pink cupcakes">
       <button class="big" data-block="${d.orderButton}" data-open="order">Order</button>
     </section>${withHours ? `
     <section class="hours" data-block="${hours}">
@@ -231,12 +227,12 @@ ${body}
       </form>
     </div>
   </main>`
-  const cakes2 = [['Pink cupcake', '£1.50'], ['Lemon drizzle', '£2.00'], ['Chocolate slice', '£2.50'], ['Carrot cake', '£2.00'], ['Victoria sponge', '£3.00'], ['Brownie', '£1.80']]
+  const cakes2 = [['Pink cupcake', '£1.50', 'cupcakes'], ['Lemon drizzle', '£2.00', 'lemon-drizzle'], ['Chocolate slice', '£2.50', 'brownie'], ['Carrot cake', '£2.00', 'layer-cake'], ['Victoria sponge', '£3.00', 'layer-cake'], ['Brownie', '£1.80', 'brownie']]
   const menuBody = `  <main>
     <h1>Our cakes</h1>
     <div class="grid" data-block="${d.cakes}">
-${cakes2.map(([n, price], i) => `      <article class="card" data-block="${d.card}">
-        <img src="assets/${['cupcakes', 'layer-cake', 'cookies', 'bake-stall'][i % 4]}.png" alt="${n}">
+${cakes2.map(([n, price, photo]) => `      <article class="card" data-block="${d.card}">
+        <img src="assets/${photo}.jpg" alt="${n}">
         <h3>${n}</h3><p>${price}</p>
       </article>`).join('\n')}
     </div>

@@ -2,12 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { demoProject, builtSite, DEMO_PHOTOS } from './fixtures.ts'
 
 describe('DEMO_PHOTOS', () => {
-  it('has 4 entries', () => {
-    expect(DEMO_PHOTOS).toHaveLength(4)
-    expect(DEMO_PHOTOS[0].file).toBe('cupcakes.png')
-    expect(DEMO_PHOTOS[1].file).toBe('layer-cake.png')
-    expect(DEMO_PHOTOS[2].file).toBe('cookies.png')
-    expect(DEMO_PHOTOS[3].file).toBe('bake-stall.png')
+  it('has 6 entries', () => {
+    expect(DEMO_PHOTOS).toEqual(['cupcakes.jpg', 'layer-cake.jpg', 'cookies.jpg', 'bake-stall.jpg', 'lemon-drizzle.jpg', 'brownie.jpg'])
   })
 })
 
@@ -17,11 +13,13 @@ describe('demoProject()', () => {
     expect(p.name).toBe("Maya's bake sale")
   })
 
-  it('has 4 assets with ids a1–a4', () => {
+  it('has 6 assets with ids a1–a6', () => {
     const p = demoProject()
-    expect(p.assets).toHaveLength(4)
-    expect(p.assets.map(a => a.id)).toEqual(['a1', 'a2', 'a3', 'a4'])
+    expect(p.assets).toHaveLength(6)
+    expect(p.assets.map(a => a.id)).toEqual(['a1', 'a2', 'a3', 'a4', 'a5', 'a6'])
+    expect(p.next.a).toBe(7)
     expect(p.assets[0].kind).toBe('image')
+    expect(p.assets[0].mime).toBe('image/jpeg')
     expect(p.assets[0].width).toBe(1200)
     expect(p.assets[0].height).toBe(800)
   })

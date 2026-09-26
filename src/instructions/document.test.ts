@@ -41,7 +41,7 @@ const APPENDIX_A = `## Block types used
   - Textbox "Textbox" #b15
     - text (exact words to show, as written): "Fresh cakes every Saturday"
   - Frame "Frame" #b14
-    - image (show this picture): assets/cupcakes.png
+    - image (show this picture): assets/cupcakes.jpg
   - Button "Order" #b13
     - on click (when a visitor clicks this Block): open "Order" popup #b12
 - Popup "Order" #b12
@@ -91,10 +91,12 @@ const APPENDIX_A = `## Block types used
 
 ## Library
 
-- assets/cupcakes.png: image, 1200×800 px, used by a Trait
-- assets/layer-cake.png: image, 1200×800 px
-- assets/cookies.png: image, 1200×800 px
-- assets/bake-stall.png: image, 1200×800 px
+- assets/cupcakes.jpg: image, 1200×800 px, used by a Trait
+- assets/layer-cake.jpg: image, 1200×800 px
+- assets/cookies.jpg: image, 1200×800 px
+- assets/bake-stall.jpg: image, 1200×800 px
+- assets/lemon-drizzle.jpg: image, 1200×800 px
+- assets/brownie.jpg: image, 1200×800 px
 `
 
 const find = (p: Project, name: string, type?: string) =>
@@ -157,7 +159,7 @@ describe('instructionDocument', () => {
     p.traits[click].value = 'popup:b999'
     const r = doc(p)
     expect(r.document).toContain('  - Frame "Frame" #b14\n  - Button "Order" #b13\n- Popup "Order" #b12\n')
-    expect(r.document).not.toContain('cupcakes.png, used by a Trait')
+    expect(r.document).not.toContain('cupcakes.jpg, used by a Trait')
     expect(r.skipped).toEqual([
       'Skipped: the picture for the "Frame" frame was deleted from the Library.',
       'Skipped: the "Order" button opens a popup that no longer exists.',
