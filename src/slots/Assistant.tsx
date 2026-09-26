@@ -15,15 +15,16 @@ export default function Assistant() {
   const level = useLevel()
   const run = useReply()
   const replying = run !== null
-  // A stopped reply shows nothing live: its question comes back with "Stopped.".
-  const live = run && !run.stopped ? run : null
+  // A reply for a replaced Project (New Project, the demo) shows nothing here.
+  const live = run && run.project === project.id ? run : null
   // Sent, but the server hasn't accepted it yet: the question and Bob thinking show in the panel only.
   const waiting = live && live.bob === undefined ? live.asked : null
   const [draft, setDraft] = useState('')
   const [limit, setLimit] = useState<string | null>(null)
   const chatRef = useRef<HTMLDivElement>(null)
   const pinned = useRef(true)
-  // Keyed by position: the chat only grows, so when the server accepts, the real messages take the waiting pair's places without popping again.
+  // Keyed by position, so when the server accepts, the real messages take the waiting pair's places without popping again.
+  // (A replaced chat reuses elements and skips its pop, unseen: New Project and the demo switch to Plan.)
   const chat: ChatMessage[] = waiting === null ? project.chat : [...project.chat, { role: 'user', text: waiting, time: -2 }, { role: 'bob', text: '', time: -1 }]
   const liveBob = live ? live.bob ?? -1 : undefined
 
@@ -130,13 +131,13 @@ function BobSays({ children }: { children: ReactNode }) {
 }
 
 function Dots() {
-  return <span className={styles.dots} role="status" aria-label="Bob is still working…"><i /><i /><i /></span>
+  return <span className={styles.dots} aria-hidden="true"><i /><i /><i /></span>
 }
 
 function Thinking() {
   return (
     <span className={styles.thinking} role="status">
-      <span className={styles.dots} aria-hidden="true"><i /><i /><i /></span>
+      <Dots />
       Bob is thinking…
     </span>
   )

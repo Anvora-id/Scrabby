@@ -25,10 +25,9 @@ const level = createStore<Level>('simply')
 export const useLevel = () => level.use()
 export const setLevel = (l: Level) => level.set(l)
 
-// The running reply: what was asked, and the time of Bob's message once the server accepted it.
-type Reply = { stopped: boolean; asked: string; bob?: number }
+// The running reply: what was asked, for which Project, and the time of Bob's message once the server accepted it.
+type Reply = { stopped: boolean; asked: string; project: string; bob?: number }
 const reply = createStore<Reply | null>(null)
-export const useReplying = () => reply.use() !== null
 export const useReply = () => reply.use()
 
 // ── chat writes (never in the undo history) ──────────────────────────────────
@@ -65,7 +64,7 @@ export async function ask(text: string): Promise<string | undefined> {
     .filter(m => !m.line)
     .slice(-10)
     .map(({ role, text, time }) => ({ role, text, time }))
-  const token: Reply = { stopped: false, asked: text }
+  const token: Reply = { stopped: false, asked: text, project: p.id }
   reply.set(token)
   let said = ''
   const start = () => {
@@ -80,6 +79,8 @@ export async function ask(text: string): Promise<string | undefined> {
     setMessage(token.bob!, m => (proposal ? { ...m, text: t, proposal } : { ...m, text: t }))
   try {
     for await (const e of runAgent({ kind: 'assistant', messages, context: turnContext(p), files: p.files })) {
+      // New Project or the demo replaced it: write nothing into that one.
+      if (getProject().id !== p.id) break
       if (token.stopped) {
         // Stopped before `start`: still show the question and that it was stopped.
         start()
@@ -123,7 +124,7 @@ export function turnContext(p: Project): AssistantContext {
           run.state === 'running' ? `Build ${run.n} is running` : run.state === 'done' ? `Build ${run.n} done` : `Build ${run.n} did not finish`,
           `Blocks: ${run.chips.map(c => c.name).join(', ') || 'none'}`,
           ...run.skipped,
-          ...(run.reason ? [FAILURE_LINES[run.reason]] : []),
+          ...(run.reason ? [run.message ?? FAILURE_LINES[run.reason]] : []),
         ].join('\n')
       : null,
     library: p.assets.map(libraryLine),

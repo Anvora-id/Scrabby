@@ -145,7 +145,7 @@ The category colors are "Medium" strength (D-Q18): stronger than the old pastels
 | Bob | Hops only on the Build stage (loop) and once when a speech bubble or the greeting appears ([Brand and Bob](#brand-and-bob)). |
 | Greeting leaves | The backdrop fades out while the card shrinks to `scale(.9)`, over `--t-pop` with `--ease`. |
 
-**Reduced motion** (`prefers-reduced-motion: reduce`): no transforms or loops. Presses, drops, pops and step changes happen at once. Flashes still fade (opacity only). The Build stage shows the full pile of bricks standing still and Bob standing still. The working Build chip holds at opacity .6.
+**Reduced motion** (`prefers-reduced-motion: reduce`): no transforms or loops, except the Assistant's thinking dots, which fade in turn (opacity only). Presses, drops, pops and step changes happen at once. Flashes still fade (opacity only). The Build stage shows the full pile of bricks standing still and Bob standing still. The working Build chip holds at opacity .6.
 
 ## Icons
 

@@ -137,6 +137,18 @@ describe('ask', () => {
     expect(hasPending(getProject())).toBe(false)
   })
 
+  it('a reply whose Project was replaced writes nothing into the new one', async () => {
+    let open!: () => void
+    gate = new Promise(r => { open = r })
+    script = [{ type: 'start' }, { type: 'text', text: 'Late' }]
+    const turn = ask('Hi')
+    start()
+    open()
+    await turn
+    expect(getProject().chat).toEqual([])
+    expect(hasPending(getProject())).toBe(false)
+  })
+
   it('after a drop no proposal is added and the code is unchanged', async () => {
     let open!: () => void
     gate = new Promise(r => { open = r })
