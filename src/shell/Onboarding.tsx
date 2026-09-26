@@ -1,17 +1,19 @@
-import { useEffect, useLayoutEffect, useReducer, useRef, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useReducer, useRef, useState, type ReactNode } from 'react'
 import { getProject, useUi } from '../store.ts'
 import { downloadCode } from '../download.ts'
 import {
-  askDemo, askStore, closeAsk, closeTip, endTour, loadDemo, newProject, nextBubble, once,
-  placeBubble, startTour, tipStore, tourStore, TOURS,
+  askDemo, askStore, closeAsk, closeTip, endTour, firstTour, isEmptyProject, loadDemo, newProject,
+  nextBubble, once, placeBubble, startTour, tipStore, tourStore, TOURS,
 } from '../onboarding.ts'
 import styles from './Onboarding.module.css'
 
 export default function Onboarding() {
   const { step } = useUi()
+  // App mounts after the saved Project has loaded, so this is the page load's Project.
+  const [greet, setGreet] = useState(() => isEmptyProject(getProject()))
 
   useEffect(() => {
-    if (once('scrabby.tour.plan')) startTour('plan')
+    if (!greet) firstTour() // with the greeting up, its Start my own site runs it
   }, [])
   useEffect(() => {
     if (step === 'try' && once('scrabby.tour.try')) startTour('try')
@@ -19,10 +21,51 @@ export default function Onboarding() {
 
   return (
     <>
+      {greet && <Greeting onClose={() => setGreet(false)} />}
       <Tour />
       <Tip />
       <ReplaceWarning />
     </>
+  )
+}
+
+function Greeting({ onClose }: { onClose: () => void }) {
+  const [then, setThen] = useState<(() => void) | null>(null)
+
+  // Close, then act: once the leave animation ends, or at once with reduced motion.
+  const leave = (act: () => void) => {
+    if (then) return
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { onClose(); act() }
+    else setThen(() => act)
+  }
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') leave(firstTour) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [then])
+
+  return (
+    <div
+      className={`${styles.backdrop} ${styles.center}`}
+      data-leaving={then ? '' : undefined}
+      onAnimationEnd={e => { if (then && e.target === e.currentTarget) { onClose(); then() } }}
+    >
+      <div className={styles.greeting} role="dialog" aria-modal="true" aria-labelledby="greeting-title">
+        <div className={styles.logo}>
+          <img src="/bob.svg" alt="" />
+          <span id="greeting-title" className={styles.wordmark}>Scrabby</span>
+        </div>
+        <h1 className={styles.slogan}>Ideas are best blocked out.</h1>
+        <p className={styles.pitch}>Snap your idea together. Bob builds it for real.</p>
+        <div className={styles.choices}>
+          <button className={styles.demo} autoFocus onClick={() => leave(askDemo)}>
+            Take me through the demo: Maya's bake sale
+          </button>
+          <button className={styles.secondary} onClick={() => leave(firstTour)}>Start my own site</button>
+        </div>
+      </div>
+    </div>
   )
 }
 
