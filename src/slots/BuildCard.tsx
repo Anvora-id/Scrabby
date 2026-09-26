@@ -77,10 +77,17 @@ const FOLD_AT = 12
 export default function BuildCard() {
   const run = useBuild()
   const p = useProject()
-  const [limit, setLimit] = useState<string>()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
   // The Blocks leave the Project when the Build ends, so remember each chip's icon while they are there.
   const icons = useRef<Record<string, IconKey>>({})
+  const list = useRef<HTMLDivElement>(null)
+  const { done, working } = run ? progress(run) : { done: new Set<string>(), working: undefined }
+
+  // The open list scrolls past about 5 rows: keep the chip Bob is on in the middle of it.
+  useEffect(() => {
+    const chip = list.current?.querySelector<HTMLElement>(`.${styles.working}`)
+    if (chip) list.current!.scrollTop = chip.offsetTop - (list.current!.clientHeight - chip.offsetHeight) / 2
+  }, [working, open])
 
   if (!run) {
     return (
@@ -93,7 +100,6 @@ export default function BuildCard() {
   }
 
   const failed = run.state === 'failed'
-  const { done, working } = progress(run)
   for (const c of run.chips) {
     const b = p.blocks[c.id]
     if (b && b.type !== 'canvas') icons.current[c.id] = b.inst ? 'custom' : BLOCK_TYPES[b.type].icon
@@ -107,12 +113,10 @@ export default function BuildCard() {
       </span>
     )
   }
-  const chips = <div className={styles.chips}>{run.chips.map(chip)}</div>
-  const current = run.chips.find(c => c.id === working)
+  const workingChip = run.chips.find(c => c.id === working)
 
-  async function tryAgain() {
-    setLimit(undefined)
-    setLimit(await runBuild().catch(e => { console.error('The Build failed to run', e); return undefined }))
+  function tryAgain() {
+    runBuild().catch(e => console.error('The Build failed to run', e))
   }
 
   return (
@@ -121,7 +125,7 @@ export default function BuildCard() {
         <h2 className={styles.title}>
           {run.state === 'running' && <><span className={styles.spinner} /><span className={styles.bobTitle}>Bob is building your website</span><span className={styles.end}><BobBadge /></span></>}
           {run.state === 'done' && <><span className={styles.doneMark}>✓</span>Build {run.n} done</>}
-          {failed && <><span className={cx(styles.bang, styles.bigBang)}>!</span>Build {run.n} did not finish</>}
+          {failed && <><span className={cx(styles.bang, styles.bigBang)}>!</span>Build {run.n} {run.reason === 'limit' ? 'did not start' : 'did not finish'}</>}
         </h2>
         {run.state === 'done' && <p className={styles.sub}>Opening your website…</p>}
         {failed && <p className={styles.sub}>Nothing changed: your code and Blocks are as they were.</p>}
@@ -132,13 +136,13 @@ export default function BuildCard() {
           <button className={styles.fold} aria-expanded={open} aria-controls="build-chips" onClick={() => setOpen(!open)}>
             <ICONS.fold weight="fill" size={12} className={cx(styles.chevron, !open && styles.turned)} />
             {run.chips.length} Blocks · {done.size} done
-            {!open && current && <span className={styles.end}>{chip(current)}</span>}
+            {!open && workingChip && <span className={styles.end}>{chip(workingChip)}</span>}
           </button>
           <div id="build-chips" className={cx(styles.drawer, open && styles.open)} aria-hidden={!open}>
-            <div>{chips}</div>
+            <div><div className={styles.chips} ref={list}>{run.chips.map(chip)}</div></div>
           </div>
         </div>
-      ) : chips}
+      ) : <div className={styles.chips}>{run.chips.map(chip)}</div>}
       {notes.length > 0 && (
         <ul className={styles.notes}>
           {notes.map((s, i) => <li key={i}><span className={styles.dash}>–</span>{s}</li>)}
@@ -146,12 +150,11 @@ export default function BuildCard() {
       )}
       {failed && (
         <div>
-          {run.reason && <p className={styles.failRow}><span className={styles.bang}>!</span><span className={styles.failLine}>{FAILURE_LINES[run.reason]}</span></p>}
+          {run.reason && <p className={styles.failRow}><span className={styles.bang}>!</span><span className={styles.failLine}>{run.message ?? FAILURE_LINES[run.reason]}</span></p>}
           <div className={styles.actions}>
             <button className={styles.primary} onClick={tryAgain}>Try again</button>
             <button className={styles.ghost} onClick={() => setStep('plan')}>← Back to the Blocks</button>
           </div>
-          {limit && <p className={styles.failLine}>{limit}</p>}
         </div>
       )}
     </div>

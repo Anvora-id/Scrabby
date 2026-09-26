@@ -248,10 +248,10 @@ describe('runLoop', () => {
   })
 })
 
-const post = (body: unknown, browser = 'b1') =>
+const post = (body: unknown, browser = 'b1', run?: string) =>
   new Request('http://localhost/api/agent', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-scrabby-browser': browser },
+    headers: { 'content-type': 'application/json', 'x-scrabby-browser': browser, ...run && { 'x-scrabby-run': run } },
     body: typeof body === 'string' ? body : JSON.stringify(body),
   })
 
@@ -295,6 +295,28 @@ describe('agentHandler', () => {
     expect((await handler(post(build(), 'b2'))).status).toBe(200)
     process.env.AGENT_LIMITS = 'off'
     expect((await handler(post(build()))).status).toBe(200)
+  })
+
+  it('a repeated run id never starts a second run or counts twice, also with AGENT_LIMITS=off', async () => {
+    delete process.env.AGENT_LIMITS
+    const handler = agentHandler(() => fake([]).model, createLimits())
+    expect((await handler(post(build(), 'b1', 'r1'))).status).toBe(200)
+    expect((await handler(post(build(), 'b1', 'r1'))).status).toBe(409)
+    for (let i = 2; i <= 10; i++) expect((await handler(post(build(), 'b1', `r${i}`))).status).toBe(200)
+    expect((await handler(post(build(), 'b1', 'r11'))).status).toBe(429)
+    process.env.AGENT_LIMITS = 'off'
+    expect((await handler(post(build(), 'b1', 'r5'))).status).toBe(409)
+    expect((await handler(post(build(), 'b1', 'r12'))).status).toBe(200)
+  })
+
+  it('a Build that ends without files gives its hour back', async () => {
+    delete process.env.AGENT_LIMITS
+    const limits = createLimits()
+    const broken = agentHandler(() => fake([{ content: '  ', tool_calls: [], finish: 'stop' }]).model, limits)
+    for (let i = 0; i < 12; i++) expect(await (await broken(post(build()))).text()).toContain('"reason":"broken"')
+    const handler = agentHandler(() => fake([]).model, limits)
+    for (let i = 0; i < 10; i++) expect(await (await handler(post(build()))).text()).toContain('"type":"files"')
+    expect((await handler(post(build()))).status).toBe(429)
   })
 })
 

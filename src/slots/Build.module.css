@@ -428,9 +428,13 @@
   overflow: hidden;
 }
 
-/* Room for the chips' rings and bottom edges, which the fold would clip. */
+/* Room for the chips' rings and bottom edges, which the fold would clip; about 5 rows, then it scrolls. */
 .drawer .chips {
+  position: relative;
+  max-height: 204px;
   padding: 12px 3px 6px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
 }
 
 .notes {
@@ -474,12 +478,6 @@
   background: var(--alert-bg);
   color: var(--ink);
   font-weight: 900;
-}
-
-p.failLine {
-  display: inline-block;
-  margin: 8px 0 0;
-  font-size: var(--fs-md);
 }
 
 /* Actions */
@@ -552,6 +550,9 @@ p.failLine {
   }
   .chip, .chevron, .drawer {
     transition: none;
+  }
+  .drawer .chips {
+    scroll-behavior: auto;
   }
   .chip.working {
     animation: none;
