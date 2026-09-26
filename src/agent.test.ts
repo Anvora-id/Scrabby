@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { agentHandler, type Model } from '../api/agent.ts'
-import { readAgentStream, runAgent, type AgentEvent } from './agent.ts'
+import { agentLabel, readAgentStream, runAgent, type AgentEvent } from './agent.ts'
 
 async function collect(events: AsyncGenerator<AgentEvent>) {
   const out: AgentEvent[] = []
@@ -57,5 +57,15 @@ describe('runAgent', () => {
       { type: 'limit', message: 'Try again in 5 minutes.' },
     ])
     expect(fetch).toHaveBeenCalledOnce()
+  })
+
+  it('a model event sets the badge label; the next run starts on the GET label again', async () => {
+    vi.stubGlobal('fetch', async () => chunked(['data: {"type":"start"}\n\ndata: {"type":"model","label":"Gemini"}\n\n']))
+    const events = await collect(runAgent({ kind: 'build', document: 'D', files: {} }))
+    expect(events.slice(0, 2)).toEqual([{ type: 'start' }, { type: 'model', label: 'Gemini' }])
+    expect(agentLabel()).toBe('Gemini')
+    vi.stubGlobal('fetch', async () => chunked(['data: {"type":"start"}\n\n']))
+    await collect(runAgent({ kind: 'build', document: 'D', files: {} }))
+    expect(agentLabel()).toBeNull()
   })
 })

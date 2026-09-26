@@ -212,18 +212,41 @@ export async function* runLoop(
   }
 }
 
-export function bobModel(): Model {
+export type ModelConfig = { baseUrl: string; apiKey: string; authScheme: string; model: string; headers: string }
+
+export function primaryConfig(): ModelConfig {
+  const env = process.env
+  return {
+    baseUrl: env.AGENT_BASE_URL || 'https://api.us-east.bob.ibm.com/inference/v1',
+    apiKey: env.AGENT_API_KEY ?? '',
+    authScheme: env.AGENT_AUTH_SCHEME || 'Apikey',
+    model: env.AGENT_MODEL || 'premium',
+    headers: env.AGENT_HEADERS || '{}',
+  }
+}
+
+export function fallbackConfig(): ModelConfig | null {
+  const env = process.env
+  if (!env.FALLBACK_API_KEY) return null
+  return {
+    baseUrl: env.FALLBACK_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai',
+    apiKey: env.FALLBACK_API_KEY,
+    authScheme: env.FALLBACK_AUTH_SCHEME || 'Bearer',
+    model: env.FALLBACK_MODEL || 'gemini-3.8-flash',
+    headers: env.FALLBACK_HEADERS || '{}',
+  }
+}
+
+export function openAiModel(cfg: ModelConfig): Model {
   return async ({ messages, signal }) => {
-    const env = process.env
-    const base = (env.AGENT_BASE_URL || 'https://api.us-east.bob.ibm.com/inference/v1').replace(/\/$/, '')
-    const res = await fetch(`${base}/chat/completions`, {
+    const res = await fetch(`${cfg.baseUrl.replace(/\/$/, '')}/chat/completions`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        authorization: `${env.AGENT_AUTH_SCHEME || 'Apikey'} ${env.AGENT_API_KEY ?? ''}`,
-        ...JSON.parse(env.AGENT_HEADERS || '{}'),
+        authorization: `${cfg.authScheme} ${cfg.apiKey}`,
+        ...JSON.parse(cfg.headers),
       },
-      body: JSON.stringify({ model: env.AGENT_MODEL || 'premium', messages, tools: TOOLS, tool_choice: 'auto' }),
+      body: JSON.stringify({ model: cfg.model, messages, tools: TOOLS, tool_choice: 'auto' }),
       signal,
     })
     if (!res.ok) throw new Error(`model answered ${res.status}: ${(await res.text()).slice(0, 300)}`)
@@ -235,6 +258,34 @@ export function bobModel(): Model {
       typeof raw === 'string' ? raw : Array.isArray(raw) ? raw.map((p: { text?: string }) => p?.text ?? '').join('') : null
     return { content, tool_calls: choice.message?.tool_calls ?? [], finish: choice.finish_reason ?? null }
   }
+}
+
+// Only a throw switches (network, 403, 429, 5xx); broken, turns and time come from replies or the clock.
+export function withFallback(primary: Model, fallback: Model | null, label: string, onSwitch: (label: string) => void): Model {
+  let switched = false
+  return async (args) => {
+    if (switched) return fallback!(args)
+    try {
+      return await primary(args)
+    } catch (e) {
+      if (args.signal.aborted || !fallback) throw e
+      console.error(`[agent] Bob failed, switching to ${label}:`, e instanceof Error ? e.message : String(e))
+      switched = true
+      onSwitch(label)
+      return fallback(args)
+    }
+  }
+}
+
+// One per request: Bob first, the fallback (if configured) for the rest of the run once Bob fails.
+export function bobModel(onSwitch: (label: string) => void = () => {}): Model {
+  const fallback = fallbackConfig()
+  return withFallback(
+    openAiModel(primaryConfig()),
+    fallback && openAiModel(fallback),
+    process.env.FALLBACK_LABEL || 'Gemini',
+    onSwitch,
+  )
 }
 
 type Kind = 'build' | 'assistant'
@@ -272,7 +323,7 @@ export function createLimits() {
   }
 }
 
-export function agentHandler(model: () => Model, limits = createLimits()) {
+export function agentHandler(model: (onSwitch: (label: string) => void) => Model, limits = createLimits()) {
   return async (request: Request): Promise<Response> => {
     if (request.method === 'GET') return Response.json({ model: process.env.AGENT_LABEL || 'IBM Bob' })
     if (request.method !== 'POST') return new Response('POST an AgentRequest', { status: 405 })
@@ -288,16 +339,24 @@ export function agentHandler(model: () => Model, limits = createLimits()) {
       const message = limits.take(req.kind, browser, Date.now())
       if (message) return Response.json({ message }, { status: 429 })
     }
+    const encoder = new TextEncoder()
+    const send = (controller: ReadableStreamDefaultController<Uint8Array>, event: AgentEvent) =>
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`))
+    let stream!: ReadableStreamDefaultController<Uint8Array>
+    // The model event goes out at once, while runLoop still waits on the fallback's reply.
+    const onSwitch = (label: string) => send(stream, { type: 'model', label })
     const events = (async function* (): AsyncGenerator<AgentEvent> {
       yield { type: 'start' }
-      yield* runLoop(req, model(), { signal: request.signal })
+      yield* runLoop(req, model(onSwitch), { signal: request.signal })
     })()
-    const encoder = new TextEncoder()
     const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        stream = controller
+      },
       async pull(controller) {
         const { done, value } = await events.next()
         if (done) controller.close()
-        else controller.enqueue(encoder.encode(`data: ${JSON.stringify(value)}\n\n`))
+        else send(controller, value)
       },
       async cancel() {
         await events.return(undefined)

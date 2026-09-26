@@ -18,6 +18,7 @@ export type AgentEvent =
   | { type: 'block'; id: string }                      // a data-block id first written by a tool call
   | { type: 'files'; files: Files; summary?: string }  // the files when the run ends
   | { type: 'error'; reason: 'time' | 'turns' | 'unreachable' | 'broken' }
+  | { type: 'model'; label: string }                   // the run switched to the fallback model
 
 let pageId: string | null = null
 
@@ -57,7 +58,11 @@ export async function* runAgent(req: AgentRequest): AsyncGenerator<AgentEvent> {
     yield { type: 'limit', message }
     return
   }
-  yield* readAgentStream(res)
+  for await (const event of readAgentStream(res)) {
+    if (event.type === 'start') setLabel(serverLabel)
+    if (event.type === 'model') setLabel(event.label)
+    yield event
+  }
 }
 
 export async function* readAgentStream(res: Response): AsyncGenerator<AgentEvent> {
@@ -87,9 +92,17 @@ export async function* readAgentStream(res: Response): AsyncGenerator<AgentEvent
   yield { type: 'error', reason: 'unreachable' }
 }
 
+let serverLabel: string | null = null // the GET value: the label every run starts with
 let label: string | null = null
 let asked = false
 const listeners = new Set<() => void>()
+
+function setLabel(next: string | null) {
+  label = next
+  listeners.forEach((l) => l())
+}
+
+export const agentLabel = () => label
 
 function subscribe(listener: () => void) {
   listeners.add(listener)
@@ -99,8 +112,8 @@ function subscribe(listener: () => void) {
       .then((res) => res.json())
       .then((body) => {
         if (typeof body?.model !== 'string') return
-        label = body.model
-        listeners.forEach((l) => l())
+        serverLabel = body.model
+        setLabel(label ?? serverLabel)
       })
       .catch(() => {})
   }
@@ -110,5 +123,5 @@ function subscribe(listener: () => void) {
 }
 
 export function useAgentLabel(): string | null {
-  return useSyncExternalStore(subscribe, () => label)
+  return useSyncExternalStore(subscribe, agentLabel)
 }

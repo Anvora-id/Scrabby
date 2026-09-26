@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AgentEvent, AgentRequest, AssistantContext } from '../src/agent.ts'
 import type { ChatMessage, Files } from '../src/model/types.ts'
-import { agentHandler, createLimits, runLoop, type ChatMsg, type Model, type ModelReply } from './agent.ts'
+import { agentHandler, createLimits, runLoop, withFallback, type ChatMsg, type Model, type ModelReply } from './agent.ts'
 
 let n = 0
 const call = (name: string, args: object | string) => ({
@@ -316,5 +316,76 @@ describe('createLimits', () => {
     for (let i = 0; i < 40; i++) expect(take('build', `b${i}`, now)).toBeNull()
     expect(take('build', 'new', now)).toBe("Scrabby has reached today's limit for everyone. Please try again tomorrow.")
     expect(take('build', 'new', now + 24 * 3_600_000)).toBeNull()
+  })
+})
+
+describe('withFallback', () => {
+  // Bob answers with a create call per round and throws from round `failAt` on (Infinity: never).
+  function bob(failAt: number) {
+    const got: ChatMsg[][] = []
+    const model: Model = async ({ messages }) => {
+      got.push(structuredClone(messages))
+      if (got.length - 1 >= failAt) throw new Error('model answered 403: blocked')
+      return tools(call('create', { path: `bob${got.length}.html`, file_text: 'x' }))
+    }
+    return { model, got }
+  }
+
+  async function run(primary: Model, fallback: Model | null) {
+    const res = await agentHandler((onSwitch) => withFallback(primary, fallback, 'Gemini', onSwitch))(post(build()))
+    const text = await res.text()
+    return text.split('\n\n').filter(Boolean).map((m) => JSON.parse(m.replace(/^data: /, '')) as AgentEvent)
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('a working Bob sends no model event and never calls the fallback', async () => {
+    const primary = fake([tools(call('create', { path: 'a.html', file_text: 'x' })), say('Done.')])
+    const fallback = vi.fn<Model>()
+    const events = await run(primary.model, fallback)
+    expect(events.map((e) => e.type)).toEqual(['start', 'files'])
+    expect(fallback).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['round 1', 0],
+    ['round 3', 2],
+  ])('Bob failing on %s switches once, retries that round and every later one on the fallback', async (_, failAt) => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const primary = bob(failAt)
+    const fallback = fake([tools(call('create', { path: 'gem.html', file_text: 'y' })), say('Done.')])
+    const events = await run(primary.model, fallback.model)
+    expect(events.filter((e) => e.type === 'model')).toEqual([{ type: 'model', label: 'Gemini' }])
+    expect(events[1]).toEqual({ type: 'model', label: 'Gemini' })
+    expect(primary.got).toHaveLength(failAt + 1)
+    expect(fallback.got[0]).toEqual(primary.got[failAt])
+    expect(fallback.got).toHaveLength(2)
+    const last = events[events.length - 1]
+    expect(last.type === 'files' && Object.keys(last.files).sort()).toEqual(
+      [...Array.from({ length: failAt }, (_, i) => `bob${i + 1}.html`), 'gem.html'].sort(),
+    )
+    expect(log).toHaveBeenCalledWith('[agent] Bob failed, switching to Gemini:', 'model answered 403: blocked')
+  })
+
+  it('without a fallback Bob failing ends with unreachable', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const events = await run(bob(0).model, null)
+    expect(events).toEqual([{ type: 'start' }, { type: 'error', reason: 'unreachable' }])
+  })
+
+  it('a client abort never switches', async () => {
+    const leave = new AbortController()
+    const primary: Model = async () => {
+      leave.abort()
+      throw new Error('aborted')
+    }
+    const fallback = vi.fn<Model>()
+    const onSwitch = vi.fn()
+    const events = await collect(runLoop(build(), withFallback(primary, fallback, 'Gemini', onSwitch), { signal: leave.signal }))
+    expect(events).toEqual([])
+    expect(fallback).not.toHaveBeenCalled()
+    expect(onSwitch).not.toHaveBeenCalled()
   })
 })
