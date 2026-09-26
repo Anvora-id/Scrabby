@@ -110,7 +110,7 @@ What users can make: websites, and simple web apps with no backend (a quiz, a to
 - **Every product Build and Assistant answer spends the Bobcoins of the account that owns the Inference key.** Watch its balance (Bob IDE → Settings → General) and switch the variables to a fallback model before it runs out.
 - The UI always calls the agent **Bob**, with a badge naming the model that runs it. The video and deck say plainly which model ran the demo.
 - The Prototype is plain HTML, CSS and JS with no npm: one `.html` per Page Block, a shared `style.css` and `script.js`, and Assets in `assets/`.
-- **Download** (PRD-48): a zip with the website files, which runs by double-clicking `index.html`, plus a **Bob kit**. The kit is an `AGENTS.md` with Bob's rules for this Project and the plan as the text Bob reads, and `.bob/skills/` with the four Skills (every Build loads all four). Opening the folder in the IBM Bob IDE lets the user keep building with Bob, using the same rules and plan.
+- **Download** (PRD-48): a zip with the website files and Assets only, which runs by double-clicking `index.html`.
 - All product code is written in the Bob IDE. The Bobcoin budget sets the drop order (§6).
 
 **Assistant** (ticket 08): the chat panel where the user talks with Bob about the code.
@@ -146,7 +146,7 @@ Build in this order:
 | Must | Preview: redraws a moment after typing stops, with a "Pause live updates" switch; the changed parts flash after a Build or an accepted change (W-16, W-17) |
 | Must | Code editor; the next Build keeps hand edits |
 | Must | Library, images and video, with the image and video Traits |
-| Must | Save one Project in the browser (with its chat); Download code as a zip, with a Bob kit inside (PRD-48) |
+| Must | Save one Project in the browser (with its chat); Download code as a zip (PRD-48) |
 | Must | Guardrails (§8) |
 | Must | Onboarding (§9): sample Project, hints, New Project, a short show-around |
 | Must | Preview error bar (§10) |
@@ -360,7 +360,7 @@ Owner: the developer who moves over at hour 34 (§1). Submit at Sun 13:00 UTC (2
 - Long description (about 1,150 characters):
   > Kids who code are developers too, but AI builders expect them to describe a whole website in words, and that is hard. Only 27% of US eighth-graders write at NAEP's Proficient level, and when 14- and 15-year-olds asked ChatGPT in their own words, 39% of the answers were high-level, against 84% with expert prompts.
   >
-  > Scrabby replaces the prompt with a plan. Young developers lay out their idea as nested Blocks and Traits on a Canvas, the way they already know from Scratch: a Page holds a Hero, which holds a Button that goes to the Shop. Bob, Scrabby's AI agent, reads the plan and writes a real website in plain HTML, CSS and JS. In Try & tweak they click through it, edit the real code and ask Bob what it does. Bob answers in plain words, at the level they pick, and proposes changes they accept or reject. The next Build keeps every hand edit. A download runs with a double-click and carries a Bob kit, so the project continues in the IBM Bob IDE.
+  > Scrabby replaces the prompt with a plan. Young developers lay out their idea as nested Blocks and Traits on a Canvas, the way they already know from Scratch: a Page holds a Hero, which holds a Button that goes to the Shop. Bob, Scrabby's AI agent, reads the plan and writes a real website in plain HTML, CSS and JS. In Try & tweak they click through it, edit the real code and ask Bob what it does. Bob answers in plain words, at the level they pick, and proposes changes they accept or reject. The next Build keeps every hand edit. A download runs with a double-click.
   >
   > We built Scrabby with IBM Bob 2.0: we planned in documents, and Bob's Agent mode, subagents and parallel tasks built the product from them. A version for young coders will come through schools and parents.
 - Tags: IBM Bob, Generative AI, AI Agents, Education, Web Development, Developer Onboarding, Block-based Programming, Vercel.
@@ -389,7 +389,7 @@ An honest read of the idea against lablab's four criteria and the theme, as of 2
 | Application of Technology | 3–4 | Built entirely in the Bob IDE, with session evidence. The risk is completeness: the must tier is large for 48 hours and a limited Bobcoin budget, and the link must keep working through judging. | Show Bob's named features in the video: Agent mode, subagents, parallel tasks, and document understanding (Bob builds Scrabby from this PRD and DESIGN.md). Run Bob inside the product if the access allows it. |
 | Presentation | 4–5 | The outline covers the problem, demo, market, revenue, competitors and roadmap in under 5 minutes. | Keep it 3–5 minutes. A 5 needs the competitor slide. |
 | Business Value | 3, 4 with work | A large audience, a clear gap and a revenue model. But schools buy slowly, and kids' access needs consent and an AI provider that allows children. | Name a specific first customer (coding clubs and schools), give TAM and SAM, and show the School Edition. |
-| Originality | 4–5 | No product we found turns a kid's block plan into real code with AI. | Stress the Bob link: the Download carries a Bob kit (PRD-48), so the user's Project continues in the IBM Bob IDE. |
+| Originality | 4–5 | No product we found turns a kid's block plan into real code with AI. | Stress the Bob link: the product's Bob runs on IBM Bob's inference endpoint, and Bob built Scrabby. |
 
 - **The biggest risk is theme fit.** Judges may read Scrabby as an education product rather than a developer-workflow tool. The challenge asks teams to show "how your solution increases productivity, reduces manual effort, errors, and rework, or significantly shortens the time required". So one slide must show our numbers: idea to working prototype in under 10 minutes, and every hand edit kept across rebuilds (no rework).
 - **The biggest lever is showing IBM Bob 2.0 clearly.** Both Application of Technology and Originality name Bob.

@@ -1,6 +1,6 @@
 # Scrabby technical design (hackathon build)
 
-**Status:** build spec, 2026-09-26. It describes the team prototype as built (planning repo `spbob_prototype`, commit `267140d`), plus the hackathon changes: Bob runs the product through its inference endpoint, and the app is hosted on Vercel with the PRD §8 guardrails and the Bob kit.
+**Status:** build spec, 2026-09-26. It describes the team prototype as built (planning repo `spbob_prototype`, commit `267140d`), plus the hackathon changes: Bob runs the product through its inference endpoint, and the app is hosted on Vercel with the PRD §8 guardrails.
 **Readers:** Bob and the two developers. Bob builds from this file: every name, string and number here is exact. Do not rename, reword or "improve" anything.
 **Other sources:** words in [`CONTEXT.md`](CONTEXT.md), what and why in [`PRD.md`](PRD.md), the look in [`DESIGN.md`](DESIGN.md), work order in [`plan/build-map.md`](plan/build-map.md), rules for Bob in [`AGENTS.md`](AGENTS.md).
 **Precedence:** this file wins over PRD.md on mechanisms. §18 wins over DESIGN.md where they differ. DESIGN.md wins on every look value §18 does not mention.
@@ -871,28 +871,7 @@ The Prototype runs on its own origin, so it cannot reach the app's IndexedDB. Th
 - View: heading `Library`, hint `Images and videos for this Project. Pick one inside an image or video Trait.`, **Upload** (Primary; clicks a hidden multiple file input; reset its value after picking). Problems box (`role=alert`) with a **Dismiss** text button. Empty → `Nothing here yet. Upload an image or a video.` Tiles (title `<file> · <size>`): the image (object URL of its Blob) or a 40px duotone image/video icon; the name; hover actions: rename (pencil, title `Rename`, aria-label `Rename <file>`) and delete (trash, title `Delete`). Delete also has aria-label `Delete <file>`. Rename: an input (autofocus, aria-label `New name for <file>`): Enter commits, Escape or blur cancels, typing clears the problem. Commit trims the draft; a non-blank draft with a `renameProblem` shows it under the field and stays open; a blank or unchanged name just closes the field; a new name asks `confirm('Rename <file>?\nCode that references assets/<file> won't be updated and will break. You can ask the Assistant to fix the references.')` then `renameAsset`. Delete: `confirm(deleteWarning)`, then `removeAsset` and `deleteAsset` (Blob). Storage line at the bottom: `<used> of <quota> browser storage used` from `navigator.storage.estimate()`. Object URLs are revoked when the tiles reload.
 
 **download.ts:**
-- `zipDownload(project: Pick<Project, 'name' | 'files'>, assets: { file: string; data: Uint8Array }[]): Uint8Array` with fflate `zipSync`: every file not under `.builds/` (as `strToU8`); every Asset at `assets/<file>` stored uncompressed (`[data, { level: 0 }]`); and the **Bob kit**: `AGENTS.md` (below) and `.bob/skills/<name>/SKILL.md` for `code-rules`, `behavior`, `content`, `visual-style` (imported with `?raw` from `../skills/<name>/SKILL.md`).
-- Kit `AGENTS.md` text (exact; `<name>` is the Project name; the plan parts are the `.builds/build-N.md` files in N order, or the single line `No Build yet.`):
-
-```markdown
-# <name>
-
-A website made with Scrabby. Bob built it from a plan of Blocks and Traits. The plan Bob read for each Build is at the end of this file.
-
-## Rules for Bob
-
-- Plain HTML, CSS and JavaScript: one `.html` file per page, one shared `style.css` and `script.js`, images and videos in `assets/`. No build step, no npm, no frameworks.
-- Keep every `data-block="…"` attribute and every `/* block … */` comment. They tie the code to the Blocks it came from.
-- Change only what is asked. Keep all other code as it is, including the user's own edits.
-- Follow the Skills in `.bob/skills/`: code rules, behavior, content and visual style.
-
-## The plan
-
-### Build <N>
-
-<the text of .builds/build-N.md>
-```
-
+- `zipDownload(project: Pick<Project, 'files'>, assets: { file: string; data: Uint8Array }[]): Uint8Array` with fflate `zipSync`: every file not under `.builds/` (as `strToU8`); every Asset at `assets/<file>` stored uncompressed (`[data, { level: 0 }]`).
 - `downloadCode(project)`: read each Asset Blob (`getAsset`; a missing one is left out with a `console.warn`), build the zip Blob (`application/zip`), download it as `${name.replace(/[^\p{L}\p{N} _-]+/gu, '').trim() || 'my-site'}.zip`, revoke the object URL after 60s.
 
 ## 17. Onboarding and demo
@@ -1153,7 +1132,7 @@ if (quiz) {
 | `src/checkpoints.test.ts` | Go back (code, Checkpoint Block, Built page ids kept, unbuilt → loose, Library and defs unchanged); "Before loading Checkpoint 1" saved once; Edit its Blocks (code `before`, request Blocks back unlocked); Edit on Checkpoint 1 clears code and brings the Site back; fresh ids when taken; gist, fromTag, buildOf, the warning text. |
 | `src/assistant.test.ts` | A turn sends 10 messages without lines, level, open file, Library, `.builds/`, never Blocks; streams into one Bob message; a diff card with summary (`total: 2` for a changed and a new file); a failed turn; a limit adds no messages and returns the text; Accept all (no Checkpoint; Undo takes it back; chat stays); Reject all; Out of date then Dismiss; Review decisions → `reviewing` then `partial`; dropPending with the line; a running reply is pending and one reply at a time; loading a Checkpoint drops it; changedBlocks. |
 | `src/code/code.test.ts`, `preview/serve.test.ts` | changedLines (examples + the 4 hours lines + none on menu.html + all lines without base); blockMarks; findBlockCode (HTML first, CSS comment fallback); blockInfo (from Checkpoints, Built page on Canvas, Instances `my`). Serve: helper first in head; no head; folder → index.html; CSS/JS types; Asset Blob; missing page text with helper and html type; other missing 404; other paths → undefined. |
-| `src/store.test.ts`, `src/history.test.ts`, `src/model/library.test.ts`, `src/download.test.ts`, `src/onboarding.test.ts`, `src/fixtures/fixtures.test.ts` | A no-undo change leaves Undo for the last edit. History order, redo cleared, key merging, a new step after undo, the limit. Library: addAsset names, clashes, uploadKind (types, SVG refused text, 30 MB text), rename + problems, deleteWarning texts. Zip: code at the top, Assets under `assets/`, no `.builds/`, the kit's `AGENTS.md` (Project name, plan per Build) and the 4 `.bob/skills/*/SKILL.md`. Demo shows no Warnings and has 4–6 photos; isEmptyProject; placeBubble cases (§17 numbers: `{0,100,300,700}`, 280×100 in 1366×768 → right x 314 y 350 tail 50; `{1200,680,1350,740}` → left x 906; a full-width bar → below y 104; `{300,150,W,H}` → inside y 174; `{10,740,60,766}` → right, y 660, tail 80). Fixtures: the demo tree, page files, asset ids; built site: 3 linked pages + CSS + JS, Checkpoint Block with Built pages, 2 Checkpoints whose Blocks hold every mark id (more than 20 marks), nothing unreachable. |
+| `src/store.test.ts`, `src/history.test.ts`, `src/model/library.test.ts`, `src/download.test.ts`, `src/onboarding.test.ts`, `src/fixtures/fixtures.test.ts` | A no-undo change leaves Undo for the last edit. History order, redo cleared, key merging, a new step after undo, the limit. Library: addAsset names, clashes, uploadKind (types, SVG refused text, 30 MB text), rename + problems, deleteWarning texts. Zip: code at the top, Assets under `assets/`, no `.builds/`, nothing else. Demo shows no Warnings and has 4–6 photos; isEmptyProject; placeBubble cases (§17 numbers: `{0,100,300,700}`, 280×100 in 1366×768 → right x 314 y 350 tail 50; `{1200,680,1350,740}` → left x 906; a full-width bar → below y 104; `{300,150,W,H}` → inside y 174; `{10,740,60,766}` → right, y 660, tail 80). Fixtures: the demo tree, page files, asset ids; built site: 3 linked pages + CSS + JS, Checkpoint Block with Built pages, 2 Checkpoints whose Blocks hold every mark id (more than 20 marks), nothing unreachable. |
 
 ## 20a. Console messages (exact)
 
