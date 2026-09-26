@@ -10,6 +10,7 @@ Right-click on a Block or Trait opens its menu (Add/Delete Note, Duplicate, Dele
 
 ## Read
 
+- **Open only these files:** `spec/tdd/09.md`, `spec/tdd/18.md`, `spec/tdd/20.md`, `spec/design/brand-and-bob.md`, `spec/design/motion.md`, `spec/design/note.md`, `spec/design/menus.md`, `spec/design/tooltip.md`, `spec/design/trait.md`, `spec/prd/11.md`. The bullets below say what to look for inside them.
 - TDD §9.2 (bulb, BobPicksChip, Dropdown's Bob picks option), §9.3, §9.5, and the Overlays row of §18 "Look details".
 - DESIGN.md: Brand and Bob, Motion, Note, Menus (Context menu), Tooltip, Trait (Bob picks).
 - PRD §11 (the tooltip table, for checking only).

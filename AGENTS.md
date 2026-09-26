@@ -2,11 +2,16 @@
 
 Scrabby is a web IDE: users plan a website as nested Blocks and Traits on a Canvas, Bob (IBM Bob, through its inference endpoint) builds real HTML, CSS and JS from the plan, and users try it in a Preview, edit the code and ask Bob about it. You are building Scrabby itself, from written specs.
 
-## Read only what the task needs
+## Read only what the task needs (every token you read costs Bobcoins)
 
-1. The issue you were given (`plan/issues/NN-*.md`). It lists its files, the spec sections to read, the steps and the checks.
-2. Only the sections the issue names: `TDD.md §N` (find them with the heading `## N.`) and `DESIGN.md` sections by heading. Do not read whole documents. Do not read `PRD.md` unless the issue names it.
-3. Words: `CONTEXT.md`. Use its terms in code, UI text and commits (Block, not node; Trait, not property).
+1. The issue you were given (`plan/issues/NN-*.md`).
+2. Only the files on its **Open only these files** line. They are `spec/tdd/NN.md` (TDD §NN), `spec/design/<section>.md` (a DESIGN.md section) and `spec/prd/NN.md` (PRD §NN), split word for word from the big documents. **Never open `TDD.md`, `DESIGN.md` or `PRD.md` themselves.** If the issue names a section that is not on its list, open only that section's file.
+3. For token names and colors, read `src/tokens.css`, not the design Tokens section.
+4. Words: `CONTEXT.md`, only when you must name something new. Use its terms (Block, not node; Trait, not property).
+5. Source files: open a file only to edit it or to see what you import from it. To find where something is defined, search (for example for `export function updateProject`) instead of opening files one by one. Never read `node_modules/`, `dist/`, `pnpm-lock.yaml` or `plan/issues/` files other than yours.
+6. Read each file once. Do not open a file again to check an edit you just made.
+
+`spec/` is generated: never edit it. To change the specs, edit `TDD.md`, `DESIGN.md` or `PRD.md`, then run `node scripts/split-specs.mjs`.
 
 ## Do exactly what the spec says
 
@@ -26,8 +31,8 @@ Scrabby is a web IDE: users plan a website as nested Blocks and Traits on a Canv
 
 ## Finish a task
 
-1. `pnpm typecheck` and `pnpm test` both pass. Fix what you broke; do not edit tests of other issues to make them pass.
-2. Tick the issue's checkboxes, set `Status: done`, and add a short `## Answer` with anything the next issue must know.
+1. `pnpm typecheck` and `pnpm test` both pass. Fix what you broke; do not edit tests of other issues to make them pass. Run only these two commands to check your work: never start `pnpm dev`, `pnpm build` or a browser. The issue's in-browser checks under **Done when** are for the human.
+2. Tick the issue's checkboxes, set `Status: done`, and add a short `## Answer` (at most 5 lines) with anything the next issue must know. Keep your chat replies short too.
 3. Commit with a Conventional Commits message: `feat: <what the user can now do> (issue NN)`.
 4. The human saves this task's session summary screenshot and exported history in `bob_sessions/` (`scrabby_taskNN_<slug>_summary.png`).
 

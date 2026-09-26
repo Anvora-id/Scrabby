@@ -10,6 +10,7 @@ The one server function, `/api/agent`: it checks the usage limits, then runs Bob
 
 ## Read
 
+- **Open only these files:** `spec/tdd/05.md`, `spec/tdd/01.md`, `spec/tdd/07.md`, `spec/tdd/20.md`, `spec/design/bob-badge.md`, `skills/instruction-header.md`. The bullets below say what to look for inside them.
 - TDD §5 (all), §1 (Environment variables, vercel.json, the dev plugin), §7 (BobBadge).
 - `skills/instruction-header.md` (the prompt ending is read from it).
 

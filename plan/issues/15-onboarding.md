@@ -10,6 +10,7 @@ The first visit: the age check ("Welcome to Scrabby", 18 or older), then an empt
 
 ## Read
 
+- **Open only these files:** `spec/tdd/17.md`, `spec/tdd/18.md`, `spec/tdd/20.md`, `spec/design/brand-and-bob.md`, `spec/design/motion.md`, `spec/design/speech-bubble.md`, `spec/design/menus.md`, `spec/design/canvas.md`, `spec/prd/08.md`, `spec/prd/09.md`. The bullets below say what to look for inside them.
 - TDD §17 (all), the Onboarding row of §18 "Look details".
 - DESIGN.md: Brand and Bob, Motion, Speech bubble, Menus (Modal: the age check, the New Project warning, the demo warning), Canvas (Empty hint, Demo button).
 - PRD §8 item 1, §9.

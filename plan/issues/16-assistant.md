@@ -10,6 +10,7 @@ The Assistant panel in Try & tweak: the user chats with Bob about the code at a 
 
 ## Read
 
+- **Open only these files:** `spec/tdd/15.md`, `spec/tdd/14.md`, `spec/tdd/11.md`, `spec/tdd/12.md`, `spec/tdd/20.md`, `spec/design/brand-and-bob.md`, `spec/design/motion.md`, `spec/design/assistant.md`, `spec/design/bob-badge.md`, `spec/design/code-editor.md`, `spec/prd/05.md`. The bullets below say what to look for inside them.
 - TDD §15 (all), §14 (the CodeEditor Review bullet and MergeReview), §11 (BuildButton press), §12 (`loadCheckpoint`, `warning`).
 - DESIGN.md: Brand and Bob, Motion, Assistant, Bob badge, Code editor (Bob's suggested changes).
 - PRD §5 (Assistant).

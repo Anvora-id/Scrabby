@@ -10,6 +10,7 @@ Nothing new. The live URL passes the walk below and PRD §7's checklist. Anythin
 
 ## Read
 
+- **Open only these files:** `spec/tdd/01.md`, `spec/tdd/20.md`, `spec/prd/07.md`, `spec/prd/13.md`. The bullets below say what to look for inside them.
 - TDD §1 (Hosting), §20.
 - PRD §7 (Checklist before submitting), §13 (the package).
 

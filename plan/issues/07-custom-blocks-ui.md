@@ -10,6 +10,7 @@ Custom Blocks on screen (ADR 0003): My Blocks in the palette (make one, place In
 
 ## Read
 
+- **Open only these files:** `spec/tdd/09.md`, `spec/tdd/08.md`, `spec/tdd/18.md`, `spec/design/brand-and-bob.md`, `spec/design/motion.md`, `spec/design/block.md`, `spec/design/palette.md`, `spec/design/menus.md`. The bullets below say what to look for inside them.
 - TDD §9.4, §9.1 (Instance and definition bits), §8.4 (Render in the edit view, Reset view, EditBar), and the §18 rows "Block header" and "Block, Instance".
 - DESIGN.md: Brand and Bob, Motion, Block (Instance state, Custom Block definition state, Markers), Palette (My Blocks), Menus (Custom Block edit bar). Ignore the toggle strip, the Color button and the color menu (TDD §18).
 

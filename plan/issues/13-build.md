@@ -10,6 +10,7 @@ Lane: B
 
 ## Read
 
+- **Open only these files:** `spec/tdd/11.md`, `spec/tdd/12.md`, `spec/tdd/18.md`, `spec/tdd/20.md`, `spec/design/brand-and-bob.md`, `spec/design/motion.md`, `spec/design/build-button-and-build-card.md`, `spec/design/speech-bubble.md`, `spec/design/bob-badge.md`, `spec/prd/04.md`, `spec/prd/10.md`. The bullets below say what to look for inside them.
 - TDD §11 (all), the Build rows of §18 and its "Look details".
 - DESIGN.md: Brand and Bob, Motion, Build button and Build card, Speech bubble (Limit message, Blocked Build), Bob badge.
 - PRD §4 ("A Build consumes its Blocks"), §10 (Build failure).

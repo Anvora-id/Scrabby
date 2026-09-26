@@ -10,6 +10,7 @@ The dark code editor in Try & tweak: one tab per file, hand edits saved as the P
 
 ## Read
 
+- **Open only these files:** `spec/tdd/14.md`, `spec/tdd/18.md`, `spec/tdd/20.md`, `spec/design/brand-and-bob.md`, `spec/design/motion.md`, `spec/design/code-editor.md`. The bullets below say what to look for inside them.
 - TDD §14 (all), the Code editor rows of §18.
 - DESIGN.md: Brand and Bob, Motion, Code editor.
 

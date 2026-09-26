@@ -10,6 +10,7 @@ The live, clickable Prototype in Try & tweak. It runs on its own origin (a secon
 
 ## Read
 
+- **Open only these files:** `spec/tdd/13.md`, `spec/tdd/18.md`, `spec/tdd/20.md`, `spec/design/brand-and-bob.md`, `spec/design/motion.md`, `spec/design/preview.md`. The bullets below say what to look for inside them.
 - TDD §13 (all), the Preview rows of §18.
 - DESIGN.md: Brand and Bob, Motion, Preview (ignore `srcdoc`: TDD §18).
 

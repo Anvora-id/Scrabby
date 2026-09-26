@@ -10,6 +10,7 @@ The Plan Canvas the user works on: the palette with its category column, Blocks 
 
 ## Read
 
+- **Open only these files:** `spec/tdd/08.md`, `spec/tdd/09.md`, `spec/tdd/18.md`, `spec/design/brand-and-bob.md`, `spec/design/motion.md`, `spec/design/canvas.md`, `spec/design/palette.md`, `spec/design/block.md`, `spec/design/trait.md`. The bullets below say what to look for inside them.
 - TDD §8.4, §9.1, §9.2, §9.6, and the Palette, Canvas, Block, Trait, Dragging rows of §18 "Look details".
 - DESIGN.md: Brand and Bob, Motion, Canvas, Palette, Block (Anatomy, States: Open, Folded, Loose idea, Drop target, Being dragged, Site Block, Checkpoint Block, Locked Page, Header buttons), Trait (Sticker, Straight, Value fields, Dropdown sources, Color menu).
 

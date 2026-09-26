@@ -10,6 +10,7 @@ The Checkpoints tab in Plan: every Build, newest first, with its gist and tags; 
 
 ## Read
 
+- **Open only these files:** `spec/tdd/12.md`, `spec/tdd/18.md`, `spec/tdd/20.md`, `spec/design/brand-and-bob.md`, `spec/design/motion.md`, `spec/design/checkpoints.md`, `spec/design/menus.md`, `spec/prd/04.md`. The bullets below say what to look for inside them.
 - TDD §12 (all), the Checkpoints rows of §18 and its "Look details".
 - DESIGN.md: Brand and Bob, Motion, Checkpoints, Menus (Modal, The Checkpoint warning).
 - PRD §4 (Checkpoints tab).

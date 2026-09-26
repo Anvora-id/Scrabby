@@ -10,6 +10,7 @@ The pure logic under the Canvas: the rows-and-columns layout tree inside a Block
 
 ## Read
 
+- **Open only these files:** `spec/tdd/08.md`, `spec/tdd/20.md`. The bullets below say what to look for inside them.
 - TDD §8.1, §8.2, §8.3.
 
 ## Files

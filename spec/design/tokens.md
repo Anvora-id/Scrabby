@@ -1,0 +1,99 @@
+<!-- Generated from DESIGN.md by scripts/split-specs.mjs. Do not edit. -->
+## Tokens
+
+Paste as-is.
+
+```css
+:root {
+  /* text */
+  --ink: #1F1A33;          /* strong text: Blocks, Traits, headings, labels */
+  --text: #4A4560;         /* body text on chrome and white */
+  --hint: #8A849E;         /* hints under headings, captions */
+  --muted: #9A94AD;        /* "empty" labels, rejected states */
+  --placeholder: #B5B0C4;  /* placeholders: italic, weight 600, so a hint never looks typed */
+  /* surfaces */
+  --surface: #FFFFFF;      /* panels, menus, text fields, the selected tab */
+  --soft: #F6F4FA;         /* palette, address bar, composer, panel sub-bars */
+  --page: #F1EDFF;         /* page background behind panels (the Grape tint) */
+  --ws: #FFFBF2;           /* Canvas paper */
+  --ws-dot: #D4CCE4;       /* Canvas dots: 1.6px radius every 24px at 100%, moving and scaling with pan and zoom */
+  --idle: #E7E3F0;         /* unselected tabs, step circles not reached yet, spinner tracks, switch tracks */
+  --line: #1F1A331F;       /* 2px borders of panels, tabs, buttons and fields; also their bottom edge */
+  --line-soft: #1F1A3314;  /* dividers inside a panel */
+  /* brand: Grape means Scrabby and the user (D-Q15) */
+  --brand: #6B4EFF;        /* menu bar, primary buttons, the user's chat bubbles, current step, selected tab, focus */
+  --brand-dark: #4B31D1;   /* bottom edge of brand-filled things */
+  --brand-tint: #F1EDFF;   /* current step fill, menu hover */
+  /* Bob blue means Bob, and only Bob (D-Q16) */
+  --bob: #315DFB;          /* the mascot's own blue: Bob's title, badge, bubbles' borders, Bob's spinner */
+  --bob-dark: #1F3FC4;     /* bottom edge of Bob-filled things */
+  --bob-tint: #EAF0FF;     /* Bob's chat bubbles, Bob's title bar, the Build stage */
+  /* Build green */
+  --go: #1CA24A;           /* Build button fill; ticks, "built" and Accept outlines. White text on it only at 19px weight 900 or larger */
+  --go-dark: #137A36;      /* the Build button's bottom edge */
+  --flag: #4CD97A;         /* green marks on the dark code editor */
+  /* problems: soft tomato, never orange (orange is a Block category) (D-Q21) */
+  --alert: #FF5A4E;        /* borders and top bars of errors and warnings */
+  --alert-dark: #D93A2F;   /* "!" marks and icons */
+  --alert-bg: #FFECEA;     /* fill of error bars, warning boxes, a dropdown whose target is gone */
+  --flash: #FFE14D;        /* ring on something jumped to, and on the page parts a Build changed */
+  /* drag and drop */
+  --drop: #6B4EFF;         /* drop-indicator line */
+  --drop-over: #A896FF;    /* outline on the Block that will take a drop */
+  --drop-gap: #1F1A3326;   /* placeholder where the dragged item will land */
+  --trash: #FFECEA;        /* palette background while a drag would delete */
+  /* paper */
+  --note-bg: #FFE872;  --note-edge: #E5C63A;  --note-text: #5A4A00;   /* Notes */
+  --edit-bar: #FA9EB5;     /* bar across the Custom Block edit view (stretch) */
+  --def-ring: #FDD8E1;     /* 5px ring around a Custom Block definition (stretch) */
+  /* type (D-Q17) */
+  --font: "Nunito", "Arial Rounded MT Bold", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --w-body: 600;  --w-bold: 800;  --w-heavy: 900;   /* Nunito weights; nothing lighter than 600 */
+  --fs: 13px;              /* base: body text, buttons, pills */
+  --fs-xs: 10.5px;         /* markers and badges: ✎ changed, + only here, not built, tab counts */
+  --fs-sm: 12px;           /* hints, folded chips, captions */
+  --fs-md: 14px;           /* Block headers, step buttons, tabs, context menu, speech bubbles */
+  --fs-lg: 16px;           /* section and panel headings */
+  --fs-xl: 21px;           /* Build card title */
+  --fs-logo: 24px;         /* the wordmark */
+  /* shape */
+  --r-block: 16px;  --r-panel: 16px;  --r-inside: 11px;  --r-btn: 12px;  --r-tab: 14px;  --r-card: 22px;  --r-pill: 999px;
+  --edge: 4px;             /* a Block's bottom edge */
+  --edge-btn: 3px;         /* buttons, palette Blocks, panels */
+  --gap: 10px;             /* between panels and between child Blocks */
+  --gap-pill: 6px;         /* between Trait stickers */
+  --menubar-h: 56px;  --stepbar-h: 58px;
+  --focus: 0 0 0 4px color-mix(in srgb, var(--brand) 35%, transparent);  /* keyboard focus ring */
+  --shadow-menu: 0 10px 28px #1F1A3329, 0 3px 0 var(--line);             /* context menus, tooltips */
+  --shadow-drag: drop-shadow(0 12px 14px #1F1A3340);                      /* the dragged copy */
+  /* motion (D-Q19): see Motion */
+  --spring: cubic-bezier(.34, 1.56, .64, 1);   /* overshoots a little, then settles */
+  --ease: cubic-bezier(.3, .7, .4, 1);          /* plain ease-out */
+  --t-press: 80ms;  --t-quick: 150ms;  --t-pop: 320ms;  --t-settle: 450ms;
+}
+
+/* Category colors. c1 frame and sticker fill, c2 dropdown fill, c3 border and bottom edge, c4 inside of a Block (never white). */
+.cat-site     { --c1: #FB8B6F; --c2: #FA6742; --c3: #C34322; --c4: #FFE1D9; }  /* Site Block */
+.cat-pages    { --c1: #FCD66E; --c2: #FBCA41; --c3: #C49921; --c4: #FFF5D9; }  /* Page Block */
+.cat-ui       { --c1: #71ACF9; --c2: #4592F7; --c3: #2668C0; --c4: #D9EAFF; }  /* Navbar Hero Section Card grid Card Form Popup Footer */
+.cat-prim     { --c1: #7BDFEF; --c2: #53D6EA; --c3: #369FB0; --c4: #D9FAFF; }  /* Textbox Frame Button Panel */
+.cat-design   { --c1: #A474F6; --c2: #945CF5; --c3: #5F2ABB; --c4: #E7D9FF; }  /* color font vibe size position */
+.cat-behavior { --c1: #FCB06E; --c2: #FB9841; --c3: #C46D21; --c4: #FFEBD9; }  /* on click, purpose, fake data */
+.cat-content  { --c1: #F278CD; --c2: #EE4FBE; --c3: #B4318D; --c4: #FFD9F4; }  /* text image sound video */
+.cat-bob      { --c1: #87E393; --c2: #62DA72; --c3: #489D54; --c4: #D9FFDE; }  /* tell Bob, let Bob pick */
+.cat-my       { --c1: #F87294; --c2: #F54772; --c3: #BD284D; --c4: #FFD9E3; }  /* Custom Blocks and Instances */
+```
+
+**Fonts:** load Nunito (600, 700, 800, 900) and JetBrains Mono (500) from Google Fonts, with `display=swap`.
+
+The category colors are "Medium" strength (D-Q18): stronger than the old pastels, softer than full toy colors, so a big plan stays readable. They follow one formula for hue `h` and saturation `s`: `c1 hsl(h s 71%)`, `c2 hsl(h s 62%)`, `c3 hsl(h s−25% 45%)`, `c4 hsl(h 100% 92.6%)`. Design's c2 is the exception, at 66% lightness, so dark text on its dropdowns stays readable. Hues and saturations: Site 12/95, Pages 44/96, UI 214/92, Primitives 188/78, Design 262/88, Behavior 28/96, Content 318/82, Talk to Bob 128/62, My Blocks 345/90. Text on every category color is `--ink` (at least 5:1 on every c1).
+
+**Color roles** (D-Q15, D-Q16). Each color family means one thing, so a glance tells who or what is involved:
+- **Grape** (`--brand`): Scrabby itself and the user: the menu bar, primary buttons, the user's own chat bubbles, the current step, the selected tab, focus and the drop line.
+- **Bob blue** (`--bob`): Bob, and nothing else: Bob's chat bubbles and title bar, the [Bob badge](#bob-badge), speech bubbles, the Build card's title and stage, Bob's spinner. Never use it for a control the user presses.
+- **Green** (`--go`): Build, and things that went right (ticks, "built", Accept).
+- **Tomato** (`--alert`): something needs fixing.
+- **Category colors**: the plan, meaning Blocks and Traits, and anything that stands for one Block (Block chips).
+
+**Custom Block color** (Stretch, PRD §6; editor-only, not the website's colors). Each new Custom Block gets its own color: the first preset hue no other Custom Block uses (presets: hues 345, 15, 40, 90, 140, 180, 205, 235, 275, 310 at `s 90% l 71%`). Once all ten are taken, it gets the hue farthest from those in use, at `s 85% l 71%`. The user can change it to another preset or any color. From the chosen `hsl(h s l)`, set `--c1 (s, l)`, `--c2 (s, l−9)`, `--c3 (s−25, l−26)`, `--c4 (100, 92.6)` on that Block. If `l < 55`, only its header text turns white. Stickers, Notes and markers inside keep `--ink`.

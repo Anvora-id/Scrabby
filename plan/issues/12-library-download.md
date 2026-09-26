@@ -10,6 +10,7 @@ The Library tab (upload images and videos, rename, delete, storage use) that the
 
 ## Read
 
+- **Open only these files:** `spec/tdd/16.md`, `spec/tdd/04.md`, `spec/tdd/18.md`, `spec/tdd/20.md`, `spec/design/brand-and-bob.md`, `spec/design/motion.md`, `spec/design/library.md`, `spec/prd/05.md`. The bullets below say what to look for inside them.
 - TDD §16 (all), §4 "Library" (the model functions already exist), the Library row of §18 and its "Look details".
 - DESIGN.md: Brand and Bob, Motion, Library.
 - PRD §5 **Download** bullet.
