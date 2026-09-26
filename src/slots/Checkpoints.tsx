@@ -23,6 +23,7 @@ export default function Checkpoints() {
   const [ask, setAsk] = useState<{ c: Checkpoint; mode: LoadMode } | null>(null)
   const [renaming, setRenaming] = useState<number | null>(null)
   const [draft, setDraft] = useState('')
+  const [refocus, setRefocus] = useState<number | null>(null) // after Enter or Escape, keyboard focus returns to that rename button
   const flashRow = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
@@ -57,12 +58,14 @@ export default function Checkpoints() {
 
   function startRename(n: number) {
     setRenaming(n)
+    setRefocus(null)
     setDraft(p.checkpointNames?.[n] ?? '')
   }
 
-  function commitName(n: number) {
+  function endRename(n: number, save: boolean) {
     setRenaming(null)
-    if (draft.trim() !== (getProject().checkpointNames?.[n] ?? '')) updateProject(d => renameCheckpoint(d, n, draft))
+    setRefocus(n)
+    if (save && draft.trim() !== (getProject().checkpointNames?.[n] ?? '')) updateProject(d => renameCheckpoint(d, n, draft))
   }
 
   function tree(n: number, bb: BuiltBlocks, id: string): ReactNode {
@@ -96,7 +99,12 @@ export default function Checkpoints() {
 
   return (
     <div className={styles.panel}>
-      {cps.length === 0 && <p className={styles.empty}>No Checkpoints yet. Every Build saves one here.</p>}
+      {cps.length === 0 && (
+        <div className={styles.empty}>
+          <img className={styles.bob} src="/bob-head.svg" alt="" />
+          No Checkpoints yet. Every Build saves one here.
+        </div>
+      )}
       {[...cps].reverse().map(c => {
         const here = p.checkpoint === c.number
         const tag = fromTag(c, p)
@@ -115,8 +123,8 @@ export default function Checkpoints() {
                     value={draft}
                     onChange={e => setDraft(e.target.value)}
                     onKeyDown={e => {
-                      if (e.key === 'Enter') commitName(c.number)
-                      else if (e.key === 'Escape') setRenaming(null)
+                      if (e.key === 'Enter') endRename(c.number, true)
+                      else if (e.key === 'Escape') endRename(c.number, false)
                     }}
                     onBlur={() => setRenaming(null)}
                   />
@@ -124,15 +132,15 @@ export default function Checkpoints() {
               ) : (
                 <h3>{checkpointTitle(p, c.number)}</h3>
               )}
+              {renaming !== c.number && (
+                <button className={styles.rename} title="Rename" aria-label={`Rename Checkpoint ${c.number}`} autoFocus={refocus === c.number} onClick={() => startRename(c.number)}>
+                  <PencilSimpleIcon size={14} weight="fill" />
+                </button>
+              )}
               <span className={styles.time}>{new Date(c.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               {tag && <span className={styles.tag}>{tag}</span>}
               {!c.blocks && <span className={cx(styles.tag, styles.saved)}>saved for you</span>}
               {here && <span className={cx(styles.tag, styles.hereTag)}>you are here{!sameFiles(p.files, c.after) && ' + hand edits'}</span>}
-              {renaming !== c.number && (
-                <button className={styles.rename} title="Rename" aria-label={`Rename Checkpoint ${c.number}`} onClick={() => startRename(c.number)}>
-                  <PencilSimpleIcon size={14} weight="fill" />
-                </button>
-              )}
             </div>
             <p className={styles.gist}>{gist(c, p)}</p>
             <div className={styles.actions}>

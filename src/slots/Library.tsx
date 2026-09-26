@@ -140,7 +140,10 @@ export default function Library() {
       )}
 
       {project.assets.length === 0 ? (
-        <p className={styles.empty}>Nothing here yet. Upload an image or a video.</p>
+        <div className={styles.empty}>
+          <img className={styles.bob} src="/bob-head.svg" alt="" />
+          Nothing here yet. Upload an image or a video.
+        </div>
       ) : (
         <div className={styles.grid}>
           {project.assets.map(a => {
