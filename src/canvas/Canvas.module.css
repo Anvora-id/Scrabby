@@ -85,7 +85,7 @@
   box-shadow: 0 3px 0 #0000001a;
   color: var(--ink);
   font-size: var(--fs-md);
-  font-weight: var(--w-heavy);
+  font-weight: var(--w-bold);
 }
 
 .editBarDone {

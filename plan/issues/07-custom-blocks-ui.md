@@ -1,6 +1,6 @@
 # 07: Custom Blocks UI
 
-Status: ready-for-agent
+Status: done
 Blocked by: 06
 Lane: A
 
@@ -20,12 +20,16 @@ Modify: `src/slots/Palette.tsx` (My Blocks), `src/slots/Canvas.tsx` (edit view, 
 
 ## Steps
 
-- [ ] `customColor` exported from BlockView (TDD §9.1); Instances and definitions wear it.
-- [ ] Palette My Blocks (TDD §9.4): Make a Custom Block (opens its edit view), the hint, one row per Custom Block (drag → a new Instance; Edit).
-- [ ] Canvas edit view: only the definition, the EditBar with Done, the view saved and restored; nothing lands outside the definition; no Warnings there.
-- [ ] Markers on Instance parts; the Edit pill on an Instance header; the definition is not draggable and reads "Custom Block".
+- [x] `customColor` exported from BlockView (TDD §9.1); Instances and definitions wear it.
+- [x] Palette My Blocks (TDD §9.4): Make a Custom Block (opens its edit view), the hint, one row per Custom Block (drag → a new Instance; Edit).
+- [x] Canvas edit view: only the definition, the EditBar with Done, the view saved and restored; nothing lands outside the definition; no Warnings there.
+- [x] Markers on Instance parts; the Edit pill on an Instance header; the definition is not draggable and reads "Custom Block".
 
 ## Done when
 
 - `pnpm typecheck` and `pnpm test` pass.
 - In the browser (demo): edit "Top bar" and rename its Menu button: all three Instances follow; rename it in one Instance first: that one keeps its name and shows `✎ changed here`; delete a part from one Instance and "Bring back removed parts (1)" restores it; Make Custom Block on a Hero puts "… 1" in its place.
+
+## Answer
+
+`customColor` is exported from `BlockView.tsx` and used by `Palette.tsx` for My Blocks palette rows. The `editing` UI state holds a def id; the edit view resolves it through `p.defs` so a deleted Custom Block silently exits the edit view. `inInst` propagation through `BlockView` and `TraitPill` drives the `✎ changed here` / `+ only here` markers. The `hasOverride` helper (already in `project.ts`) was the predicate used for both Block-level and Trait-level markers.
