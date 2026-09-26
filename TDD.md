@@ -1,6 +1,6 @@
 # Scrabby technical design (hackathon build)
 
-**Status:** build spec, 2026-09-26. It describes the team prototype as built (planning repo `spbob_prototype`, commit `267140d`), plus the hackathon changes: Bob runs the product through its inference endpoint, and the app is hosted on Vercel with the PRD §8 guardrails and the Bob kit.
+**Status:** build spec, 2026-09-26. It describes the team prototype as built (planning repo `spbob_prototype`, commit `267140d`), plus the hackathon changes: Bob runs the product through its inference endpoint, and the app is hosted on Vercel with the PRD §8 guardrails.
 **Readers:** Bob and the two developers. Bob builds from this file: every name, string and number here is exact. Do not rename, reword or "improve" anything.
 **Other sources:** words in [`CONTEXT.md`](CONTEXT.md), what and why in [`PRD.md`](PRD.md), the look in [`DESIGN.md`](DESIGN.md), work order in [`plan/build-map.md`](plan/build-map.md), rules for Bob in [`AGENTS.md`](AGENTS.md).
 **Precedence:** this file wins over PRD.md on mechanisms. §18 wins over DESIGN.md where they differ. DESIGN.md wins on every look value §18 does not mention.
@@ -506,7 +506,7 @@ LEVELS:
 
 ### 5.4 scripts/build-demo.ts
 
-Runs one real Build with no browser (use it on day 1 to prove the key and the endpoint). `process.loadEnvFile('.env')` in a try; throw `AGENT_API_KEY is not set. Add it to .env.` if missing. Reads `scripts/demo-instructions.md`, calls `agentHandler(bobModel, createLimits())` with a POST Request `{ kind:'build', document, files:{} }`, prints `Building the demo with ${AGENT_MODEL || 'the default model'}…` first, reads it with `readAgentStream`, and prints `${seconds} s  Building <id>` per block, `The Build failed: <reason>` (exit 1), or on files: empties `tmp/demo-site/`, writes each file (skip paths that leave the folder), writes a placeholder `assets/cupcakes.svg`, prints `Done: <paths> in tmp/demo-site/`. Import the server with `'../api/agent.ts'` and the client with `'../src/agent.ts'` (Node runs TypeScript directly).
+Runs one real Build with no browser (use it on day 1 to prove the key and the endpoint). `process.loadEnvFile('.env')` in a try; throw `AGENT_API_KEY is not set. Add it to .env.` if missing. Reads `scripts/demo-instructions.md`, calls `agentHandler(bobModel, createLimits())` with a POST Request `{ kind:'build', document, files:{} }`, prints `Building the demo with ${AGENT_MODEL || 'the default model'}…` first, reads it with `readAgentStream`, and prints `${seconds} s  Building <id>` per block, `The Build failed: <reason>` (exit 1), or on files: empties `tmp/demo-site/`, writes each file (skip paths that leave the folder), copies each of `DEMO_PHOTOS` from `public/demo/` to `assets/` (`demo-instructions.md` is the demo's Build 1 document), prints `Done: <paths> in tmp/demo-site/`. Import the server with `'../api/agent.ts'` and the client with `'../src/agent.ts'` (Node runs TypeScript directly).
 
 ## 6. State: store, history, IndexedDB
 
@@ -634,7 +634,7 @@ Constants `MIN_ZOOM 0.3`, `MAX_ZOOM 2`, `CORNER 40`, `DOTS 24`. Refs: viewport, 
 ### 9.3 Notes and the context menu (Overlays.tsx, menu.ts)
 
 - **BlockNote:** a sticky with a `×` (title `Delete Note` → `deleteNote`) and a textarea (placeholder `Note for Bob`) → `note`. **TraitNote:** an input (placeholder `note for Bob`, size clamp(len + 1, 8, 30), Enter blurs), with the same ⤢/⤡ long-text behavior. A Note that mounts empty takes focus without scrolling.
-- **openMenu(e, id):** ignored inside `input, textarea` (the browser menu stays); else prevent default, stop propagation, open the menu at the pointer. **ContextMenu** (portal): `role=menu`, left `min(x, innerWidth - 210)`, top `min(y, innerHeight - 8 - 32 * items)`; each item a `menuitem` button: close, then `updateProject(change, null)` / `act()` / `setEditing(edit)`. Closes on outside pointerdown or Escape; renders nothing if the id is gone.
+- **openMenu(e, id, items?):** ignored inside `input, textarea` (the browser menu stays); else prevent default, stop propagation, open the menu at the pointer. `items` replaces `menuItems(p, id)`: a right-click on the viewport outside any Block or Trait opens one item, Reset zoom (`home()`, the same as the Reset zoom button). **ContextMenu** (portal): `role=menu`, left `min(x, innerWidth - 210)`, top `min(y, innerHeight - 8 - 32 * items)`; each item a `menuitem` button: close, then `updateProject(change, null)` / `act()` / `setEditing(edit)`. Closes on outside pointerdown or Escape; renders nothing if the id is gone (unless `items` was given).
 - **menuItems(p, id)** in this order, each only when it applies: `Add Note` (sets `noteOn`) or `Delete Note` (when `note || noteOn`); `Edit Custom Block` (an Instance; `edit: inst`); `Duplicate` (when `canTrash` allows it); `Bring back removed parts (N)` (Instance with N removed; sets `removed = []`); `Use the Custom Block's version` (`hasOverride`; deletes `ov`); `Make Custom Block` (a Block where `canMakeCustom`); `Delete Trait` / `Delete Block` (when `canTrash`; `removeItem`).
 - `canMakeCustom`: not site/page/checkpoint, not locked, does not hold (itself or inside) an Instance or definition, and no ancestor is an Instance or definition.
 - `deleteNote(p, id)`: `note = ''`, `noteOn = false`.
@@ -754,7 +754,7 @@ export interface BuildRun {
 - `progress(run)`: `{ done, working }`. Running: the lit ids that are chips, first-lit order, no duplicates; the last is `working`, the rest are `done`. Done: every chip `done`. Failed: none.
 - `nothingNew(p)`: the top is a Checkpoint Block and `requestBlocks` is empty.
 - `buildProblem(p)`: `instructionDocument(p).error` or null.
-- Store `starting` (`useStarting`): true from a press until `begin()` or the end of the run; the Build buttons show `Starting…` meanwhile.
+- Store `starting` (`useStarting`): true from `runBuild()` (the confirm in `Build now?`, or Try again) until `begin()` or the end of the run; the Build buttons show `Starting…` meanwhile.
 - `runBuild(): Promise<void>`. A module flag `busy` makes a second call while one starts or runs return at once (the buttons are disabled meanwhile). Sets `starting`, runs the Build, then clears both. A deadline `START_MS = 15_000` (an AbortController aborted by a timer that `begin()` clears) covers everything before `start`. `notStarted(message?)` = `begin()` then `state:'failed', reason:'start', message`: every way out before `start` ends on a failed card.
   1. `doc = instructionDocument(p)`; on error → `notStarted(doc.error)`. `top`, `saved` = `listCheckpoints(p.id)` (errors → `[]`) raced against the deadline, `n = saved.filter(c => c.blocks).length + 1`, chips = `requestBlocks(p, top)` mapped to `{ id, ...blockInfo(id, p, []) }` (§14). Anything thrown here (or the deadline) → log `The Build failed to start`, `notStarted()` (n stays 0, no chips).
   2. `begin()` (once): clear the timer, `starting` false, `run.set({ n, state:'running', chips, lit: [], loose: canvas.children.length - 1, skipped: doc.skipped })`; `setStep('build')`.
@@ -767,7 +767,7 @@ export interface BuildRun {
 - `consume(p, topId, files, checkpoint)` (exported): `pages` = the top's Page children by file. `html` = file paths ending `.html`. Order = the top's Page files that exist in `html` (in the top's order), then the other `html` files (in `files` order). Delete every Block and Trait inside the top and the top's Traits. For each file: reuse the id of the Page that had it (else `addBlock(p, 'page')` for a new id) and set `{ id, type:'page', name: old name or pageName(file), note:'', traits:[], children:[], file, locked:true }`. Replace the top with `{ id: topId, type:'checkpoint', name: top.name, note:'', traits:[], children, locked:true, pos: top.pos }`. `p.files = files`, `p.checkpoint = checkpoint`. `pageName(file)`: strip `.html`, the last path part, `-`/`_` runs → space, trim; `index` or empty → `Home`; else first letter upper-cased (`contact-us.html` → `Contact us`).
 - The Build applies to the Project as it is when it ends (an Undo pressed mid-Build is consumed too).
 
-**BuildButton:** reads the Project and the run. Greyed (class `greyed`) when `nothingNew`. Disabled while starting or running; label `Starting…` while starting (a 20px white spinner in place of the flag), `Building…` while running, else `Build`, with the 24px fill flag icon; `data-tour="build"`. Press: nothingNew → bubble `Nothing new to build. To redo a Build, open ` + a link button **Checkpoints** (→ `setPlanTab('checkpoints')`); `buildProblem` → bubble with it; `hasPending(p)` (§15) → the warning dialog (title `Build now?`, line `The Assistant has changes you haven't accepted. Building drops them.`, confirm `Build anyway`: `dropPending()` then build); else build. Build = `runBuild()` (a limit shows on the Build card, not in the bubble). The bubble (`role=status`) sits above the button (absolute, right 0, bottom 100% + 16px) with a tail; the button gets class `target` while it shows; it closes on the next click anywhere (listener added after the current click). The warning dialog is the `Warning` component from Checkpoints.tsx (§12).
+**BuildButton:** reads the Project and the run. Greyed (class `greyed`) when `nothingNew`. Disabled while starting or running; label `Starting…` while starting (a 20px white spinner in place of the flag), `Building…` while running, else `Build`, with the 24px fill flag icon; `data-tour="build"`. Press: nothingNew → bubble `Nothing new to build. To redo a Build, open ` + a link button **Checkpoints** (→ `setPlanTab('checkpoints')`); `buildProblem` → bubble with it; else the warning dialog (title `Build now?`, line `Bob builds your site from the plan and takes you to the Build step.`, confirm `Build`; when `hasPending(p)` (§15) it adds the line `The Assistant has changes you haven't accepted. Building drops them.` and the confirm is `Build anyway`, which runs `dropPending()` before the build). Build = `runBuild()` (a limit shows on the Build card, not in the bubble). The bubble (`role=status`) sits above the button (absolute, right 0, bottom 100% + 16px) with a tail; the button gets class `target` while it shows; it closes on the next click anywhere (listener added after the current click). The warning dialog is the `Warning` component from Checkpoints.tsx (§12).
 
 **BuildCard:** under the title, a `BuildStage` (`aria-hidden`; DESIGN.md Build card, item 2): still with no run, looping while running, stopped on done or failed as DESIGN.md says; reduced motion keeps it still. No run → title `Nothing built yet`, the stage, and a big BuildButton. Else:
 - Title: running → spinner + `Bob is building your website` + `<BobBadge/>` at the right end; done → `✓ Build N done` and sub `Opening your website…`; failed → `!` + `Build N did not finish` (reason `limit` or `start`: `Build N did not start`; n 0: `Your Build did not start`) and sub `Nothing changed: your code and Blocks are as they were.`; failed card has class `failed`.
@@ -889,28 +889,7 @@ The Prototype runs on its own origin, so it cannot reach the app's IndexedDB. Th
 - View: heading `Library`, hint `Images and videos for this Project. Pick one inside an image or video Trait.`, **Upload** (Primary; clicks a hidden multiple file input; reset its value after picking). Problems box (`role=alert`) with a **Dismiss** text button. Empty → a centered `div` (class `empty`): `<img src="/bob-head.svg" alt="">` (48px) above `Nothing here yet. Upload an image or a video.` Tiles (a CSS grid, `repeat(auto-fill, minmax(clamp(168px, 16cqi, 260px), 1fr))` with the panel as an inline-size container; square tiles, the image in a 3:2 box) (title `<file> · <size>`): the image (object URL of its Blob) or a 40px duotone image/video icon; the name; hover actions: rename (pencil, title `Rename`, aria-label `Rename <file>`) and delete (trash, title `Delete`). Delete also has aria-label `Delete <file>`. Rename: an input (autofocus, aria-label `New name for <file>`): Enter commits, Escape or blur cancels, typing clears the problem. Commit trims the draft; a non-blank draft with a `renameProblem` shows it under the field and stays open; a blank or unchanged name just closes the field; a new name asks `confirm('Rename <file>?\nCode that references assets/<file> won't be updated and will break. You can ask the Assistant to fix the references.')` then `renameAsset`. Delete: `confirm(deleteWarning)`, then `removeAsset` and `deleteAsset` (Blob). Storage line at the bottom: `<used> of <quota> browser storage used` from `navigator.storage.estimate()`. Object URLs are revoked when the tiles reload.
 
 **download.ts:**
-- `zipDownload(project: Pick<Project, 'name' | 'files'>, assets: { file: string; data: Uint8Array }[]): Uint8Array` with fflate `zipSync`: every file not under `.builds/` (as `strToU8`); every Asset at `assets/<file>` stored uncompressed (`[data, { level: 0 }]`); and the **Bob kit**: `AGENTS.md` (below) and `.bob/skills/<name>/SKILL.md` for `code-rules`, `behavior`, `content`, `visual-style` (imported with `?raw` from `../skills/<name>/SKILL.md`).
-- Kit `AGENTS.md` text (exact; `<name>` is the Project name; the plan parts are the `.builds/build-N.md` files in N order, or the single line `No Build yet.`):
-
-```markdown
-# <name>
-
-A website made with Scrabby. Bob built it from a plan of Blocks and Traits. The plan Bob read for each Build is at the end of this file.
-
-## Rules for Bob
-
-- Plain HTML, CSS and JavaScript: one `.html` file per page, one shared `style.css` and `script.js`, images and videos in `assets/`. No build step, no npm, no frameworks.
-- Keep every `data-block="…"` attribute and every `/* block … */` comment. They tie the code to the Blocks it came from.
-- Change only what is asked. Keep all other code as it is, including the user's own edits.
-- Follow the Skills in `.bob/skills/`: code rules, behavior, content and visual style.
-
-## The plan
-
-### Build <N>
-
-<the text of .builds/build-N.md>
-```
-
+- `zipDownload(project: Pick<Project, 'files'>, assets: { file: string; data: Uint8Array }[]): Uint8Array` with fflate `zipSync`: every file not under `.builds/` (as `strToU8`); every Asset at `assets/<file>` stored uncompressed (`[data, { level: 0 }]`).
 - `downloadCode(project)`: read each Asset Blob (`getAsset`; a missing one is left out with a `console.warn`), build the zip Blob (`application/zip`), download it as `${name.replace(/[^\p{L}\p{N} _-]+/gu, '').trim() || 'my-site'}.zip`, revoke the object URL after 60s.
 
 ## 17. Onboarding and demo
@@ -976,16 +955,19 @@ DESIGN.md's look was redone on 2026-09-26 (D-Q14 to D-Q27: Grape, Bob blue, Nuni
 1. `p = emptyProject()` (Site `b1`); `p.name = "Maya's bake sale"`; `p.assets` = the 6 photos as `{ id: 'a1'…'a6', file, kind:'image', mime:'image/jpeg', bytes:0, width:1200, height:800 }`; `p.next.a = DEMO_PHOTOS.length + 1` (7).
 2. Site: name `Maya's bake sale`, traits `[T('color','#F8BBD0'), T('vibe','playful'), T('font','friendly')]`.
 3. `home = B('page','Home')`, `menu = B('page','Menu')`, `quiz = B('page','Quiz')`; Site children `[home, menu, quiz]`.
-4. Definitions (off the Canvas): `menuButton = B('button','Menu',[T('onclick','page:'+menu)])`; `quizButton = B('button','Quiz',[T('onclick','page:'+quiz)])`; `topBar = B('navbar','Top bar',[],[menuButton, quizButton])` with layout `{d:'col',k:[{d:'row',k:[menuButton, quizButton]}]}`; `bottom = B('footer','Bottom',[],[B('text', undefined)])`. `p.defs.d1 = { id:'d1', blockId: topBar, color:{h:345,s:90,l:82} }`, `d2` = bottom with `{h:15,s:90,l:82}`; set `defines`; `p.next.d = 3`.
+4. Definitions (off the Canvas): `menuButton = B('button','Menu',[T('onclick','page:'+menu)])`; `quizButton = B('button','Quiz',[T('onclick','page:'+quiz)])`; `topBar = B('navbar','Top bar',[T('position','stays on top when scrolling')],[menuButton, quizButton])` with layout `{d:'col',k:[{d:'row',k:[menuButton, quizButton]}]}`; `bottom = B('footer','Bottom',[],[B('text',undefined,[T('text','Made by Maya, age 11')])])`. `p.defs.d1 = { id:'d1', blockId: topBar, color:{h:345,s:90,l:82} }`, `d2` = bottom with `{h:15,s:90,l:82}`; set `defines`; `p.next.d = 3`.
 5. `withBarAndBottom(content) = [makeInstance(p,'d1'), ...content, makeInstance(p,'d2')]` (the Instance for d1 is made first).
-6. `order = B('popup','Order',[],[B('form','Order form',[],[B('button',undefined,[T('onclick','submits (fake)')])])])`; `orderButton = B('button','Order',[T('onclick','popup:'+order)])`; `photo = B('image',undefined,[T('image','a1')])`; `hero = B('hero','Big welcome',[],[B('text',undefined,[T('text','Fresh cakes every Saturday')]), photo, orderButton])`; home children += `withBarAndBottom([hero, order])`.
-7. `card = B('card',undefined,[T('image','',{bobPicks:true})])`; `cakes = B('cardgrid','Cakes',[T('fakedata','6 cakes with prices')],[card])` with layout `{d:'col',k:[{d:'row',k:[card]}]}`; menu children += `withBarAndBottom([cakes])`.
-8. `answer = B('button',undefined,[T('onclick','checks an answer')])`; `cupcake = B('section','Which cupcake are you?',[T('tellbob','3 questions, then show which cupcake you are')],[answer])`; quiz children += `withBarAndBottom([cupcake])`.
+6. `orderForm = B('form','Order form',[],[B('button',undefined,[T('onclick','submits (fake)')])])` with Note `name, which cake, pickup time`; `order = B('popup','Order',[],[orderForm])`; `orderButton = B('button','Order',[T('onclick','popup:'+order)])`; `photo = B('image',undefined,[T('image','a1'), T('image','a4'), T('purpose','slideshow')])`; `headline = B('text',undefined,[T('text','Fresh cakes every Saturday')])`; `hero = B('hero','Big welcome',[T('size','full width')],[headline, photo, orderButton])` with layout `{d:'col',k:[headline,{d:'row',k:[photo, orderButton]}]}`; `cookies = B('image',undefined,[T('image','a3')])`; `halfPrice = B('text',undefined,[T('text','Cookies are half price!')])`; `panel = B('box',undefined,[],[cookies, halfPrice])`; `nextSale = B('section','Next sale',[T('purpose','countdown')],[panel])`; home children += `withBarAndBottom([hero, order, nextSale])`, with layout `{d:'col',k:[its Top bar, {d:'row',k:[hero, order]}, {d:'row',k:[nextSale, its Bottom]}]}`.
+7. `card = B('card',undefined,[T('image','',{bobPicks:true}), T('onclick','adds to cart (fake)')])`; `cakes = B('cardgrid','Cakes',[T('fakedata','6 cakes with prices'), T('purpose','filter / sort (fake)')],[card])` with layout `{d:'col',k:[{d:'row',k:[card]}]}`; menu children += `withBarAndBottom([cakes])`.
+8. `answer = B('button',undefined,[T('onclick','checks an answer')])`; `cupcake = B('section','Which cupcake are you?',[T('tellbob','3 questions, then show which cupcake you are'), T('letbobpick','the colors')],[answer])`; quiz children += `withBarAndBottom([cupcake])`.
+9. Site layout `{d:'col',k:[{d:'row',k:[home, menu, quiz]}]}`: the three Pages side by side keep the plan short on the Canvas.
+
+The demo uses every Block type and every Trait type except `sound` (a stretch Trait) and `video`.
 
 It must show no Warnings, and its Build 1 document must equal Appendix A.
 
 **builtSite(): { project, checkpoints }** — the demo after two Builds:
-1. Build the demo as above (keep the ids: site, home, menu, quiz, hero, photo, orderButton, order, cakes, card, cupcake, answer, homeBar = Home's first child, homeBottom = Home's last child).
+1. Build the demo as above (keep the ids: site, home, menu, quiz, hero, photo, orderButton, order, nextSale, panel, cakes, card, cupcake, answer, homeBar = Home's first child, homeBottom = Home's last child).
 2. `hours = addBlock(p,'section','Opening hours')` with a text Trait `Saturdays 9 till 1, at the school gate`.
 3. Files, `files(withHours)`: `index.html`, `menu.html`, `quiz.html`, `style.css`, `script.js`. Each page:
 
@@ -1006,7 +988,7 @@ It must show no Warnings, and its Build 1 document must equal Appendix A.
   </nav>
 {body}
   <footer class="bottom" data-block="{page's Bottom Instance}">
-    <p data-block="{its Textbox}">Made with love by Maya. Every Saturday, 9 till 1.</p>
+    <p data-block="{its Textbox}">Made by Maya, age 11</p>
   </footer>
   <script src="script.js"></script>
 </body>
@@ -1019,7 +1001,10 @@ It must show no Warnings, and its Build 1 document must equal Appendix A.
   const homeBody = (withHours: boolean) => `  <main>
     <section class="hero" data-block="${d.hero}">
       <h1 data-block="${ids(d.hero)[0]}">Fresh cakes every Saturday</h1>
-      <img data-block="${d.photo}" src="assets/cupcakes.jpg" alt="A tray of pink cupcakes">
+      <div class="slides" data-block="${d.photo}">
+        <img src="assets/cupcakes.jpg" alt="A tray of pink cupcakes">
+        <img src="assets/bake-stall.jpg" alt="Our bake stall" hidden>
+      </div>
       <button class="big" data-block="${d.orderButton}" data-open="order">Order</button>
     </section>${withHours ? `
     <section class="hours" data-block="${hours}">
@@ -1036,14 +1021,24 @@ It must show no Warnings, and its Build 1 document must equal Appendix A.
         <p class="thanks" hidden>Thanks! Your order is in.</p>
       </form>
     </div>
+    <section class="next-sale" data-block="${d.nextSale}">
+      <h2>Next sale in <span id="countdown"></span></h2>
+      <div class="panel" data-block="${d.panel}">
+        <img data-block="${ids(d.panel)[0]}" src="assets/cookies.jpg" alt="A plate of cookies">
+        <p data-block="${ids(d.panel)[1]}">Cookies are half price!</p>
+      </div>
+    </section>
   </main>`
   const cakes = [['Pink cupcake', '£1.50', 'cupcakes'], ['Lemon drizzle', '£2.00', 'lemon-drizzle'], ['Chocolate slice', '£2.50', 'brownie'], ['Carrot cake', '£2.00', 'layer-cake'], ['Victoria sponge', '£3.00', 'layer-cake'], ['Brownie', '£1.80', 'brownie']]
   const menuBody = `  <main>
     <h1>Our cakes</h1>
+    <p class="sort" data-block="${d.cakes}">Sort by price: <button data-sort="up">Cheapest</button> <button data-sort="down">Priciest</button></p>
+    <p id="cart">Cart: 0</p>
     <div class="grid" data-block="${d.cakes}">
 ${cakes.map(([n, price, photo]) => `      <article class="card" data-block="${d.card}">
         <img src="assets/${photo}.jpg" alt="${n}">
         <h3>${n}</h3><p>${price}</p>
+        <button class="add">Add to cart</button>
       </article>`).join('\n')}
     </div>
   </main>`
@@ -1065,13 +1060,15 @@ main { max-width: 960px; margin: 0 auto; padding: 24px; }
 button { font: inherit; background: #E91E63; color: white; border: 0; border-radius: 999px; padding: 10px 20px; cursor: pointer; }
 
 /* block ${d.homeBar} */
-.top-bar { display: flex; gap: 20px; align-items: center; padding: 14px 24px; background: #F8BBD0; }
+.top-bar { position: sticky; top: 0; display: flex; gap: 20px; align-items: center; padding: 14px 24px; background: #F8BBD0; }
 .top-bar a { color: #3A2A30; font-weight: bold; text-decoration: none; }
 .top-bar .logo { margin-right: auto; font-size: 20px; }
 
 /* block ${d.hero} */
 .hero { text-align: center; padding: 32px; background: white; border-radius: 24px; }
+.hero { width: 100%; box-sizing: border-box; }
 .hero img { width: 100%; max-width: 480px; border-radius: 16px; display: block; margin: 16px auto; }
+.hero img[hidden] { display: none; }
 
 /* block ${d.order} */
 .popup { position: fixed; inset: 0; background: #0006; display: grid; place-items: center; }
@@ -1079,7 +1076,13 @@ button { font: inherit; background: #E91E63; color: white; border: 0; border-rad
 .popup form { background: white; padding: 24px; border-radius: 16px; display: grid; gap: 12px; min-width: 280px; position: relative; }
 .popup .close { position: absolute; top: 8px; right: 8px; padding: 4px 10px; }
 
+/* block ${d.nextSale} */
+.next-sale { margin-top: 24px; padding: 16px; background: white; border-radius: 16px; text-align: center; }
+.panel { display: flex; gap: 16px; align-items: center; justify-content: center; }
+.panel img { width: 160px; border-radius: 12px; }
+
 /* block ${d.cakes} */
+.sort { text-align: center; }
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .card { background: white; border-radius: 16px; padding: 12px; text-align: center; }
 .card img { width: 100%; border-radius: 12px; }
@@ -1104,6 +1107,39 @@ document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click
 document.querySelectorAll('.popup form').forEach(f => f.addEventListener('submit', e => {
   e.preventDefault()
   f.querySelector('.thanks').hidden = false
+}))
+
+/* block ${d.photo} */
+const slides = document.querySelectorAll('.slides img')
+let slide = 0
+if (slides.length) setInterval(() => {
+  slides[slide].hidden = true
+  slide = (slide + 1) % slides.length
+  slides[slide].hidden = false
+}, 3000)
+
+/* block ${d.nextSale} */
+const countdown = document.getElementById('countdown')
+const tick = () => {
+  const next = new Date()
+  next.setDate(next.getDate() + ((6 - next.getDay() + 7) % 7))
+  next.setHours(9, 0, 0, 0)
+  if (next < new Date()) next.setDate(next.getDate() + 7)
+  const h = Math.floor((next - new Date()) / 3600000)
+  countdown.textContent = Math.floor(h / 24) + ' days ' + (h % 24) + ' hours'
+}
+if (countdown) { tick(); setInterval(tick, 60000) }
+
+/* block ${d.cakes} */
+let cart = 0
+document.querySelectorAll('.add').forEach(b => b.addEventListener('click', () => {
+  document.getElementById('cart').textContent = 'Cart: ' + ++cart
+}))
+document.querySelectorAll('[data-sort]').forEach(b => b.addEventListener('click', () => {
+  const grid = document.querySelector('.grid')
+  const price = c => parseFloat(c.querySelector('p').textContent.slice(1))
+  const sign = b.dataset.sort === 'up' ? 1 : -1
+  ;[...grid.children].sort((x, y) => sign * (price(x) - price(y))).forEach(c => grid.append(c))
 }))
 
 /* block ${d.cupcake} */
@@ -1176,7 +1212,7 @@ if (quiz) {
 | `src/checkpoints.test.ts` | Go back (code, Checkpoint Block, Built page ids kept, unbuilt → loose, Library and defs unchanged); "Before loading Checkpoint 1" saved once; Edit its Blocks (code `before`, request Blocks back unlocked); Edit on Checkpoint 1 clears code and brings the Site back; fresh ids when taken; gist, fromTag, buildOf, the warning text; names: `checkpointTitle`, `renameCheckpoint` (trim, 40 characters, blank deletes), `withNames` (saved texts, `Checkpoint 12` untouched), a named gist, tag and warning. |
 | `src/assistant.test.ts` | A turn sends 10 messages without lines, level, open file, Library, `.builds/`, never Blocks; streams into one Bob message; a diff card with summary (`total: 2` for a changed and a new file); a failed turn; a limit adds no messages and returns the text; Accept all (no Checkpoint; Undo takes it back; chat stays); Reject all; Out of date then Dismiss; Review decisions → `reviewing` then `partial`; dropPending with the line; a running reply is pending and one reply at a time; loading a Checkpoint drops it; changedBlocks. |
 | `src/code/code.test.ts`, `preview/serve.test.ts` | changedLines (examples + the 4 hours lines + none on menu.html + all lines without base); blockMarks; findBlockCode (HTML first, CSS comment fallback); blockInfo (from Checkpoints, Built page on Canvas, Instances `my`). Serve: helper first in head; no head; folder → index.html; CSS/JS types; Asset Blob; missing page text with helper and html type; other missing 404; other paths → undefined. |
-| `src/store.test.ts`, `src/history.test.ts`, `src/model/library.test.ts`, `src/download.test.ts`, `src/onboarding.test.ts`, `src/fixtures/fixtures.test.ts` | A no-undo change leaves Undo for the last edit. `fillBlankName` puts back "My website" in the typing's step, so Undo gives the name before typing. History order, redo cleared, key merging, a new step after undo, the limit. Library: addAsset names, clashes, uploadKind (types, SVG refused text, 30 MB text), rename + problems, deleteWarning texts. Zip: code at the top, Assets under `assets/`, no `.builds/`, the kit's `AGENTS.md` (Project name, plan per Build) and the 4 `.bob/skills/*/SKILL.md`. Demo shows no Warnings and has 4–6 photos; isEmptyProject; placeBubble cases (§17 numbers: `{0,100,300,700}`, 280×100 in 1366×768 → right x 314 y 350 tail 50; `{1200,680,1350,740}` → left x 906; a full-width bar → below y 104; `{300,150,W,H}` → inside y 174; `{10,740,60,766}` → right, y 660, tail 80; that panel with a Block `{320,300,700,460}` → right x 314 y 474 tail 20; with `{320,0,700,768}` → x 714 y 350; with `{310,0,W,H}` → stays x 314 y 350; the bar with `{500,100,900,300}` → below x 206 y 104 tail 260; inside ignores Blocks; keepClearOf with the Canvas `{310,150,1366,768}`, Blocks `{320,100,700,400}` and `{320,800,700,900}`, W 1366, up 64: for the palette `{0,150,300,700}` → `{320,150,700,464}` and `{0,0,1366,214}`; for the step bar `{0,56,1366,90}` → only `{320,150,700,464}`). Fixtures: the demo tree, page files, asset ids; built site: 3 linked pages + CSS + JS, Checkpoint Block with Built pages, 2 Checkpoints whose Blocks hold every mark id (more than 20 marks), nothing unreachable. |
+| `src/store.test.ts`, `src/history.test.ts`, `src/model/library.test.ts`, `src/download.test.ts`, `src/onboarding.test.ts`, `src/fixtures/fixtures.test.ts` | A no-undo change leaves Undo for the last edit. `fillBlankName` puts back "My website" in the typing's step, so Undo gives the name before typing. History order, redo cleared, key merging, a new step after undo, the limit. Library: addAsset names, clashes, uploadKind (types, SVG refused text, 30 MB text), rename + problems, deleteWarning texts. Zip: code at the top, Assets under `assets/`, no `.builds/`, nothing else. Demo shows no Warnings and has 4–6 photos; isEmptyProject; placeBubble cases (§17 numbers: `{0,100,300,700}`, 280×100 in 1366×768 → right x 314 y 350 tail 50; `{1200,680,1350,740}` → left x 906; a full-width bar → below y 104; `{300,150,W,H}` → inside y 174; `{10,740,60,766}` → right, y 660, tail 80; that panel with a Block `{320,300,700,460}` → right x 314 y 474 tail 20; with `{320,0,700,768}` → x 714 y 350; with `{310,0,W,H}` → stays x 314 y 350; the bar with `{500,100,900,300}` → below x 206 y 104 tail 260; inside ignores Blocks; keepClearOf with the Canvas `{310,150,1366,768}`, Blocks `{320,100,700,400}` and `{320,800,700,900}`, W 1366, up 64: for the palette `{0,150,300,700}` → `{320,150,700,464}` and `{0,0,1366,214}`; for the step bar `{0,56,1366,90}` → only `{320,150,700,464}`). Fixtures: the demo tree, page files, asset ids; built site: 3 linked pages + CSS + JS, Checkpoint Block with Built pages, 2 Checkpoints whose Blocks hold every mark id (more than 20 marks), nothing unreachable. |
 
 ## 20a. Console messages (exact)
 
@@ -1217,6 +1253,7 @@ if (quiz) {
 - Textbox: Words: a heading, paragraph or label, whichever fits.
 - Frame: One picture. With no image Trait, a plain placeholder box labelled with the Block's name; a Library Asset only under "let Bob pick".
 - Button: Something a visitor clicks.
+- Panel: Groups what's inside; has no meaning of its own.
 
 ## Site "Maya's bake sale" #b1
 
@@ -1226,69 +1263,91 @@ if (quiz) {
 
 ### Page "Home" (index.html) #b2
 
-- Navbar "Top bar 1" (Instance of "Top bar") #b17
-  - Button "Menu" #b18
+- Navbar "Top bar 1" (Instance of "Top bar") #b21
+  - position (where it sits inside its parent): stays on top when scrolling
+  - Button "Menu" #b22
     - on click (when a visitor clicks this Block): go to "Menu" page (menu.html) #b3
-  - Button "Quiz" #b19
+  - Button "Quiz" #b23
     - on click (when a visitor clicks this Block): go to "Quiz" page (quiz.html) #b4
 - Hero "Big welcome" #b16
+  - size (room it takes in its parent; "full screen" fills the window): full width
   - Textbox "Textbox" #b15
     - text (exact words to show, as written): "Fresh cakes every Saturday"
   - Frame "Frame" #b14
     - image (show this picture): assets/cupcakes.jpg
+    - image (show this picture): assets/bake-stall.jpg
+    - purpose (what this Block does by itself, no click needed): slideshow
   - Button "Order" #b13
     - on click (when a visitor clicks this Block): open "Order" popup #b12
 - Popup "Order" #b12
   - Form "Order form" #b11
+    - Note: "name, which cake, pickup time"
     - Button "Button" #b10
       - on click (when a visitor clicks this Block): submits (fake)
-- Footer "Bottom 1" (Instance of "Bottom") #b20
-  - Textbox "Textbox" #b21
+- Section "Next sale" #b20
+  - purpose (what this Block does by itself, no click needed): countdown
+  - Panel "Panel" #b19
+    - Frame "Frame" #b17
+      - image (show this picture): assets/cookies.jpg
+    - Textbox "Textbox" #b18
+      - text (exact words to show, as written): "Cookies are half price!"
+- Footer "Bottom 1" (Instance of "Bottom") #b24
+  - Textbox "Textbox" #b25
+    - text (exact words to show, as written): "Made by Maya, age 11"
 
 ### Page "Menu" (menu.html) #b3
 
-- Navbar "Top bar 2" (Instance of "Top bar") #b24
-  - Button "Menu" #b25
+- Navbar "Top bar 2" (Instance of "Top bar") #b28
+  - position (where it sits inside its parent): stays on top when scrolling
+  - Button "Menu" #b29
     - on click (when a visitor clicks this Block): go to "Menu" page (menu.html) #b3
-  - Button "Quiz" #b26
+  - Button "Quiz" #b30
     - on click (when a visitor clicks this Block): go to "Quiz" page (quiz.html) #b4
-- Card grid "Cakes" #b23
+- Card grid "Cakes" #b27
   - fake data (fill with made-up content as described): "6 cakes with prices"
-  - Card "Card" #b22
+  - purpose (what this Block does by itself, no click needed): filter / sort (fake)
+  - Card "Card" #b26
     - image (show this picture): you choose
-- Footer "Bottom 2" (Instance of "Bottom") #b27
-  - Textbox "Textbox" #b28
+    - on click (when a visitor clicks this Block): adds to cart (fake)
+- Footer "Bottom 2" (Instance of "Bottom") #b31
+  - Textbox "Textbox" #b32
+    - text (exact words to show, as written): "Made by Maya, age 11"
 
 ### Page "Quiz" (quiz.html) #b4
 
-- Navbar "Top bar 3" (Instance of "Top bar") #b31
-  - Button "Menu" #b32
+- Navbar "Top bar 3" (Instance of "Top bar") #b35
+  - position (where it sits inside its parent): stays on top when scrolling
+  - Button "Menu" #b36
     - on click (when a visitor clicks this Block): go to "Menu" page (menu.html) #b3
-  - Button "Quiz" #b33
+  - Button "Quiz" #b37
     - on click (when a visitor clicks this Block): go to "Quiz" page (quiz.html) #b4
-- Section "Which cupcake are you?" #b30
+- Section "Which cupcake are you?" #b34
   - The user says: "3 questions, then show which cupcake you are"
-  - Button "Button" #b29
+  - You choose: the colors
+  - Button "Button" #b33
     - on click (when a visitor clicks this Block): checks an answer
-- Footer "Bottom 3" (Instance of "Bottom") #b34
-  - Textbox "Textbox" #b35
+- Footer "Bottom 3" (Instance of "Bottom") #b38
+  - Textbox "Textbox" #b39
+    - text (exact words to show, as written): "Made by Maya, age 11"
 
 ## Custom Blocks
 
 - Navbar "Top bar"
+  - position (where it sits inside its parent): stays on top when scrolling
   - Button "Menu"
     - on click (when a visitor clicks this Block): go to "Menu" page (menu.html) #b3
   - Button "Quiz"
     - on click (when a visitor clicks this Block): go to "Quiz" page (quiz.html) #b4
 - Footer "Bottom"
   - Textbox "Textbox"
+    - text (exact words to show, as written): "Made by Maya, age 11"
 
 ## Library
 
 - assets/cupcakes.jpg: image, 1200×800 px, used by a Trait
 - assets/layer-cake.jpg: image, 1200×800 px
-- assets/cookies.jpg: image, 1200×800 px
-- assets/bake-stall.jpg: image, 1200×800 px
+- assets/cookies.jpg: image, 1200×800 px, used by a Trait
+- assets/bake-stall.jpg: image, 1200×800 px, used by a Trait
 - assets/lemon-drizzle.jpg: image, 1200×800 px
 - assets/brownie.jpg: image, 1200×800 px
 ```

@@ -120,6 +120,18 @@ export function parentMap(p: Project): Map<string, string> {
   return map
 }
 
+// Blocks 4 levels deep start folded. The Checkpoint Block never folds.
+export function isFolded(b: Block, depth: number): boolean {
+  return b.type !== 'checkpoint' && (b.folded ?? depth >= 4)
+}
+
+// A Block on the Canvas is depth 1, like BlockView counts it.
+function depthOf(parents: Map<string, string>, id: string): number {
+  let d = 0
+  for (let a: string | undefined = id; a && a !== 'canvas'; a = parents.get(a)) d++
+  return d
+}
+
 // ── canDrop ───────────────────────────────────────────────────────────────────
 
 export function canDrop(p: Project, item: DragItem, targetId: string, parents = parentMap(p)): boolean {
@@ -218,6 +230,20 @@ export function dropItem(p: Project, item: DragItem, at: Drop): string {
     id = makeInstance(p, item.defId)
   } else {
     id = item.id
+    // A Block shown folded, or as a chip in a folded parent, stays folded where it lands.
+    // So do the Blocks inside it: moving up a level must not unfold them.
+    if (item.kind === 'block') {
+      const parents = parentMap(p), up = parents.get(id)
+      const parent = up && up !== 'canvas' ? p.blocks[up] : undefined
+      if (parent && isFolded(parent, depthOf(parents, up!))) p.blocks[id].folded = true
+      const pin = (bid: string, depth: number): void => {
+        const b = p.blocks[bid]
+        if (!b) return
+        if (isFolded(b, depth)) b.folded = true
+        for (const c of b.children) pin(c, depth + 1)
+      }
+      pin(id, depthOf(parents, id))
+    }
     detach(p, id)
   }
 

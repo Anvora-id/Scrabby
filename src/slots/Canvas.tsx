@@ -11,7 +11,7 @@ import { canDrop, canTrash, dropItem, isTraitItem, parentMap, removeItem, repair
 import type { DragItem, Drop } from '../canvas/tree.ts'
 import BlockView from '../canvas/BlockView.tsx'
 import TraitPill from '../canvas/TraitPill.tsx'
-import { ContextMenu, Tooltip } from '../canvas/Overlays.tsx'
+import { ContextMenu, openMenu, Tooltip } from '../canvas/Overlays.tsx'
 import { flash, MarksContext, Popover, Stepper } from '../canvas/Warnings.tsx'
 import { marksOf, stopsOf } from '../canvas/marks.ts'
 import { topBlock, warnings } from '../instructions/warnings.ts'
@@ -530,6 +530,7 @@ export default function Canvas() {
       onPointerCancel={onPanEnd}
       onMouseDown={e => { if (e.button === 1) e.preventDefault() }}
       onAuxClick={e => { if (e.button === 1) e.preventDefault() }}
+      onContextMenu={e => openMenu(e, 'canvas', [{ label: 'Reset zoom', act: () => { home(); apply() } }])}
     >
       <div ref={worldRef} className={styles.world}>
         <MarksContext.Provider value={editingId ? { marks: new Map(), busy: null, open: () => {} } : { marks, busy, open: openPop }}>

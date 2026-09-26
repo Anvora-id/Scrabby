@@ -63,9 +63,9 @@ export function demoProject(): Project {
   // Step 4: Definitions (off canvas — do not push to canvas.children)
   const menuButton = B('button', 'Menu', [T('onclick', 'page:' + menu)])
   const quizButton = B('button', 'Quiz', [T('onclick', 'page:' + quiz)])
-  const topBar = B('navbar', 'Top bar', [], [menuButton, quizButton])
+  const topBar = B('navbar', 'Top bar', [T('position', 'stays on top when scrolling')], [menuButton, quizButton])
   p.blocks[topBar].layout = { d: 'col', k: [{ d: 'row', k: [menuButton, quizButton] }] }
-  const bottom = B('footer', 'Bottom', [], [B('text', undefined)])
+  const bottom = B('footer', 'Bottom', [], [B('text', undefined, [T('text', 'Made by Maya, age 11')])])
   p.defs['d1'] = { id: 'd1', blockId: topBar, color: { h: 345, s: 90, l: 82 } }
   p.defs['d2'] = { id: 'd2', blockId: bottom, color: { h: 15, s: 90, l: 82 } }
   p.blocks[topBar].defines = 'd1'
@@ -77,30 +77,37 @@ export function demoProject(): Project {
   }
 
   // Step 6: Home page contents
-  const order = B('popup', 'Order', [], [
-    B('form', 'Order form', [], [
-      B('button', undefined, [T('onclick', 'submits (fake)')]),
-    ]),
+  const orderForm = B('form', 'Order form', [], [
+    B('button', undefined, [T('onclick', 'submits (fake)')]),
   ])
+  p.blocks[orderForm].note = 'name, which cake, pickup time'
+  const order = B('popup', 'Order', [], [orderForm])
   const orderButton = B('button', 'Order', [T('onclick', 'popup:' + order)])
-  const photo = B('image', undefined, [T('image', 'a1')])
-  const hero = B('hero', 'Big welcome', [], [
-    B('text', undefined, [T('text', 'Fresh cakes every Saturday')]),
-    photo,
-    orderButton,
-  ])
-  p.blocks[home].children = withBarAndBottom([hero, order])
+  const photo = B('image', undefined, [T('image', 'a1'), T('image', 'a4'), T('purpose', 'slideshow')])
+  const headline = B('text', undefined, [T('text', 'Fresh cakes every Saturday')])
+  const hero = B('hero', 'Big welcome', [T('size', 'full width')], [headline, photo, orderButton])
+  p.blocks[hero].layout = { d: 'col', k: [headline, { d: 'row', k: [photo, orderButton] }] }
+  const cookies = B('image', undefined, [T('image', 'a3')])
+  const halfPrice = B('text', undefined, [T('text', 'Cookies are half price!')])
+  const panel = B('box', undefined, [], [cookies, halfPrice])
+  const nextSale = B('section', 'Next sale', [T('purpose', 'countdown')], [panel])
+  p.blocks[home].children = withBarAndBottom([hero, order, nextSale])
+  const [homeBar, , , , homeBottom] = p.blocks[home].children
+  p.blocks[home].layout = { d: 'col', k: [homeBar, { d: 'row', k: [hero, order] }, { d: 'row', k: [nextSale, homeBottom] }] }
 
   // Step 7: Menu page contents
-  const card = B('card', undefined, [T('image', '', { bobPicks: true })])
-  const cakes = B('cardgrid', 'Cakes', [T('fakedata', '6 cakes with prices')], [card])
+  const card = B('card', undefined, [T('image', '', { bobPicks: true }), T('onclick', 'adds to cart (fake)')])
+  const cakes = B('cardgrid', 'Cakes', [T('fakedata', '6 cakes with prices'), T('purpose', 'filter / sort (fake)')], [card])
   p.blocks[cakes].layout = { d: 'col', k: [{ d: 'row', k: [card] }] }
   p.blocks[menu].children = withBarAndBottom([cakes])
 
   // Step 8: Quiz page contents
   const answer = B('button', undefined, [T('onclick', 'checks an answer')])
-  const cupcake = B('section', 'Which cupcake are you?', [T('tellbob', '3 questions, then show which cupcake you are')], [answer])
+  const cupcake = B('section', 'Which cupcake are you?', [T('tellbob', '3 questions, then show which cupcake you are'), T('letbobpick', 'the colors')], [answer])
   p.blocks[quiz].children = withBarAndBottom([cupcake])
+
+  // The three Pages side by side keep the plan short on the Canvas
+  p.blocks[site].layout = { d: 'col', k: [{ d: 'row', k: [home, menu, quiz] }] }
 
   return p
 }
@@ -145,7 +152,7 @@ export function builtSite(): { project: Project; checkpoints: Checkpoint[] } {
   const homeBottom = homeChildren[homeChildren.length - 1]
 
   // Find named blocks
-  let hero = '', photo = '', orderButton = '', order = '', cakes = '', card = '', cupcake = '', answer = ''
+  let hero = '', photo = '', orderButton = '', order = '', nextSale = '', panel = '', cakes = '', card = '', cupcake = '', answer = ''
   for (const [id, b] of Object.entries(p.blocks)) {
     if (b.type === 'hero') hero = id
     if (b.type === 'image' && b.traits.length > 0 && p.traits[b.traits[0]]?.type === 'image' && p.traits[b.traits[0]]?.value === 'a1') photo = id
@@ -153,7 +160,9 @@ export function builtSite(): { project: Project; checkpoints: Checkpoint[] } {
     if (b.type === 'popup') order = id
     if (b.type === 'cardgrid') cakes = id
     if (b.type === 'card') card = id
-    if (b.type === 'section') cupcake = id
+    if (b.type === 'section' && b.name === 'Next sale') nextSale = id
+    if (b.type === 'box') panel = id
+    if (b.type === 'section' && b.name === 'Which cupcake are you?') cupcake = id
     if (b.type === 'button' && p.traits[b.traits[0]]?.value === 'checks an answer') answer = id
   }
 
@@ -166,7 +175,7 @@ export function builtSite(): { project: Project; checkpoints: Checkpoint[] } {
   const ids = (blockId: string): string[] => p.blocks[blockId]?.children ?? []
 
   // Step 3: Build the HTML/CSS/JS
-  const d = { site, home, menu, quiz, hero, photo, orderButton, order, cakes, card, cupcake, answer, homeBar, homeBottom }
+  const d = { site, home, menu, quiz, hero, photo, orderButton, order, nextSale, panel, cakes, card, cupcake, answer, homeBar, homeBottom }
 
   // Get instances of d1 in each page
   const homeBarInst = homeBar
@@ -198,7 +207,7 @@ export function builtSite(): { project: Project; checkpoints: Checkpoint[] } {
   </nav>
 ${body}
   <footer class="bottom" data-block="${bottomInst}">
-    <p data-block="${textbox}">Made with love by Maya. Every Saturday, 9 till 1.</p>
+    <p data-block="${textbox}">Made by Maya, age 11</p>
   </footer>
   <script src="script.js"></script>
 </body>
@@ -209,7 +218,10 @@ ${body}
   const homeBody = (withHours: boolean) => `  <main>
     <section class="hero" data-block="${d.hero}">
       <h1 data-block="${ids(d.hero)[0]}">Fresh cakes every Saturday</h1>
-      <img data-block="${d.photo}" src="assets/cupcakes.jpg" alt="A tray of pink cupcakes">
+      <div class="slides" data-block="${d.photo}">
+        <img src="assets/cupcakes.jpg" alt="A tray of pink cupcakes">
+        <img src="assets/bake-stall.jpg" alt="Our bake stall" hidden>
+      </div>
       <button class="big" data-block="${d.orderButton}" data-open="order">Order</button>
     </section>${withHours ? `
     <section class="hours" data-block="${hours}">
@@ -226,14 +238,24 @@ ${body}
         <p class="thanks" hidden>Thanks! Your order is in.</p>
       </form>
     </div>
+    <section class="next-sale" data-block="${d.nextSale}">
+      <h2>Next sale in <span id="countdown"></span></h2>
+      <div class="panel" data-block="${d.panel}">
+        <img data-block="${ids(d.panel)[0]}" src="assets/cookies.jpg" alt="A plate of cookies">
+        <p data-block="${ids(d.panel)[1]}">Cookies are half price!</p>
+      </div>
+    </section>
   </main>`
   const cakes2 = [['Pink cupcake', '£1.50', 'cupcakes'], ['Lemon drizzle', '£2.00', 'lemon-drizzle'], ['Chocolate slice', '£2.50', 'brownie'], ['Carrot cake', '£2.00', 'layer-cake'], ['Victoria sponge', '£3.00', 'layer-cake'], ['Brownie', '£1.80', 'brownie']]
   const menuBody = `  <main>
     <h1>Our cakes</h1>
+    <p class="sort" data-block="${d.cakes}">Sort by price: <button data-sort="up">Cheapest</button> <button data-sort="down">Priciest</button></p>
+    <p id="cart">Cart: 0</p>
     <div class="grid" data-block="${d.cakes}">
 ${cakes2.map(([n, price, photo]) => `      <article class="card" data-block="${d.card}">
         <img src="assets/${photo}.jpg" alt="${n}">
         <h3>${n}</h3><p>${price}</p>
+        <button class="add">Add to cart</button>
       </article>`).join('\n')}
     </div>
   </main>`
@@ -255,13 +277,15 @@ main { max-width: 960px; margin: 0 auto; padding: 24px; }
 button { font: inherit; background: #E91E63; color: white; border: 0; border-radius: 999px; padding: 10px 20px; cursor: pointer; }
 
 /* block ${d.homeBar} */
-.top-bar { display: flex; gap: 20px; align-items: center; padding: 14px 24px; background: #F8BBD0; }
+.top-bar { position: sticky; top: 0; display: flex; gap: 20px; align-items: center; padding: 14px 24px; background: #F8BBD0; }
 .top-bar a { color: #3A2A30; font-weight: bold; text-decoration: none; }
 .top-bar .logo { margin-right: auto; font-size: 20px; }
 
 /* block ${d.hero} */
 .hero { text-align: center; padding: 32px; background: white; border-radius: 24px; }
+.hero { width: 100%; box-sizing: border-box; }
 .hero img { width: 100%; max-width: 480px; border-radius: 16px; display: block; margin: 16px auto; }
+.hero img[hidden] { display: none; }
 
 /* block ${d.order} */
 .popup { position: fixed; inset: 0; background: #0006; display: grid; place-items: center; }
@@ -269,7 +293,13 @@ button { font: inherit; background: #E91E63; color: white; border: 0; border-rad
 .popup form { background: white; padding: 24px; border-radius: 16px; display: grid; gap: 12px; min-width: 280px; position: relative; }
 .popup .close { position: absolute; top: 8px; right: 8px; padding: 4px 10px; }
 
+/* block ${d.nextSale} */
+.next-sale { margin-top: 24px; padding: 16px; background: white; border-radius: 16px; text-align: center; }
+.panel { display: flex; gap: 16px; align-items: center; justify-content: center; }
+.panel img { width: 160px; border-radius: 12px; }
+
 /* block ${d.cakes} */
+.sort { text-align: center; }
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .card { background: white; border-radius: 16px; padding: 12px; text-align: center; }
 .card img { width: 100%; border-radius: 12px; }
@@ -294,6 +324,39 @@ document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click
 document.querySelectorAll('.popup form').forEach(f => f.addEventListener('submit', e => {
   e.preventDefault()
   f.querySelector('.thanks').hidden = false
+}))
+
+/* block ${d.photo} */
+const slides = document.querySelectorAll('.slides img')
+let slide = 0
+if (slides.length) setInterval(() => {
+  slides[slide].hidden = true
+  slide = (slide + 1) % slides.length
+  slides[slide].hidden = false
+}, 3000)
+
+/* block ${d.nextSale} */
+const countdown = document.getElementById('countdown')
+const tick = () => {
+  const next = new Date()
+  next.setDate(next.getDate() + ((6 - next.getDay() + 7) % 7))
+  next.setHours(9, 0, 0, 0)
+  if (next < new Date()) next.setDate(next.getDate() + 7)
+  const h = Math.floor((next - new Date()) / 3600000)
+  countdown.textContent = Math.floor(h / 24) + ' days ' + (h % 24) + ' hours'
+}
+if (countdown) { tick(); setInterval(tick, 60000) }
+
+/* block ${d.cakes} */
+let cart = 0
+document.querySelectorAll('.add').forEach(b => b.addEventListener('click', () => {
+  document.getElementById('cart').textContent = 'Cart: ' + ++cart
+}))
+document.querySelectorAll('[data-sort]').forEach(b => b.addEventListener('click', () => {
+  const grid = document.querySelector('.grid')
+  const price = c => parseFloat(c.querySelector('p').textContent.slice(1))
+  const sign = b.dataset.sort === 'up' ? 1 : -1
+  ;[...grid.children].sort((x, y) => sign * (price(x) - price(y))).forEach(c => grid.append(c))
 }))
 
 /* block ${d.cupcake} */

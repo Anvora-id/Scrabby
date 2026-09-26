@@ -7,7 +7,7 @@
 |---|---|---|
 | Big | 22px, padding 14px 30px 13px, 24px flag, radius 16px, a 5px bottom edge | Plan: the bottom right of the Canvas, with the zoom buttons stacked above it. The Build card before the first Build |
 
-From the press until Bob starts, the pressed Build button reads "Starting…" with a small white spinner (20px, a white 35% ring whose top quarter is white) in place of the flag, and every Build button can't be pressed; the step stays on Plan. If Bob hasn't started within 15s, or anything goes wrong before he does, the Build step opens on a failed Build card, never in silence. While a Build runs, every Build button reads "Building…", can't be pressed, and has opacity .6. There is no Stop.
+From the confirm in "Build now?" until Bob starts, the Build button reads "Starting…" with a small white spinner (20px, a white 35% ring whose top quarter is white) in place of the flag (a pressed Try again does the same), and every Build button can't be pressed; the step stays on Plan. If Bob hasn't started within 15s, or anything goes wrong before he does, the Build step opens on a failed Build card, never in silence. While a Build runs, every Build button reads "Building…", can't be pressed, and has opacity .6. There is no Stop.
 
 **Nothing new to build** (ticket 08): after a Build, while no new Blocks or Traits are on the Canvas, the Build button is greyed: `--placeholder` fill, a `--muted` bottom edge. Pressing it starts nothing; a footer-less [Speech bubble](#speech-bubble) points at it: "Nothing new to build. To redo a Build, open **Checkpoints**". The word Checkpoints is a link that opens the Checkpoints tab.
 

@@ -34,8 +34,7 @@ export default function BuildButton() {
       setBubble(problem)
       return
     }
-    if (hasPending(p)) setWarn(true)
-    else await build()
+    setWarn(true)
   }
 
   async function build() {
@@ -57,10 +56,12 @@ export default function BuildButton() {
       {warn && (
         <Warning
           title="Build now?"
-          lines={["The Assistant has changes you haven't accepted. Building drops them."]}
-          confirm="Build anyway"
+          lines={hasPending(p)
+            ? ['Bob builds your site from the plan and takes you to the Build step.', "The Assistant has changes you haven't accepted. Building drops them."]
+            : ['Bob builds your site from the plan and takes you to the Build step.']}
+          confirm={hasPending(p) ? 'Build anyway' : 'Build'}
           onCancel={() => setWarn(false)}
-          onConfirm={() => { setWarn(false); dropPending(); build() }}
+          onConfirm={() => { setWarn(false); if (hasPending(getProject())) dropPending(); build() }}
         />
       )}
     </span>
