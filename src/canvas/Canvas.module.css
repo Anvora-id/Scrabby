@@ -44,14 +44,14 @@ body > .avatar {
 body > .avatar.gone {
   opacity: 0;
   scale: 0.9;
-  transition: opacity var(--t-pop) var(--ease), scale var(--t-pop) var(--ease);
+  transition: opacity var(--t-quick) var(--ease), scale var(--t-quick) var(--ease);
 }
 
 /* a moved item's copy flies back to its spot */
 body > .avatar.back {
   scale: 1;
-  transition: left var(--t-pop) var(--spring), top var(--t-pop) var(--spring),
-    scale var(--t-pop) var(--spring), transform var(--t-pop) var(--spring);
+  transition: left var(--t-quick) var(--ease), top var(--t-quick) var(--ease),
+    scale var(--t-quick) var(--ease), transform var(--t-quick) var(--ease);
 }
 
 /* the item waits in its spot until its copy is back */
@@ -83,7 +83,7 @@ body > .avatar.back {
 
   body > .avatar.gone {
     scale: 1.03;
-    transition: opacity var(--t-pop) var(--ease);
+    transition: opacity var(--t-quick) var(--ease);
   }
 
   .landed {
