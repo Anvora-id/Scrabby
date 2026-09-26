@@ -57,27 +57,10 @@ export function targetAt(
     if (!canDrop(p, item, bxId, parents)) return null
 
     if (isTraitItem(item)) {
-      // tIdx = index of the first measured trait pill with y < top || (y <= bottom && x < (pill left + pill right) / 2)
-      const traitIds = (p.blocks[bxId]?.traits ?? []).filter(tid => rects.traits.has(tid))
-      let tIdx = traitIds.length
-      for (let i = 0; i < traitIds.length; i++) {
-        const tr = rects.traits.get(traitIds[i])!
-        const pillMidX = (tr.left + tr.right) / 2
-        if (y < tr.top || (y <= tr.bottom && x < pillMidX)) {
-          tIdx = i
-          break
-        }
-      }
-      // map traitIds index back to the block's full trait list index
-      const allTraits = p.blocks[bxId]?.traits ?? []
-      let actualIdx: number
-      if (tIdx < traitIds.length) {
-        actualIdx = allTraits.indexOf(traitIds[tIdx])
-        if (actualIdx === -1) actualIdx = allTraits.length
-      } else {
-        actualIdx = allTraits.length
-      }
-      return { id: bxId, tIdx: actualIdx }
+      // index among measured pills: the dragged pill is not measured, so this is its index after detach
+      const pills = (p.blocks[bxId]?.traits ?? []).flatMap(tid => rects.traits.get(tid) ?? [])
+      const tIdx = pills.findIndex(r => y < r.top || (y <= r.bottom && x < (r.left + r.right) / 2))
+      return { id: bxId, tIdx: tIdx === -1 ? pills.length : tIdx }
     }
 
     // Block item → slot from nearestSlot

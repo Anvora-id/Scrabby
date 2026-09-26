@@ -75,38 +75,15 @@ export function repairLayout(b: Block): Layout {
 
 export function insertInto(l: Layout, id: string, slot: Slot | null | undefined): Layout {
   const root: Layout = structuredClone(l)
-  if (!slot || !slot.ref) {
+  if (!slot || !slot.ref || !leafList(root).includes(slot.ref)) {
     root.k.push(id)
-    const r = norm(root, true)
-    return typeof r === 'string' ? { d: 'col', k: [r] } : r
+  } else if (slot.where === 'rowBefore') {
+    root.k.splice(root.k.findIndex(item => leafList(item).includes(slot.ref)), 0, id)
+  } else {
+    const dir: 'row' | 'col' = (slot.where === 'left' || slot.where === 'right') ? 'row' : 'col'
+    insertBeside(root, slot.ref, id, dir, slot.where === 'right' || slot.where === 'below')
   }
-
-  if (slot.where === 'rowBefore') {
-    // find the root item containing ref, insert id before it
-    const idx = rootItemContaining(root, slot.ref)
-    if (idx === -1) {
-      root.k.push(id)
-    } else {
-      root.k.splice(idx, 0, id)
-    }
-    const r = norm(root, true)
-    return typeof r === 'string' ? { d: 'col', k: [r] } : r
-  }
-
-  const dir: 'row' | 'col' = (slot.where === 'left' || slot.where === 'right') ? 'row' : 'col'
-  const after = slot.where === 'right' || slot.where === 'below'
-
-  insertBeside(root, slot.ref, id, dir, after)
-  const r = norm(root, true)
-  return typeof r === 'string' ? { d: 'col', k: [r] } : r
-}
-
-function rootItemContaining(root: Layout, ref: string): number {
-  for (let i = 0; i < root.k.length; i++) {
-    const item = root.k[i]
-    if (typeof item === 'string' ? item === ref : leafList(item).includes(ref)) return i
-  }
-  return -1
+  return norm(root, true) as Layout
 }
 
 function insertBeside(node: Layout | string, ref: string, id: string, dir: 'row' | 'col', after: boolean): boolean {
@@ -190,11 +167,8 @@ export function canDrop(p: Project, item: DragItem, targetId: string, parents = 
     if (chain.includes(id)) return false
     const block = p.blocks[id]
     if (!block) return false
-    // locked Page only moves on Canvas to its current parent
-    if (block.type === 'page' && block.locked) {
-      const currentParent = parents.get(id)
-      return targetId === currentParent
-    }
+    // a locked Page only reorders inside its current parent
+    if (block.type === 'page' && block.locked && targetId !== parents.get(id)) return false
     if (inCustom && hasInst(id)) return false
   }
 
@@ -249,18 +223,16 @@ export function dropItem(p: Project, item: DragItem, at: Drop): string {
   const c = p.blocks[at.id]
   if (!c) return id
 
-  if (item.kind === 'newTrait' || item.kind === 'trait') {
-    const tIdx = at.tIdx ?? c.traits.length
-    c.traits.splice(tIdx, 0, id)
+  if (isTraitItem(item)) {
+    c.traits.splice(at.tIdx ?? c.traits.length, 0, id)
   } else {
     c.layout = insertInto(repairLayout(c), id, at.slot ?? null)
     c.children = leafList(c.layout)
-    if (at.id === 'canvas' && at.pos) {
-      p.blocks[id].pos = at.pos
-    } else {
-      delete p.blocks[id].pos
-    }
   }
+  // loose Traits keep a pos on the Canvas too
+  const placed = p.blocks[id] ?? p.traits[id]
+  if (at.id === 'canvas' && at.pos) placed.pos = at.pos
+  else delete placed.pos
 
   return id
 }

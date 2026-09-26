@@ -1,3 +1,5 @@
+import { useSyncExternalStore } from 'react'
+import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { DragItem, Drop } from './tree.ts'
 
 // ── DragState ─────────────────────────────────────────────────────────────────
@@ -23,9 +25,11 @@ export function setDrag(state: DragState | null): void {
   for (const fn of _dragListeners) fn()
 }
 
-export function useDrag(listener: () => void): () => void {
-  _dragListeners.add(listener)
-  return () => _dragListeners.delete(listener)
+export function useDrag(): DragState | null {
+  return useSyncExternalStore(
+    cb => { _dragListeners.add(cb); return () => _dragListeners.delete(cb) },
+    getDrag,
+  )
 }
 
 // ── Pending press ─────────────────────────────────────────────────────────────
@@ -51,12 +55,12 @@ export function peekPending(): Pending | null {
 
 // ── dragSource ────────────────────────────────────────────────────────────────
 
-export function dragSource(item: DragItem): (e: PointerEvent) => void {
-  return (e: PointerEvent) => {
+export function dragSource(item: DragItem): (e: ReactPointerEvent<HTMLElement>) => void {
+  return e => {
     if (e.button !== 0) return
     const target = e.target as Element | null
     if (target?.closest('input, select, textarea, button')) return
     e.stopPropagation()
-    _pending = { el: e.currentTarget as HTMLElement, item, x: e.clientX, y: e.clientY }
+    _pending = { el: e.currentTarget, item, x: e.clientX, y: e.clientY }
   }
 }

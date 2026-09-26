@@ -80,18 +80,7 @@ describe('target', () => {
     const { p, home, footer, rects } = makeScene()
     const item = { kind: 'newBlock' as const, type: 'text' as const }
     const result = targetAt(p, rects, item, 200, 205)
-    // hit = footer (deepest block containing 200,205). footer.top=210 > 205, wait—
-    // Actually footer rect is (20,210,380,300). y=205 is NOT inside footer (205 < 210).
-    // So hit would be home (10,40,390,390) which contains 200,205.
-    // hero (20,80,380,200): y=205 > 200, not inside.
-    // So hit = home.
-    // targetFor(home): parent=site (not canvas). canDrop({text},site) → site only accepts page → false. No edge.
-    //   canDrop({text}, home) → home is page, accepts ANY_PART including text → true.
-    //   nearestSlot(home): rows from repairLayout(home) = {d:'col',k:[hero,footer]}.
-    //   Hero measured (20,80,380,200) and footer measured (20,210,380,300).
-    //   rows = [{ids:[hero], union:{20,80,380,200}}, {ids:[footer], union:{20,210,380,300}}]
-    //   y=205: not in hero row (80-200 doesn't contain 205). not in footer row (210-300 doesn't contain 205).
-    //   First row whose top > y: footer.top=210 > 205 → rowBefore, ref=footer
+    // the gap between hero and footer: hit = home, no row spans y, footer is the next row
     expect(result).toEqual({ id: home, slot: { where: 'rowBefore', ref: footer } })
   })
 
@@ -107,21 +96,7 @@ describe('target', () => {
     const { p, hero, rects } = makeScene()
     const item = { kind: 'newTrait' as const, type: 'color' as const }
     const result = targetAt(p, rects, item, 120, 110)
-    // t1: (30,100,90,128). t2: (100,100,160,128).
-    // midX of hero = (20+380)/2 = 200.
-    // traitIds (measured) = [t1, t2]
-    // For i=0 (t1): y=110. t1.top=100. y >= top. y <= t1.bottom=128 AND x=120 < midX=200 → but check: does this pill's condition match?
-    //   y < tr.top: 110 < 100 → false. y <= tr.bottom (110 <= 128) AND x < midX (120 < 200) → true. So tIdx=0? No wait—
-    //   Actually we check if i=0 matches: y=110 < t1.top=100? No. y<=t1.bottom=128 && x=120 < midX=200? Yes → tIdx=0? 
-    //   Wait, that would mean x=120 maps to tIdx=0 (before t1). But the spec says tIdx=1 for (120,110).
-    // Hmm, let me re-read the spec:
-    // "tIdx = index of the first of bx's measured pills with y < top || (y <= bottom && x < (left + right) / 2)"
-    // left/right of the PILL, not the block!
-    // t2: (100,100,160,128). midX of t2 = (100+160)/2 = 130.
-    // For t1 at (30,100,90,128): midX_t1 = (30+90)/2 = 60. x=120 > 60, and y=110 <= 128 → NOT before t1.
-    // Actually wait — re-reading: "x < (left + right) / 2" — this is the midX of the pill itself!
-    // t1: midX = (30+90)/2 = 60. y=110 <= 128 && x=120 < 60? No (120 > 60).
-    // t2: midX = (100+160)/2 = 130. y=110 <= 128 && x=120 < 130? Yes → tIdx=1 (index of t2).
+    // past t1's middle (60), before t2's middle (130)
     expect(result).toEqual({ id: hero, tIdx: 1 })
   })
 

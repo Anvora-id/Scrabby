@@ -45,6 +45,18 @@ describe('tree', () => {
     expect(result).toEqual({ d: 'col', k: [{ d: 'row', k: [a, c] }, b] })
   })
 
+  it('a ref not in the tree goes to the end', () => {
+    expect(insertInto({ d: 'col', k: ['a'] }, 'c', { where: 'left', ref: 'gone' })).toEqual({ d: 'col', k: ['a', 'c'] })
+  })
+
+  it('a loose Trait gets a pos on the Canvas and loses it in a Block', () => {
+    const p = demo()
+    const t = dropItem(p, { kind: 'newTrait', type: 'color' }, { id: 'canvas', pos: { x: 5, y: 6 } })
+    expect(p.traits[t].pos).toEqual({ x: 5, y: 6 })
+    dropItem(p, { kind: 'trait', id: t }, { id: bid(p, 'Home') })
+    expect(p.traits[t].pos).toBeUndefined()
+  })
+
   it('rowBefore', () => {
     const a = 'blockA', b = 'blockB', c = 'blockC'
     const layout = { d: 'col' as const, k: [a, b] }

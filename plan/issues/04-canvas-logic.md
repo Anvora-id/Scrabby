@@ -30,4 +30,4 @@ Create: `src/canvas/tree.ts`, `src/canvas/target.ts`, `src/canvas/drag.ts`, `src
 
 ## Answer
 
-`tree.ts` exports `repairLayout`, `insertInto`, `leafList`, `parentMap`, `canDrop`, `canTrash`, `dropItem`, `removeItem`, `onClickOptions`, `isTraitItem`, and all types (`DragItem`, `Drop`, `Slot`, `Option`, `NewBlockType`). `target.ts` exports `targetAt`, `Rect`, `DragRects`. `drag.ts` exports `getDrag`, `setDrag`, `useDrag`, `dragSource`, `takePending`, `peekPending`, and types `DragState`, `Pending`. `cx.ts` exports `cx`.
+`tree.ts` exports `repairLayout`, `insertInto`, `leafList`, `parentMap`, `canDrop`, `canTrash`, `dropItem`, `removeItem`, `onClickOptions`, `isTraitItem`, and all types (`DragItem`, `Drop`, `Slot`, `Option`, `NewBlockType`). `target.ts` exports `targetAt`, `Rect`, `DragRects`. `drag.ts` exports `getDrag`, `setDrag`, `useDrag()` (hook, returns `DragState | null`), `dragSource` (a React `onPointerDown`), `takePending`, `peekPending`, and types `DragState`, `Pending`. `cx.ts` exports `cx`.
