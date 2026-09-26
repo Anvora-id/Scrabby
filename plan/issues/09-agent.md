@@ -1,6 +1,6 @@
 # 09: Agent route and Bob model client
 
-Status: ready-for-agent
+Status: done
 Blocked by: 19
 Wave: 1
 
@@ -26,11 +26,11 @@ Create: `src/shell/BobBadge.module.css`, `scripts/build-demo.ts`, `api/agent.tes
 
 ## Steps
 
-- [ ] `src/agent.ts`: the types of TDD §5.1, `runAgent`, `readAgentStream`, `browserId`, `useAgentLabel` (TDD §5.3).
-- [ ] `api/agent.ts` (one file, TDD §5.2): constants, skills loading with `process.cwd()`, roles and levels (exact text), `prompt`, `TOOLS`, `runTool`, `blockIds`, `runLoop`, `bobModel`, `createLimits`, `agentHandler`, `export default { fetch: agentHandler(bobModel) }`. Import from `src/` with `import type` only.
-- [ ] `BobBadge.tsx` (TDD §7; look: DESIGN.md Bob badge).
-- [ ] `scripts/build-demo.ts` (TDD §5.4).
-- [ ] Tests: the `api/agent.test.ts` and `src/agent.test.ts` rows of TDD §20, with a fake `Model` (an async function returning scripted `ModelReply`s and recording the messages it got). Limits tests use their own `createLimits()` and fixed `now` values; set and restore `process.env.AGENT_LIMITS` around the "off" case.
+- [x] `src/agent.ts`: the types of TDD §5.1, `runAgent`, `readAgentStream`, `browserId`, `useAgentLabel` (TDD §5.3).
+- [x] `api/agent.ts` (one file, TDD §5.2): constants, skills loading with `process.cwd()`, roles and levels (exact text), `prompt`, `TOOLS`, `runTool`, `blockIds`, `runLoop`, `bobModel`, `createLimits`, `agentHandler`, `export default { fetch: agentHandler(bobModel) }`. Import from `src/` with `import type` only.
+- [x] `BobBadge.tsx` (TDD §7; look: DESIGN.md Bob badge).
+- [x] `scripts/build-demo.ts` (TDD §5.4).
+- [x] Tests: the `api/agent.test.ts` and `src/agent.test.ts` rows of TDD §20, with a fake `Model` (an async function returning scripted `ModelReply`s and recording the messages it got). Limits tests use their own `createLimits()` and fixed `now` values; set and restore `process.env.AGENT_LIMITS` around the "off" case.
 
 ## Done when
 
@@ -41,3 +41,9 @@ Create: `src/shell/BobBadge.module.css`, `scripts/build-demo.ts`, `api/agent.tes
 ## Do not
 
 - Add an AI SDK or any dependency; use `fetch`. Log the key or headers. Split `api/agent.ts` into more files (Vercel makes every file in `api/` a function).
+
+## Answer
+
+- `runAgent`, `readAgentStream`, `browserId` and `useAgentLabel` are in `src/agent.ts`. `BobBadge` adds its own 8px left margin.
+- `bobModel` uses the TDD §1 defaults when an `AGENT_*` variable is empty (`.env.example` leaves them empty).
+- Not run here (the worktree has no `.env`): `pnpm build-demo` and the `curl` check. The human runs them and writes the Build's seconds here.
