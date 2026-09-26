@@ -58,6 +58,10 @@
   place-items: center;
 }
 
+.center > .modal {
+  position: static;
+}
+
 .greeting {
   width: 560px;
   max-width: calc(100% - 32px);

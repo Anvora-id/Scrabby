@@ -146,7 +146,23 @@ const along = (c: number, from: number, size: number) => clamp(c - from, 20, siz
 const nearest = (vs: number[], to: number) => vs.sort((a, b) => Math.abs(a - to) - Math.abs(b - to))[0]
 const flip = (b: Box): Box => ({ left: b.top, top: b.left, right: b.bottom, bottom: b.right })
 
-/** `avoid`: boxes a side placement keeps clear of when it can (the Blocks on the Canvas). */
+/**
+ * What a tour bubble keeps clear of: the Blocks, cut to the Canvas that shows them, and for a target
+ * in the Canvas panel (below the tabs) everything above the Canvas: menu bar, step bar and tabs.
+ * Each box reaches `up` lower, since Bob stands on the bubble's top corner and reaches that far above it.
+ */
+export function keepClearOf(target: Box, canvas: Box, blocks: Box[], W: number, up: number): Box[] {
+  const boxes = blocks
+    .map(b => ({
+      left: Math.max(b.left, canvas.left), top: Math.max(b.top, canvas.top),
+      right: Math.min(b.right, canvas.right), bottom: Math.min(b.bottom, canvas.bottom),
+    }))
+    .filter(b => b.right > b.left && b.bottom > b.top)
+  if (target.top >= canvas.top - 1) boxes.push({ left: 0, top: 0, right: W, bottom: canvas.top })
+  return boxes.map(b => ({ ...b, bottom: b.bottom + up }))
+}
+
+/** `avoid`: boxes a side placement keeps clear of when it can (see keepClearOf). */
 export function placeBubble(r: Box, w: number, h: number, W: number, H: number, avoid: Box[] = []): Placement {
   const p = place(r, w, h, W, H)
   if (p.side === 'inside') return p

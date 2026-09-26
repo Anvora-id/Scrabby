@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useReducer, useRef, useState, type ReactNod
 import { getProject, useProject, useUi } from '../store.ts'
 import { downloadCode } from '../download.ts'
 import {
-  askDemo, askNewProject, askStore, closeAsk, closeTip, endTour, firstTour, greetingStore, isEmptyProject,
+  askDemo, askNewProject, askStore, closeAsk, closeTip, endTour, firstTour, greetingStore, isEmptyProject, keepClearOf,
   loadDemo, newProject, nextBubble, once, placeBubble, replacingStore, startTour, tipStore, tourStore, TOURS,
   type Box,
 } from '../onboarding.ts'
@@ -123,6 +123,7 @@ const ASKS = {
 
 function ReplaceWarning() {
   const ask = askStore.use()
+  const greet = greetingStore.use()
 
   useEffect(() => {
     if (!ask) return
@@ -133,8 +134,9 @@ function ReplaceWarning() {
 
   if (!ask) return null
   const a = ASKS[ask]
+  // Over the greeting it sits centered on the card, like the card itself.
   return (
-    <div className={styles.backdrop}>
+    <div className={greet ? `${styles.backdrop} ${styles.center}` : styles.backdrop}>
       <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="ask-title">
         <h2 id="ask-title" className={styles.title}>{a.title}</h2>
         <div className={styles.body}>
@@ -191,19 +193,13 @@ function radiusOf(el: Element): string {
   return Math.abs(a.width - b.width) < 1 && Math.abs(a.height - b.height) < 1 ? radiusOf(c) : r
 }
 
-// The Blocks on the Canvas, cut to the part of the Canvas that shows them.
-function canvasBlocks(): Box[] {
-  const c = document.querySelector('[data-tour="canvas"]')?.getBoundingClientRect()
-  if (!c) return []
-  return [...document.querySelectorAll('[data-tour="canvas"] [data-bid]')]
-    .map(e => {
-      const b = e.getBoundingClientRect()
-      return {
-        left: Math.max(b.left, c.left), top: Math.max(b.top, c.top),
-        right: Math.min(b.right, c.right), bottom: Math.min(b.bottom, c.bottom),
-      }
-    })
-    .filter(b => b.right > b.left && b.bottom > b.top)
+// offsetTop, not the drawn position, so Bob's hop doesn't move the bubble.
+function tourAvoid(target: DOMRect, bubble: HTMLElement): Box[] {
+  const canvas = document.querySelector('[data-tour="canvas"]')?.getBoundingClientRect()
+  if (!canvas) return []
+  const blocks = [...document.querySelectorAll('[data-tour="canvas"] [data-bid]')].map(e => e.getBoundingClientRect())
+  const bob = bubble.querySelector<HTMLElement>(`.${styles.bob}`)
+  return keepClearOf(target, canvas, blocks, window.innerWidth, bob ? -bob.offsetTop : 0)
 }
 
 function SpeechBubble({ target, text, clearOfBlocks, children }: {
@@ -231,7 +227,7 @@ function SpeechBubble({ target, text, clearOfBlocks, children }: {
       left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px`,
       borderRadius: radiusOf(el),
     })
-    const avoid = clearOfBlocks ? canvasBlocks() : []
+    const avoid = clearOfBlocks ? tourAvoid(r, b) : []
     const p = placeBubble(r, b.offsetWidth, b.offsetHeight, window.innerWidth, window.innerHeight, avoid)
     b.style.left = `${p.x}px`
     b.style.top = `${p.y}px`
