@@ -10,7 +10,7 @@ import { runAgent } from './agent.ts'
 import { flashBlocks } from './preview.ts'
 import { createStore, getProject, setStep, updateProject } from './store.ts'
 
-export type FailReason = 'time' | 'turns' | 'unreachable' | 'broken' | 'save' | 'limit'
+export type FailReason = 'time' | 'turns' | 'unreachable' | 'broken' | 'save' | 'limit' | 'start'
 export const FAILURE_LINES: Record<FailReason, string> = {
   time: 'Bob took too long, so this Build was stopped.',
   turns: 'Bob ran out of steps before finishing, so this Build was stopped.',
@@ -18,12 +18,13 @@ export const FAILURE_LINES: Record<FailReason, string> = {
   broken: "Bob's answer came back broken, so this Build was stopped.",
   save: "Bob's website couldn't be saved on this computer, so this Build was stopped.",
   limit: "Scrabby's Build limit was reached, so this Build didn't start.",
+  start: "Something went wrong before Bob could start, so this Build didn't start.",
 }
 export interface BuildRun {
   n: number; state: 'running' | 'done' | 'failed'
   chips: { id: string; name: string; category: Category }[]
   lit: string[]; loose: number; skipped: string[]; reason?: FailReason
-  message?: string // the server's words for a `limit`, shown instead of its failure line
+  message?: string // shown instead of the failure line: a `limit`'s words, or why a Build didn't start
 }
 
 const run = createStore<BuildRun | undefined>(undefined)
@@ -59,38 +60,72 @@ export function buildProblem(p: Project): string | null {
   return 'error' in doc ? doc.error : null
 }
 
-// The button is only disabled once `start` arrives, so a second press before that must do nothing.
+// From a press until `start`, the Build buttons show "Starting…" and can't be pressed.
+const starting = createStore(false)
+export const useStarting = () => starting.use()
+
+// Bob must answer `start` this soon after a press, or the Build did not start.
+const START_MS = 15_000
+
+// A second press while a Build starts or runs does nothing (the buttons are disabled meanwhile).
 let busy = false
 
 export async function runBuild(): Promise<void> {
   if (busy) return
   busy = true
+  starting.set(true)
   try {
-    return await build()
+    await build()
   } finally {
     busy = false
+    starting.set(false)
   }
 }
 
 async function build(): Promise<void> {
   const p = getProject()
-  const doc = instructionDocument(p)
-  if ('error' in doc) return
-  const top = topBlock(p)!
-  const saved = await listCheckpoints(p.id).catch(() => [])
-  const n = saved.filter(c => c.blocks).length + 1
-  const chips = requestBlocks(p, top).map(b => ({ id: b.id, ...blockInfo(b.id, p, [])! }))
+  const stop = new AbortController()
+  const timer = setTimeout(() => stop.abort(), START_MS)
+  let base: Omit<BuildRun, 'state'> = { n: 0, chips: [], lit: [], loose: p.blocks.canvas.children.length - 1, skipped: [] }
   const set = (patch: Partial<BuildRun>) => run.set({ ...run.get()!, ...patch })
   let begun = false
   const begin = () => {
     if (begun) return
     begun = true
-    run.set({ n, state: 'running', chips, lit: [], loose: p.blocks.canvas.children.length - 1, skipped: doc.skipped })
+    clearTimeout(timer)
+    starting.set(false)
+    run.set({ ...base, state: 'running' })
     setStep('build')
   }
+  // Every way out before Bob starts ends on a failed card, never in silence.
+  const notStarted = (message?: string) => {
+    begin()
+    set({ state: 'failed', reason: 'start', message })
+  }
 
-  for await (const e of runAgent({ kind: 'build', document: doc.document, files: p.files })) {
+  const ready = await (async () => {
+    const doc = instructionDocument(p)
+    if ('error' in doc) return doc.error
+    const top = topBlock(p)!
+    // The same deadline covers a Checkpoint read that never settles.
+    const saved = await Promise.race([
+      listCheckpoints(p.id).catch(() => []),
+      new Promise<never>((_, fail) => stop.signal.addEventListener('abort', () => fail(new Error('Reading the Checkpoints took too long')))),
+    ])
+    const chips = requestBlocks(p, top).map(b => ({ id: b.id, ...blockInfo(b.id, p, [])! }))
+    base = { ...base, n: saved.filter(c => c.blocks).length + 1, chips, skipped: doc.skipped }
+    return { doc, top, saved }
+  })().catch((e: unknown) => {
+    console.error('The Build failed to start', e)
+    return undefined
+  })
+  if (typeof ready !== 'object') return notStarted(ready)
+  const { doc, top, saved } = ready
+  const { n } = base
+
+  for await (const e of runAgent({ kind: 'build', document: doc.document, files: p.files }, stop.signal)) {
     if (e.type === 'text') continue
+    if (e.type === 'error' && !begun) return notStarted(FAILURE_LINES[e.reason])
     begin()
     // A limit shows on the Build step, where it stays until the next press (a bubble closed on the next click).
     if (e.type === 'limit') {
@@ -124,6 +159,7 @@ async function build(): Promise<void> {
       return
     }
   }
+  if (!begun) notStarted(FAILURE_LINES.unreachable)
 }
 
 // Pictures never break a page's layout, even when Bob forgets the code rule.

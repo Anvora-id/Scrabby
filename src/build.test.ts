@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AgentEvent, AgentRequest } from './agent.ts'
 import type { Checkpoint, Project } from './model/types.ts'
-import { addBlock, addTrait } from './model/project.ts'
+import { addBlock, addTrait, emptyProject } from './model/project.ts'
 import { builtSite, demoProject } from './fixtures/fixtures.ts'
 import { instructionDocument } from './instructions/document.ts'
 import { flashBlocks } from './preview.ts'
@@ -9,16 +9,18 @@ import { addCheckpoint } from './db.ts'
 import { getProject, getUi, setProject, setStep } from './store.ts'
 import { getBuild, guardImages, nothingNew, pageName, progress, runBuild, type BuildRun } from './build.ts'
 
-const fake = vi.hoisted(() => ({ saved: [] as Checkpoint[], events: [] as AgentEvent[], requests: [] as AgentRequest[] }))
+const fake = vi.hoisted(() => ({ saved: [] as Checkpoint[], events: [] as AgentEvent[], requests: [] as AgentRequest[], hang: '' as '' | 'db' | 'server' }))
 vi.mock('./db.ts', () => ({
-  listCheckpoints: vi.fn(async () => [...fake.saved]),
+  listCheckpoints: vi.fn(() => fake.hang === 'db' ? new Promise(() => {}) : Promise.resolve([...fake.saved])),
   addCheckpoint: vi.fn(async (c: Checkpoint) => { fake.saved.push(c) }),
   saveProject: vi.fn(async () => {}),
   loadLatestProject: vi.fn(async () => undefined),
 }))
 vi.mock('./agent.ts', () => ({
-  runAgent: vi.fn(async function* (req: AgentRequest) {
+  runAgent: vi.fn(async function* (req: AgentRequest, signal?: AbortSignal) {
     fake.requests.push(req)
+    // A server that never answers: like fetch, give up with unreachable once the signal aborts.
+    if (fake.hang === 'server') await new Promise(done => signal?.addEventListener('abort', done))
     yield* fake.events
   }),
 }))
@@ -30,6 +32,7 @@ function start(p: Project, saved: Checkpoint[], events: AgentEvent[]) {
   fake.saved = [...saved]
   fake.events = events
   fake.requests = []
+  fake.hang = ''
 }
 
 beforeEach(() => { vi.useFakeTimers() })
@@ -86,6 +89,39 @@ describe('runBuild', () => {
     expect(getUi().step).toBe('build')
     expect(getBuild()).toMatchObject({ n: 1, state: 'failed', reason: 'limit', message: "You've used this hour's 10 Builds. Try again in 5 minutes." })
     expect(fake.saved).toHaveLength(0)
+  })
+
+  it('a plan problem on Try again shows a failed card with its words', async () => {
+    start(emptyProject(), [], [{ type: 'start' }])
+    await runBuild()
+    expect(getUi().step).toBe('build')
+    expect(getBuild()).toMatchObject({ n: 0, state: 'failed', reason: 'start', message: 'Add a Page inside your Site first.' })
+    expect(fake.requests).toHaveLength(0)
+  })
+
+  it('no start within 15s shows a failed card with the unreachable line', async () => {
+    start(demoProject(), [], [{ type: 'error', reason: 'unreachable' }])
+    fake.hang = 'server'
+    const done = runBuild()
+    await vi.advanceTimersByTimeAsync(14_999)
+    expect(getUi().step).toBe('plan')
+    await vi.advanceTimersByTimeAsync(1)
+    await done
+    expect(getUi().step).toBe('build')
+    expect(getBuild()).toMatchObject({ n: 1, state: 'failed', reason: 'start', message: "Bob couldn't be reached. Check your connection and try again." })
+  })
+
+  it('a Checkpoint read that never settles ends on a failed card after 15s', async () => {
+    start(demoProject(), [], [{ type: 'start' }])
+    fake.hang = 'db'
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const done = runBuild()
+    await vi.advanceTimersByTimeAsync(15_000)
+    await done
+    expect(getBuild()).toMatchObject({ n: 0, state: 'failed', reason: 'start', message: undefined })
+    expect(fake.requests).toHaveLength(0)
+    expect(log).toHaveBeenCalledWith('The Build failed to start', expect.any(Error))
+    log.mockRestore()
   })
 
   it('a failed Build changes nothing and stays on Build', async () => {
