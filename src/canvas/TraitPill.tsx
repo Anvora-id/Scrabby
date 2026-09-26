@@ -10,6 +10,7 @@ import { dragSource, useDrag } from './drag.ts'
 import { onClickOptions } from './tree.ts'
 import type { Option } from './tree.ts'
 import { openMenu, TraitNote } from './Overlays.tsx'
+import { Mark } from './Warnings.tsx'
 import { bobPicksControl, setBobPicks } from './bobPicks.ts'
 import styles from './parts.module.css'
 
@@ -248,7 +249,7 @@ export default function TraitPill({ p, id, inInst = false }: { p: Project; id: s
       {(t.note || t.noteOn) && !t.bobPicks && <TraitNote id={id} note={t.note} noteOn={t.noteOn} />}
       {inInst && t.from && hasOverride(t) && <span className={styles.marker} title="✎ changed here">✎</span>}
       {inInst && !t.from && <span className={styles.marker} title="+ only here">+</span>}
-      {/* issue 08: <Mark id> */}
+      <Mark id={id} />
     </span>
   )
 }

@@ -1,0 +1,173 @@
+.badge,
+.char {
+  --ink: #1F1A33;
+  flex: none;
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--alert-dark);
+  color: #fff;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: var(--w-heavy);
+  line-height: 20px;
+  text-align: center;
+}
+
+.badge {
+  cursor: pointer;
+}
+
+[data-tid] > .badge {
+  margin-left: -3px;
+}
+
+[data-bid]:has(> div > .badge),
+[data-tid]:has(> .badge) {
+  box-shadow: 0 0 0 3px var(--alert);
+}
+
+.popover {
+  position: fixed;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 300px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-top: 4px solid var(--alert);
+  border-radius: 14px;
+  box-shadow: var(--shadow-menu);
+  font-size: var(--fs);
+  animation: pop var(--t-pop) var(--spring);
+}
+
+@keyframes pop {
+  from { transform: scale(.6); }
+}
+
+.item {
+  display: flex;
+  gap: 8px;
+}
+
+.words {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.where {
+  margin-bottom: 4px;
+  padding: 2px 9px;
+  background: var(--soft);
+  border: none;
+  border-radius: var(--r-pill);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: var(--fs-sm);
+  font-weight: var(--w-bold);
+  cursor: pointer;
+}
+
+.where:hover {
+  background: var(--idle);
+}
+
+.text {
+  color: var(--ink);
+  font-weight: var(--w-heavy);
+  line-height: 1.4;
+}
+
+.todo {
+  margin-top: 2px;
+  color: var(--text);
+  font-weight: var(--w-body);
+  line-height: 1.4;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: -2px;
+  padding-left: 28px;
+}
+
+.ghost {
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: var(--r-btn);
+  padding: 5px 11px;
+  font-family: var(--font);
+  font-size: var(--fs);
+  font-weight: var(--w-bold);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 2px 0 var(--line);
+}
+
+.ghost:hover {
+  border-color: var(--brand);
+}
+
+.stepper,
+.ok {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border-radius: var(--r-pill);
+  color: var(--ink);
+  font-weight: var(--w-heavy);
+}
+
+.stepper {
+  padding: 3px;
+  border: 2px solid var(--alert);
+  box-shadow: 0 3px 0 var(--alert);
+}
+
+.count {
+  padding: 0 8px;
+}
+
+.step {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--alert-bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: var(--w-heavy);
+  cursor: pointer;
+}
+
+.ok {
+  gap: 6px;
+  padding: 6px 12px;
+  border: 2px solid var(--go);
+  box-shadow: 0 3px 0 var(--go);
+}
+
+.check {
+  color: var(--go);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popover {
+    animation: none;
+  }
+}
