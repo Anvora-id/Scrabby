@@ -36,6 +36,14 @@ function shape(p: Project): string {
     v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort()) : v)
 }
 
+const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches
+
+// --t-quick with --ease, for the motion run from script
+function quick() {
+  const css = getComputedStyle(document.documentElement)
+  return { duration: parseFloat(css.getPropertyValue('--t-quick')), easing: css.getPropertyValue('--ease') }
+}
+
 const spotKey = (el: HTMLElement) => el.dataset.bid ? 'b' + el.dataset.bid : 't' + el.dataset.tid
 
 function measure(world: HTMLElement): DragRects {
@@ -59,6 +67,7 @@ export default function Canvas() {
   const rects = useRef<DragRects | null>(null)
   const pan = useRef<{ x: number; y: number } | null>(null)
   const avatar = useRef<HTMLElement | null>(null)
+  const source = useRef<HTMLElement | null>(null)
   const grab = useRef({ x: 0, y: 0 })
   // '' so the first render places the view too
   const projectId = useRef('')
@@ -132,7 +141,7 @@ export default function Canvas() {
 
   // Before a drag moves things: the next render slides each one from here.
   function snap() {
-    if (worldRef.current && !matchMedia('(prefers-reduced-motion: reduce)').matches) slideFrom.current = spots()
+    if (worldRef.current && !reduced()) slideFrom.current = spots()
   }
 
   function stopDwell() {
@@ -269,12 +278,15 @@ export default function Canvas() {
       const fields = a.querySelectorAll<HTMLInputElement>('input, textarea, select')
       el.querySelectorAll<HTMLInputElement>('input, textarea, select').forEach((f, i) => { fields[i].value = f.value })
       a.classList.add(styles.avatar)
+      // The lift is 3%, but at most 8px, so a big Block doesn't balloon.
+      a.style.setProperty('--lift', String(Math.min(1.03, 1 + 8 / Math.max(el.offsetWidth, el.offsetHeight))))
       a.classList.remove(parts.over)
       // Keeps the size it had where it was grabbed, e.g. a palette Trait's wider padding.
       a.style.width = `${el.offsetWidth}px`
       if (worldRef.current?.contains(el)) a.style.transform = `scale(${view.current.z})`
       document.body.append(a)
       avatar.current = a
+      source.current = el
       document.body.style.userSelect = 'none'
       getSelection()?.removeAllRanges()
       snap()
@@ -335,13 +347,16 @@ export default function Canvas() {
       setTimeout(done, 1000)
     }
 
-    // Where nothing takes it, a new item's copy fades away and a moved item's copy flies back to its spot.
-    function putBack(a: HTMLElement, item: DragItem) {
-      if (item.kind !== 'block' && item.kind !== 'trait') return play(a, styles.gone, () => a.remove())
+    const fade = (a: HTMLElement) => play(a, styles.gone, () => a.remove())
+
+    // Where nothing takes it, a new item's copy fades away and a moved item's copy flies back to its spot:
+    // the Block or Trait, or the chip it was grabbed from in a folded Block.
+    function putBack(a: HTMLElement, item: DragItem, grabbed: HTMLElement) {
+      if (!('id' in item)) return fade(a)
       // The next frame comes after the render that shows the item in its spot again.
       requestAnimationFrame(() => {
-        const el = itemEl(item.id)
-        if (!el) return play(a, styles.gone, () => a.remove())
+        const el = itemEl(item.id) ?? (grabbed.isConnected ? grabbed : null)
+        if (!el) return fade(a)
         const r = el.getBoundingClientRect()
         el.classList.add(styles.waiting)
         a.style.left = `${r.left}px`
@@ -351,46 +366,53 @@ export default function Canvas() {
       })
     }
 
+    // Every drop settles by the same few pixels whatever its size: 2% wider and 3% shorter, at most 4px and 3px,
+    // held 40ms, then back over --t-quick with --ease.
     function land(id: string) {
       requestAnimationFrame(() => {
         const el = itemEl(id)
-        if (el) play(el, styles.landed, () => el.classList.remove(styles.landed))
+        if (!el || reduced()) return
+        const { duration, easing } = quick()
+        const sx = Math.min(1.02, 1 + 4 / el.offsetWidth), sy = Math.max(0.97, 1 - 3 / el.offsetHeight)
+        const squash = { scale: `${sx} ${sy}`, transformOrigin: '50% 100%' }
+        el.animate([squash, { ...squash, offset: 40 / (40 + duration), easing }, { scale: '1', transformOrigin: '50% 100%' }], 40 + duration)
       })
     }
 
-    // Ends the drag and hands back what was dragged and its copy; null when nothing was dragged.
-    function stop() {
+    // Ends the drag and hands back what was dragged, its copy and the element it was grabbed from; null when nothing was dragged.
+    function takeDrag() {
       takePending()
       stopDwell()
       const d = getDrag()
       if (!d) return null
       snap()
-      const a = avatar.current!
-      avatar.current = null
+      const a = avatar.current!, el = source.current!
+      avatar.current = source.current = null
       document.body.style.userSelect = ''
       rects.current = null
       setDrag(null)
-      return { d, a }
+      return { d, a, el }
     }
 
     function onKey(e: KeyboardEvent) {
       if (e.key !== 'Escape') return
-      const s = stop()
-      if (s) putBack(s.a, s.d.item)
+      const s = takeDrag()
+      if (s) putBack(s.a, s.d.item, s.el)
     }
 
     function end(e: PointerEvent) {
-      const s = stop()
+      const s = takeDrag()
       if (!s) return
-      const { d: { item, target, trash }, a } = s
-      if (e.type === 'pointercancel') return putBack(a, item)
+      const { d: { item, target, trash }, a, el } = s
+      if (e.type === 'pointercancel') return putBack(a, item, el)
+      const p = getProject()
       if (trash) {
-        play(a, styles.gone, () => a.remove())
-        if (item.kind === 'block' || item.kind === 'trait') updateProject(q => removeItem(q, item.id))
+        fade(a)
+        // Undo during the drag may already have taken it away.
+        if ('id' in item && (item.kind === 'block' ? p.blocks : p.traits)[item.id]) updateProject(q => removeItem(q, item.id))
         return
       }
-      if (!target) return putBack(a, item)
-      a.remove()
+      if (!target) return putBack(a, item, el)
       const to: Drop = { ...target }
       if (target.id === 'canvas') {
         const r = viewportRef.current!.getBoundingClientRect(), v = view.current
@@ -399,9 +421,10 @@ export default function Canvas() {
           y: Math.round((e.clientY - grab.current.y - r.top - v.y) / v.z),
         }
       }
-      const p = getProject()
       const dry = structuredClone(p)
-      dropItem(dry, item, to)
+      // Undo during the drag can take away the item or its target; then it goes back like a release that can't land.
+      try { dropItem(dry, item, to) } catch { return putBack(a, item, el) }
+      a.remove()
       // Back on its own spot: it still lands, but nothing is saved.
       if (shape(dry) === shape(p)) {
         if ('id' in item) land(item.id)
@@ -423,7 +446,8 @@ export default function Canvas() {
       window.removeEventListener('pointerup', end)
       window.removeEventListener('pointercancel', end)
       window.removeEventListener('keydown', onKey)
-      stopDwell()
+      // Leaving the Canvas mid-drag (a Build switches the step): end the drag and take its copy away.
+      takeDrag()?.a.remove()
     }
   }, [])
 
@@ -482,8 +506,7 @@ export default function Canvas() {
       const a = before.get(spotKey(el)), b = now.get(spotKey(el))
       if (a && b) moved.set(el, { x: a.x - b.x, y: a.y - b.y })
     }
-    const css = getComputedStyle(document.documentElement)
-    const timing = { duration: parseFloat(css.getPropertyValue('--t-quick')), easing: css.getPropertyValue('--ease') }
+    const timing = quick()
     slides.current = [...moved].flatMap(([el, d]) => {
       // A parent's slide carries its children, so each one slides only by its own share.
       const parent = el.parentElement?.closest('[data-bid]')
