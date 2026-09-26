@@ -30,7 +30,8 @@ body > .avatar {
   pointer-events: none;
   filter: var(--shadow-drag);
   transform-origin: 0 0;
-  scale: 1.03;
+  /* --lift is 1.03, capped at 8px for big Blocks (set when the drag starts) */
+  scale: var(--lift, 1.03);
   transition: scale var(--t-quick);
 }
 
@@ -59,22 +60,6 @@ body > .avatar.back {
   visibility: hidden;
 }
 
-.landed {
-  transform-origin: 50% 100%;
-  animation: land calc(40ms + var(--t-quick));
-}
-
-/* a small squash held 40ms, then a plain settle over --t-quick; 21% = 40ms of 190ms, so it follows --t-quick = 150ms */
-@keyframes land {
-  0%, 21% {
-    scale: 1.02 0.97;
-    animation-timing-function: var(--ease);
-  }
-  to {
-    scale: 1;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   body > .avatar,
   body > .avatar.back {
@@ -82,12 +67,8 @@ body > .avatar.back {
   }
 
   body > .avatar.gone {
-    scale: 1.03;
+    scale: var(--lift, 1.03);
     transition: opacity var(--t-quick) var(--ease);
-  }
-
-  .landed {
-    animation: none;
   }
 }
 
