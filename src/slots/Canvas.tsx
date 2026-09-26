@@ -14,7 +14,7 @@ import TraitPill from '../canvas/TraitPill.tsx'
 import { ContextMenu, Tooltip } from '../canvas/Overlays.tsx'
 import { flash, MarksContext, Popover, Stepper } from '../canvas/Warnings.tsx'
 import { marksOf, stopsOf } from '../canvas/marks.ts'
-import { warnings } from '../instructions/warnings.ts'
+import { topBlock, warnings } from '../instructions/warnings.ts'
 import styles from '../canvas/Canvas.module.css'
 import parts from '../canvas/parts.module.css'
 import { droppedBlock } from '../onboarding.ts'
@@ -56,7 +56,8 @@ export default function Canvas() {
   const pan = useRef<{ x: number; y: number } | null>(null)
   const avatar = useRef<HTMLElement | null>(null)
   const grab = useRef({ x: 0, y: 0 })
-  const projectId = useRef(p.id)
+  // '' so the first render places the view too
+  const projectId = useRef('')
   const prevEditing = useRef<string | null>(null)
   const stepAt = useRef(-1)
   const [busy, setBusy] = useState<string | null>(null)
@@ -106,9 +107,11 @@ export default function Canvas() {
   }
 
   useLayoutEffect(() => {
+    // Arriving on the Canvas (back on Plan, or a new Project): the top Block's corner sits 40px in, where a new Site starts.
     if (p.id !== projectId.current) {
       projectId.current = p.id
-      view.current = { x: 0, y: 0, z: 1 }
+      const pos = topBlock(p)?.pos ?? { x: 40, y: 40 }
+      view.current = { x: 40 - pos.x, y: 40 - pos.y, z: 1 }
     }
     // Entering edit view: save current view, reset to {0,0,1}
     if (editingId && !prevEditing.current) {
