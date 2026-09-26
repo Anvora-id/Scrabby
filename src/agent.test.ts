@@ -25,7 +25,7 @@ describe('readAgentStream', () => {
     const res = await agentHandler(() => model)(
       new Request('http://localhost/api/agent', { method: 'POST', body: JSON.stringify({ kind: 'build', document: 'D', files: {} }) }),
     )
-    expect(await collect(readAgentStream(res))).toEqual([{ type: 'start' }, { type: 'files', files: {} }])
+    expect(await collect(readAgentStream(res))).toEqual([{ type: 'start' }, { type: 'files', files: { 'base.css': expect.any(String) } }])
   })
 
   it('joins messages split across chunks', async () => {

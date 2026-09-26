@@ -11,7 +11,7 @@ This is the user's request for their website, written as Blocks and Traits.
 - `Note: "…"` and `The user says: "…"` are the user's own words about the website. Follow them.
 - `You choose: <field>` lets you decide that field, boldly: a striking style, playful wording, parts the user never placed. `You choose: anything in this Block` covers the Block and everything inside it. Traits the user set stay as set.
 - `label (meaning): you choose` means the user wants that one thing and leaves the choice to you. Make a deliberate choice. A Note under that Trait guides the choice.
-- Fill anything the user left unset plainly: simple wording, colors that match the rest, only the parts needed.
+- Fill anything the user left unset simply but finished: simple wording, colors that match the rest, only the parts needed, placed where the Skills say.
 - A Popup stays closed unless an "on click" opens it, a Note or `The user says` says when it opens, or `You choose` covers it.
 - `go to missing page` means the page was deleted. Make that link do nothing and leave a comment saying so.
 - The Library lists every Asset the user uploaded. Use an Asset that no Trait names only under `You choose`, or for an image, sound or video Trait set to `you choose`. If no Asset fits, use a placeholder.

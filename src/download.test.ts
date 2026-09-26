@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { strFromU8, unzipSync } from 'fflate'
 import { zipDownload } from './download.ts'
 
-const SKILL_FILES = ['code-rules', 'behavior', 'content', 'visual-style'].map(n => `.bob/skills/${n}/SKILL.md`)
+const SKILL_FILES = ['code-rules', 'layout', 'behavior', 'content', 'visual-style'].map(n => `.bob/skills/${n}/SKILL.md`)
 
 describe('zipDownload', () => {
   const files = {

@@ -10,7 +10,7 @@ How "on click" and "purpose" Traits work in plain JavaScript. Every pattern here
 ## Must follow
 
 1. Put text a visitor typed on the page with `textContent`, never `innerHTML`.
-2. Hide and show parts with the `hidden` attribute. Add `[hidden] { display: none !important; }` to `style.css` once.
+2. Hide and show parts with the `hidden` attribute. `base.css` already hides them.
 3. Every click gives a visible result on the page at once.
 
 ## On click
@@ -22,17 +22,23 @@ How "on click" and "purpose" Traits work in plain JavaScript. Every pattern here
 
 ### Open popup
 
-6. A Popup is a `<dialog>` opened with `showModal()`. Never write the `open` attribute yourself.
-7. Every Popup has a visible close button. Esc closes it by itself.
+6. A Popup is a `<dialog>` opened with `showModal()`. Never write the `open` attribute yourself. `base.css` centers and styles it: give it no position or margin.
+7. Every Popup has a `popup-close` × button in its top right corner, with `aria-label="Close"`. Esc closes it by itself. Its other buttons sit in `popup-actions` at the bottom, the main one first.
 
 ```html
-<button type="button" data-open="signup-popup">Join the club</button>
+<button type="button" class="button" data-open="signup-popup">Join the club</button>
 
 <!-- Sign-up popup -->
 <dialog id="signup-popup" data-block="b9">
+  <button type="button" class="popup-close" aria-label="Close" data-close>×</button>
   <h2>Join the cake club</h2>
-  …
-  <button type="button" data-close>Close</button>
+  <p>Hear first when a new cake is on the table.</p>
+  <form class="form">
+    …
+    <div class="popup-actions">
+      <button type="submit" class="button">Join the club</button>
+    </div>
+  </form>
 </dialog>
 ```
 
@@ -179,4 +185,4 @@ document.querySelectorAll(".appear").forEach(part => appearWatcher.observe(part)
 ## Motion
 
 25. Animate only `transform` and `opacity`. Never `transition: all`, never `ease-in`.
-26. A button press takes 100–160 ms. A popup opens in 200–350 ms, growing from `scale(0.96)`, never from `scale(0)`.
+26. A button press takes 100–160 ms. `base.css` already animates buttons and popups.

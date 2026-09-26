@@ -5,9 +5,11 @@ import codeRules from '../skills/code-rules/SKILL.md?raw'
 import behavior from '../skills/behavior/SKILL.md?raw'
 import content from '../skills/content/SKILL.md?raw'
 import visualStyle from '../skills/visual-style/SKILL.md?raw'
+import layout from '../skills/layout/SKILL.md?raw'
 
 const SKILLS: Record<string, string> = {
   'code-rules': codeRules,
+  layout,
   behavior,
   content,
   'visual-style': visualStyle,
@@ -27,10 +29,10 @@ A website made with Scrabby. Bob built it from a plan of Blocks and Traits. The 
 
 ## Rules for Bob
 
-- Plain HTML, CSS and JavaScript: one \`.html\` file per page, one shared \`style.css\` and \`script.js\`, images and videos in \`assets/\`. No build step, no npm, no frameworks.
+- Plain HTML, CSS and JavaScript: one \`.html\` file per page, a shared \`base.css\`, \`style.css\` and \`script.js\`, images and videos in \`assets/\`. No build step, no npm, no frameworks.
 - Keep every \`data-block="…"\` attribute and every \`/* block … */\` comment. They tie the code to the Blocks it came from.
 - Change only what is asked. Keep all other code as it is, including the user's own edits.
-- Follow the Skills in \`.bob/skills/\`: code rules, behavior, content and visual style.
+- Follow the Skills in \`.bob/skills/\`: code rules, layout, behavior, content and visual style.
 
 ## The plan
 
