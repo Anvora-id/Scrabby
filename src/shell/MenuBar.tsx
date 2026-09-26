@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
 import { ICONS } from '../icons.ts'
 import {
-  useProject, useUi,
+  useProject, useUi, getProject, updateProject,
   undo, redo, canUndo, canRedo,
 } from '../store.ts'
+import { NEW_NAME } from '../model/project.ts'
 import { askDemo, askNewProject, startTour } from '../onboarding.ts'
 import { downloadCode } from '../download.ts'
 import { FIXTURES, loadFixture } from '../fixtures/dev.ts'
@@ -72,8 +73,17 @@ export default function MenuBar() {
       <img src="/bob.svg" alt="" className={styles.logo} />
       <span className={styles.wordmark}>Scrabby</span>
 
-      {/* Project name chip */}
-      <span className={styles.projectName}>{project.name}</span>
+      {/* Project name chip: the Site's name too (applyChange keeps them equal) */}
+      <input
+        className={styles.projectName}
+        value={project.name}
+        size={Math.min(34, Math.max(3, project.name.length + 1))}
+        title="Rename your Project"
+        aria-label="Project name"
+        onChange={e => updateProject(d => { d.name = e.target.value })}
+        onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
+        onBlur={() => { if (!getProject().name.trim()) updateProject(d => { d.name = NEW_NAME }) }}
+      />
 
       {/* Buttons */}
       <MenuButton iconKey="new" label="New Project" title="New Project" onClick={askNewProject} />
