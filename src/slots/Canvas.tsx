@@ -18,7 +18,6 @@ import { warnings } from '../instructions/warnings.ts'
 import styles from '../canvas/Canvas.module.css'
 import parts from '../canvas/parts.module.css'
 import { droppedBlock } from '../onboarding.ts'
-import { DemoButton } from '../shell/Onboarding.tsx'
 
 const MIN_ZOOM = 0.3
 const MAX_ZOOM = 2
@@ -354,7 +353,6 @@ export default function Canvas() {
             {canvas.children.map((id, i) => (
               <div key={id} className={styles.placed} style={at(p.blocks[id]?.pos, i)}>
                 <BlockView p={p} id={id} />
-                {p.blocks[id]?.type === 'site' && !p.blocks[id].children.length && <DemoButton />}
               </div>
             ))}
             {canvas.traits.map((id, i) => (
