@@ -1,6 +1,9 @@
 // Runs inside every Prototype page; talks to the app (the parent) with paths and error texts only.
-if (window.parent !== window) {
-  const tell = msg => parent.postMessage(msg, '*')
+// The shell stores the app origin before it opens the first page (preview/shell.ts).
+let app = null
+try { app = sessionStorage.getItem('scrabby-app-origin') } catch {}
+if (window.parent !== window && app) {
+  const tell = msg => parent.postMessage(msg, app)
 
   // At once, not on load: a later `page` would clear errors thrown while the page loads.
   tell({ preview: 'page', path: location.pathname })
@@ -8,7 +11,7 @@ if (window.parent !== window) {
   addEventListener('unhandledrejection', e => tell({ preview: 'error', message: String(e.reason?.message ?? e.reason) }))
 
   addEventListener('message', e => {
-    if (e.source !== parent || e.data?.preview !== 'flash') return
+    if (e.source !== parent || e.origin !== app || e.data?.preview !== 'flash') return
     const run = () => {
       for (const id of e.data.ids) {
         for (const el of document.querySelectorAll(`[data-block="${CSS.escape(id)}"]`)) {

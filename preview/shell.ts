@@ -26,6 +26,8 @@ async function start(): Promise<void> {
     }
     stored.then(() => location.replace('/preview/' + projectId + '/' + path))
   })
+  // helper.js is a static file and can't read VITE_APP_ORIGIN; the Prototype pages share this frame's sessionStorage.
+  sessionStorage.setItem('scrabby-app-origin', APP)
   tell('ready')
 }
 
