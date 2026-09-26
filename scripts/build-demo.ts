@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, resolve, sep } from 'node:path'
 import { agentHandler, bobModel, createLimits } from '../api/agent.ts'
 import { readAgentStream } from '../src/agent.ts'
+import { DEMO_PHOTOS } from '../src/fixtures/fixtures.ts'
 
 try {
   process.loadEnvFile('.env')
@@ -23,7 +24,8 @@ const res = await handler(
   }),
 )
 
-const CUPCAKES = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><rect width="1200" height="800" fill="#F7D6E0"/><text x="600" y="420" font-family="sans-serif" font-size="64" text-anchor="middle" fill="#7A3B52">Cupcakes</text></svg>\n`
+const placeholder = (label: string, color: string) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><rect width="1200" height="800" fill="${color}"/><text x="600" y="420" font-family="sans-serif" font-size="64" text-anchor="middle" fill="#3A2A30">${label}</text></svg>\n`
 
 for await (const event of readAgentStream(res)) {
   if (event.type === 'block') console.log(`${Math.round((Date.now() - started) / 1000)} s  Building ${event.id}`)
@@ -43,7 +45,7 @@ for await (const event of readAgentStream(res)) {
       written.push(path)
     }
     mkdirSync(resolve(dir, 'assets'), { recursive: true })
-    writeFileSync(resolve(dir, 'assets/cupcakes.svg'), CUPCAKES)
+    for (const ph of DEMO_PHOTOS) writeFileSync(resolve(dir, 'assets', ph.file.replace('.png', '.svg')), placeholder(ph.label, ph.color))
     console.log(`Done: ${written.join(', ')} in tmp/demo-site/`)
   }
 }
