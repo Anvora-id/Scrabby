@@ -123,41 +123,49 @@ async function build(): Promise<void> {
   const { doc, top, saved } = ready
   const { n } = base
 
-  for await (const e of runAgent({ kind: 'build', document: doc.document, files: p.files }, stop.signal)) {
-    if (e.type === 'text') continue
-    if (e.type === 'error' && !begun) return notStarted(FAILURE_LINES[e.reason])
-    begin()
-    // A limit shows on the Build step, where it stays until the next press (a bubble closed on the next click).
-    if (e.type === 'limit') {
-      set({ state: 'failed', reason: 'limit', message: e.message })
-      return
-    }
-    if (e.type === 'block') set({ lit: [...run.get()!.lit, e.id] })
-    if (e.type === 'error') {
-      set({ state: 'failed', reason: e.reason })
-      return
-    }
-    if (e.type === 'files') {
-      const number = saved.length + 1
-      const after = guardImages({ ...e.files, ['.builds/build-' + n + '.md']: doc.document })
-      try {
-        await addCheckpoint({
-          projectId: p.id, number, label: 'Checkpoint ' + number,
-          from: top.type === 'site' ? null : p.checkpoint ?? saved.at(-1)?.number ?? null,
-          before: p.files, after, blocks: builtBlocks(p, top.id), time: Date.now(),
-        })
-      } catch (err) {
-        // Without its Checkpoint the Project must not move on, or a reload finds no Checkpoint N.
-        console.error('Saving the Checkpoint failed', err)
-        set({ state: 'failed', reason: 'save' })
+  // A throw while Bob's answer is read or taken in (a browser without TextDecoderStream, say) still ends on a card.
+  try {
+    for await (const e of runAgent({ kind: 'build', document: doc.document, files: p.files }, stop.signal)) {
+      if (e.type === 'text') continue
+      if (e.type === 'error' && !begun) return notStarted(FAILURE_LINES[e.reason])
+      begin()
+      // A limit shows on the Build step, where it stays until the next press (a bubble closed on the next click).
+      if (e.type === 'limit') {
+        set({ state: 'failed', reason: 'limit', message: e.message })
         return
       }
-      updateProject(d => consume(d, top.id, after, number), null)
-      set({ state: 'done' })
-      flashBlocks(run.get()!.lit)
-      setTimeout(() => setStep('try'), 900)
-      return
+      if (e.type === 'block') set({ lit: [...run.get()!.lit, e.id] })
+      if (e.type === 'error') {
+        set({ state: 'failed', reason: e.reason })
+        return
+      }
+      if (e.type === 'files') {
+        const number = saved.length + 1
+        const after = guardImages({ ...e.files, ['.builds/build-' + n + '.md']: doc.document })
+        try {
+          await addCheckpoint({
+            projectId: p.id, number, label: 'Checkpoint ' + number,
+            from: top.type === 'site' ? null : p.checkpoint ?? saved.at(-1)?.number ?? null,
+            before: p.files, after, blocks: builtBlocks(p, top.id), time: Date.now(),
+          })
+        } catch (err) {
+          // Without its Checkpoint the Project must not move on, or a reload finds no Checkpoint N.
+          console.error('Saving the Checkpoint failed', err)
+          set({ state: 'failed', reason: 'save' })
+          return
+        }
+        updateProject(d => consume(d, top.id, after, number), null)
+        set({ state: 'done' })
+        flashBlocks(run.get()!.lit)
+        setTimeout(() => setStep('try'), 900)
+        return
+      }
     }
+  } catch (err) {
+    console.error('The Build failed', err)
+    if (!begun) return notStarted()
+    set({ state: 'failed', reason: 'broken' })
+    return
   }
   if (!begun) notStarted(FAILURE_LINES.unreachable)
 }

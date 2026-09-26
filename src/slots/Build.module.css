@@ -29,6 +29,14 @@
   transition-duration: var(--t-press);
 }
 
+/* The pressed button sits 4px lower; this strip (placed against the button, which its transform makes the
+   containing block) keeps its old top edge, so a press that starts there still clicks. */
+.button:active:not(:disabled)::before {
+  content: "";
+  position: absolute;
+  inset: -4px 0 0;
+}
+
 .button:disabled {
   opacity: .6;
   cursor: default;

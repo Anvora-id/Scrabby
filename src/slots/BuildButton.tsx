@@ -1,6 +1,6 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { dropPending, hasPending } from '../assistant.ts'
-import { buildProblem, nothingNew, runBuild, useBuild, useStarting } from '../build.ts'
+import { buildProblem, FAILURE_LINES, nothingNew, runBuild, useBuild, useStarting } from '../build.ts'
 import { cx } from '../canvas/cx.ts'
 import { ICONS } from '../icons.ts'
 import { getProject, setPlanTab, useProject } from '../store.ts'
@@ -13,17 +13,29 @@ export default function BuildButton() {
   const starting = useStarting()
   const [bubble, setBubble] = useState<ReactNode>(null)
   const [warn, setWarn] = useState(false)
+  const button = useRef<HTMLButtonElement>(null)
   const Flag = ICONS.flag
 
   useEffect(() => {
     if (!bubble) return
-    const close = () => setBubble(null)
+    // A click on the Build button sets its own bubble; closing it here too would hide it on every other press.
+    const close = (e: MouseEvent) => { if (!button.current?.contains(e.target as Node)) setBubble(null) }
     // Added after the current click, so the click that opened the bubble does not close it.
     const t = setTimeout(() => addEventListener('click', close))
     return () => { clearTimeout(t); removeEventListener('click', close) }
   }, [bubble])
 
-  async function press() {
+  function press() {
+    try {
+      ask()
+    } catch (e) {
+      // Odd saved data can make reading the plan throw: say so, never do nothing.
+      console.error('The Build failed to start', e)
+      setBubble(FAILURE_LINES.start)
+    }
+  }
+
+  function ask() {
     const p = getProject()
     if (nothingNew(p)) {
       setBubble(<>Nothing new to build. To redo a Build, open <button className={styles.link} onClick={() => setPlanTab('checkpoints')}>Checkpoints</button></>)
@@ -45,6 +57,7 @@ export default function BuildButton() {
     <span className={styles.holder}>
       {bubble && <span className={styles.bubble} role="status">{bubble}</span>}
       <button
+        ref={button}
         className={cx(styles.button, nothingNew(p) && styles.greyed, !!bubble && styles.target)}
         disabled={running || starting}
         data-tour="build"

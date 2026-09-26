@@ -10,7 +10,7 @@ import { addCheckpoint } from './db.ts'
 import { getProject, getUi, setProject, setStep } from './store.ts'
 import { getBuild, guardImages, nothingNew, pageName, progress, runBuild, type BuildRun } from './build.ts'
 
-const fake = vi.hoisted(() => ({ saved: [] as Checkpoint[], events: [] as AgentEvent[], requests: [] as AgentRequest[], hang: '' as '' | 'db' | 'server' }))
+const fake = vi.hoisted(() => ({ saved: [] as Checkpoint[], events: [] as AgentEvent[], requests: [] as AgentRequest[], hang: '' as '' | 'db' | 'server' | 'throw' }))
 vi.mock('./db.ts', () => ({
   listCheckpoints: vi.fn(() => fake.hang === 'db' ? new Promise(() => {}) : Promise.resolve([...fake.saved])),
   addCheckpoint: vi.fn(async (c: Checkpoint) => { fake.saved.push(c) }),
@@ -23,6 +23,7 @@ vi.mock('./agent.ts', () => ({
     // A server that never answers: like fetch, give up with unreachable once the signal aborts.
     if (fake.hang === 'server') await new Promise(done => signal?.addEventListener('abort', done))
     yield* fake.events
+    if (fake.hang === 'throw') throw new TypeError('TextDecoderStream is not defined')
   }),
 }))
 vi.mock('./preview.ts', () => ({ flashBlocks: vi.fn() }))
@@ -122,6 +123,20 @@ describe('runBuild', () => {
     expect(getBuild()).toMatchObject({ n: 0, state: 'failed', reason: 'start', message: undefined })
     expect(fake.requests).toHaveLength(0)
     expect(log).toHaveBeenCalledWith('The Build failed to start', expect.any(Error))
+    log.mockRestore()
+  })
+
+  it('a throw while the answer is read ends on a failed card, before or after start', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+    start(demoProject(), [], [])
+    fake.hang = 'throw'
+    await runBuild()
+    expect(getBuild()).toMatchObject({ n: 1, state: 'failed', reason: 'start', message: undefined })
+    start(demoProject(), [], [{ type: 'start' }])
+    fake.hang = 'throw'
+    await runBuild()
+    expect(getBuild()).toMatchObject({ n: 1, state: 'failed', reason: 'broken' })
+    expect(log).toHaveBeenCalledWith('The Build failed', expect.any(TypeError))
     log.mockRestore()
   })
 
