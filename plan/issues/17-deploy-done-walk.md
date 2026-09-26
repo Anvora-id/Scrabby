@@ -1,8 +1,8 @@
 # 17: Deploy and done walk
 
 Status: ready-for-agent
-Blocked by: 20
-Wave: 4
+Blocked by: 23, 24
+Wave: 6
 Lane: both (a human runs the walk; Bob fixes what fails)
 
 ## What to build

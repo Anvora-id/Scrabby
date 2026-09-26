@@ -52,9 +52,13 @@ Bob's Bobcoins ran out after issue 07 (2026-09-26); issues 08 onward are built b
 | 1 | 08 warnings and document · 09 agent · 10 preview · 11 code editor · 12 Library and Download · 15 onboarding | wave 0 merged |
 | 2 | 13 Build · 16 Assistant | wave 1 merged |
 | 3 | 14 Checkpoints | wave 2 merged |
-| 4 | 20 integration, then 17 deploy and done walk (human + one agent) | wave 3 merged |
+| 4 | 20 integration | wave 3 merged |
+| 5 | 21 parity fixes · 22 code editor upgrade · 24 Gemini fallback | wave 4 merged |
+| 6 | 23 Try & tweak polish (resizable panels, scrollbars, fewer Bobs), then 17 deploy and done walk (human + one agent) | wave 5 merged |
 
 File owners (nobody else edits these while the wave runs): 08 `src/instructions/*`, `src/canvas/marks.ts`, `Warnings.*`, Canvas/BlockView/TraitPill mark wiring · 09 `api/agent.ts`, `src/agent.ts`, `BobBadge.*`, `scripts/build-demo.ts` · 10 `preview/*`, `Preview.*` · 11 `src/code/*`, `CodeEditor.tsx` · 12 `Library.*`, `src/download.ts` · 15 `src/onboarding.ts`, `Onboarding.*` · 13 `src/build.ts`, `BuildButton`, `BuildCard`, `Build.module.css`, the `Warning` in `Checkpoints.tsx` · 16 `src/assistant.ts`, `Assistant.*` · 14 `src/checkpoints.ts`, `Checkpoints.*`.
+
+Wave 5 owners: 21 the files its items name (not CodeEditor, `src/code/*`, `api/agent.ts`, `src/agent.ts`) · 22 `src/slots/CodeEditor.tsx`, `src/code/*`, `package.json`, DESIGN/TDD Code editor sections · 24 `api/agent.ts`, `src/agent.ts`, their tests, `.env.example`, README env section, TDD §1 env table and §5. After merging a wave that edited `TDD.md`, `DESIGN.md` or `PRD.md`, the orchestrator runs `node scripts/split-specs.mjs` and commits `spec/`.
 
 Merging: only the orchestrator merges, after the whole wave, in issue-number order, running `pnpm typecheck && pnpm test` after each merge. A red merge is fixed before the next wave starts.
 
@@ -101,10 +105,14 @@ Hour 34 (Sun 01:00 UTC): one developer moves to the submission package (PRD §13
 | [14](issues/14-checkpoints.md) | Checkpoints tab | 13 | §12 | ~4 |
 | [15](issues/15-onboarding.md) | Onboarding and demo | 19 | §17 | ~3 |
 | [16](issues/16-assistant.md) | Assistant | 09, 11 | §15, §14 | ~5 |
-| [17](issues/17-deploy-done-walk.md) | Deploy and done walk | 20 | §1, §20 | ~3 |
+| [17](issues/17-deploy-done-walk.md) | Deploy and done walk | 23, 24 | §1, §20 | ~3 |
 | [18](issues/18-deploy-checks.md) | Deploy checks before push and PR | 01 | §1 | ~3 |
 | [19](issues/19-contracts.md) | Contracts for parallel work (wave 0) | 07 | §5.1, §7, §11, §13, §15, §17 | — |
 | [20](issues/20-integration.md) | Integration after the parallel waves | 08–16 | §20 | — |
+| [21](issues/21-parity-fixes.md) | Parity fixes from the prototype audit | 20 | §8–§17 | — |
+| [22](issues/22-code-editor-upgrade.md) | Code editor upgrade | 20 | §14 | — |
+| [23](issues/23-try-tweak-polish.md) | Try & tweak polish | 21, 22 | §7 | — |
+| [24](issues/24-gemini-fallback.md) | Gemini fallback when Bob fails | 20 | §1, §5 | — |
 
 Budget = rough Bobcoins per fresh task (issues 01–07; 08 onward aren't billed in Bobcoins, see Waves) (about 70 total of the team's 80). Re-plan if an issue costs double.
 
