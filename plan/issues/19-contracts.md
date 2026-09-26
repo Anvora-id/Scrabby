@@ -1,6 +1,6 @@
 # 19: Contracts for parallel work (wave 0)
 
-Status: ready-for-agent
+Status: done
 Blocked by: 07
 Wave: 0 (one agent, before everything else)
 
@@ -28,14 +28,22 @@ Nothing a user sees. Merge `origin/main` into `rough-implementation`, then creat
 
 ## Wiring (done here, so wave-1 issues never touch these shared files)
 
-- [ ] `git fetch; git merge origin/main` (brings issue 18's `pnpm check`, hook and CI). Resolve conflicts by keeping both sides; `plan/build-map.md`: keep `rough-implementation`'s version plus main's added lines.
-- [ ] Every stub in the table above.
-- [ ] `src/App.tsx`: render `<Onboarding/>` after `<main>` (TDD §7).
-- [ ] `src/shell/MenuBar.tsx`: enable New Project (`askNewProject`), Demo (`askDemo`), Download code (`downloadCode(project).catch(e => console.error('Download code failed', e))`), Show me around (disabled on the Build step; `startTour(step === 'try' ? 'try' : 'plan')`). Remove their `disabled` placeholders.
-- [ ] `src/slots/Canvas.tsx`: replace the two `issue 15` comments with `{p.blocks[id]?.type === 'site' && !p.blocks[id].children.length && <DemoButton />}` and, for a dropped new Block, `droppedBlock(newId)` (make `dropItem`'s return value available). Leave every `issue 08` comment as it is.
-- [ ] `pnpm typecheck` and `pnpm test` pass.
+- [x] `git fetch; git merge origin/main` (brings issue 18's `pnpm check`, hook and CI). Resolve conflicts by keeping both sides; `plan/build-map.md`: keep `rough-implementation`'s version plus main's added lines.
+- [x] Every stub in the table above.
+- [x] `src/App.tsx`: render `<Onboarding/>` after `<main>` (TDD §7).
+- [x] `src/shell/MenuBar.tsx`: enable New Project (`askNewProject`), Demo (`askDemo`), Download code (`downloadCode(project).catch(e => console.error('Download code failed', e))`), Show me around (disabled on the Build step; `startTour(step === 'try' ? 'try' : 'plan')`). Remove their `disabled` placeholders.
+- [x] `src/slots/Canvas.tsx`: replace the two `issue 15` comments with `{p.blocks[id]?.type === 'site' && !p.blocks[id].children.length && <DemoButton />}` and, for a dropped new Block, `droppedBlock(newId)` (make `dropItem`'s return value available). Leave every `issue 08` comment as it is.
+- [x] `pnpm typecheck` and `pnpm test` pass.
 
 ## Done when
 
 - Typecheck and tests pass; the app still runs; the menu buttons call the stubs (they do nothing yet).
 - Commit `chore: contracts for parallel work (issue 19)` on `rough-implementation`, and push.
+
+## Answer
+
+- `origin/main` was already merged into `rough-implementation` (a25019c); nothing new to merge.
+- `createStore` in `src/store.ts` is now exported, so owner modules (`build.ts`, and later others) make their stores with it.
+- `Canvas.tsx` keeps the dropped item's id in `newId` after `updateProject`; issue 08 can use it for the busy mark.
+- `hasPending` only checks open proposals; issue 16 adds the running reply.
+- On this machine, run pnpm from Bash with `export PATH="/c/Program Files/nodejs:$PATH"` first, or scripts fail with `'node' is not recognized`.

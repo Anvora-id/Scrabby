@@ -42,3 +42,9 @@ export async function replaceProject(
   setPlanTab('canvas')
   setStep('plan')
 }
+
+// Stubs until issue 15.
+export function askDemo(): void {}
+export function askNewProject(): void {}
+export function startTour(_which: 'plan' | 'try'): void {}
+export function droppedBlock(_id: string): void {}

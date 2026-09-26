@@ -14,6 +14,8 @@ import TraitPill from '../canvas/TraitPill.tsx'
 import { ContextMenu, Tooltip } from '../canvas/Overlays.tsx'
 import styles from '../canvas/Canvas.module.css'
 import parts from '../canvas/parts.module.css'
+import { droppedBlock } from '../onboarding.ts'
+import { DemoButton } from '../shell/Onboarding.tsx'
 
 const MIN_ZOOM = 0.3
 const MAX_ZOOM = 2
@@ -227,8 +229,10 @@ export default function Canvas() {
       const dry = structuredClone(p)
       dropItem(dry, item, to)
       if (shape(dry) === shape(p)) return
-      updateProject(q => { dropItem(q, item, to) })
-      // issue 08: make the dropped item busy (§10.3). issue 15: droppedBlock(id) for a new Block.
+      let newId = ''
+      updateProject(q => { newId = dropItem(q, item, to) })
+      // issue 08: make the dropped item busy (§10.3).
+      if (item.kind === 'newBlock' || item.kind === 'newInstance') droppedBlock(newId)
     }
 
     window.addEventListener('pointermove', onMove)
@@ -290,7 +294,7 @@ export default function Canvas() {
             {canvas.children.map((id, i) => (
               <div key={id} className={styles.placed} style={at(p.blocks[id]?.pos, i)}>
                 <BlockView p={p} id={id} />
-                {/* issue 15: <DemoButton/> under a Site Block that has no children */}
+                {p.blocks[id]?.type === 'site' && !p.blocks[id].children.length && <DemoButton />}
               </div>
             ))}
             {canvas.traits.map((id, i) => (

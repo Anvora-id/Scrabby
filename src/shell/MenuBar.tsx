@@ -1,9 +1,11 @@
 import { useEffect } from 'react'
 import { ICONS } from '../icons.ts'
 import {
-  useProject,
+  useProject, useUi,
   undo, redo, canUndo, canRedo,
 } from '../store.ts'
+import { askDemo, askNewProject, startTour } from '../onboarding.ts'
+import { downloadCode } from '../download.ts'
 import { FIXTURES, loadFixture } from '../fixtures/dev.ts'
 import styles from './MenuBar.module.css'
 
@@ -36,6 +38,7 @@ function MenuButton({
 
 export default function MenuBar() {
   const project = useProject()
+  const { step } = useUi()
 
   // Keyboard shortcuts: Ctrl+Z undo, Ctrl+Y / Ctrl+Shift+Z redo
   useEffect(() => {
@@ -71,13 +74,13 @@ export default function MenuBar() {
       <span className={styles.projectName}>{project.name}</span>
 
       {/* Buttons */}
-      <MenuButton iconKey="new" label="New Project" disabled title="New Project" />
-      <MenuButton iconKey="demo" label="Demo" disabled title="Demo" />
+      <MenuButton iconKey="new" label="New Project" title="New Project" onClick={askNewProject} />
+      <MenuButton iconKey="demo" label="Demo" title="Demo" onClick={askDemo} />
       <MenuButton
         iconKey="download"
         label="Download code"
-        disabled
         title="Download code"
+        onClick={() => { downloadCode(project).catch(e => console.error('Download code failed', e)) }}
       />
       <MenuButton
         iconKey="undo"
@@ -113,8 +116,9 @@ export default function MenuBar() {
       <MenuButton
         iconKey="help"
         label="Show me around"
-        disabled
+        disabled={step === 'build'}
         title="Show me around"
+        onClick={() => startTour(step === 'try' ? 'try' : 'plan')}
       />
     </header>
   )

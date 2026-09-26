@@ -15,7 +15,7 @@ interface Store<T> {
   use(): T
 }
 
-function createStore<T>(initial: T): Store<T> {
+export function createStore<T>(initial: T): Store<T> {
   let value = initial
   const listeners = new Set<() => void>()
 
