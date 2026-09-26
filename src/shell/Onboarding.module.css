@@ -185,6 +185,9 @@
 }
 
 .demo {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   background: var(--brand);
   color: #fff;
@@ -199,6 +202,14 @@
 .demo:active {
   transform: translateY(3px);
   box-shadow: 0 1px 0 var(--brand-dark);
+}
+
+/* Greeting buttons while a new Project loads. */
+.demo:disabled,
+.secondary:disabled {
+  opacity: .5;
+  cursor: default;
+  transform: none;
 }
 
 .primary:focus-visible,

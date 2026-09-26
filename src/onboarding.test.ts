@@ -15,6 +15,10 @@ describe('isEmptyProject', () => {
     expect(isEmptyProject(demoProject())).toBe(false)
     expect(isEmptyProject({ ...emptyProject(), files: { 'index.html': '' } })).toBe(false)
   })
+
+  it('is false once renamed', () => {
+    expect(isEmptyProject({ ...emptyProject(), name: "Maya's bakery" })).toBe(false)
+  })
 })
 
 describe('placeBubble', () => {

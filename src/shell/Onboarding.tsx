@@ -1,55 +1,76 @@
 import { useEffect, useLayoutEffect, useReducer, useRef, useState, type ReactNode } from 'react'
-import { getProject, useUi } from '../store.ts'
+import { getProject, useProject, useUi } from '../store.ts'
 import { downloadCode } from '../download.ts'
 import {
-  askDemo, askStore, closeAsk, closeTip, endTour, firstTour, isEmptyProject, loadDemo, newProject,
-  nextBubble, once, placeBubble, startTour, tipStore, tourStore, TOURS, type Box,
+  askDemo, askNewProject, askStore, closeAsk, closeTip, endTour, firstTour, greetingStore, isEmptyProject,
+  loadDemo, newProject, nextBubble, once, placeBubble, replacingStore, startTour, tipStore, tourStore, TOURS,
+  type Box,
 } from '../onboarding.ts'
 import styles from './Onboarding.module.css'
 
 export default function Onboarding() {
   const { step } = useUi()
-  // App mounts after the saved Project has loaded, so this is the page load's Project.
-  const [greet, setGreet] = useState(() => isEmptyProject(getProject()))
+  const greet = greetingStore.use()
 
-  useEffect(() => {
-    if (!greet) firstTour() // with the greeting up, its Start my own site runs it
-  }, [])
   useEffect(() => {
     if (step === 'try' && once('scrabby.tour.try')) startTour('try')
   }, [step])
 
+  // A tour started behind the greeting (the demo's) shows once the greeting has gone.
   return (
     <>
-      {greet && <Greeting onClose={() => setGreet(false)} />}
-      <Tour />
+      {greet ? <Greeting /> : <Tour />}
       <Tip />
       <ReplaceWarning />
     </>
   )
 }
 
-function Greeting({ onClose }: { onClose: () => void }) {
+function Greeting() {
+  const project = useProject()
+  // App mounts after the saved Project has loaded, so this is the one the visit found.
+  const [found] = useState(project)
+  const empty = isEmptyProject(found)
+  const ask = askStore.use()
+  const busy = replacingStore.use()
   const [then, setThen] = useState<(() => void) | null>(null)
+  const first = useRef<HTMLButtonElement>(null)
+  const off = busy || then !== null
 
   // Close, then act: once the leave animation ends, or at once with reduced motion.
   const leave = (act: () => void) => {
     if (then) return
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { onClose(); act() }
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { greetingStore.set(false); act() }
     else setThen(() => act)
   }
+  const noTour = () => {}
+
+  // The card waits for a demo or a new Project to be in place, then leaves; a failed load leaves it up.
+  useEffect(() => {
+    if (project !== found) leave(isEmptyProject(project) ? firstTour : noTour)
+  }, [project])
+
+  // Focus starts on the first button, and comes back to it when a warning on top closes.
+  useEffect(() => {
+    if (!ask) first.current?.focus()
+  }, [ask])
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') leave(firstTour) }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !ask && !busy) leave(empty ? firstTour : noTour)
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [then])
+  }, [then, ask, busy])
 
   return (
     <div
       className={`${styles.backdrop} ${styles.center}`}
+      inert={ask !== null}
       data-leaving={then ? '' : undefined}
-      onAnimationEnd={e => { if (then && e.target === e.currentTarget) { onClose(); then() } }}
+      onAnimationEnd={e => {
+        if (then && e.target === e.currentTarget) { greetingStore.set(false); then() }
+      }}
     >
       <div className={styles.greeting} role="dialog" aria-modal="true" aria-labelledby="greeting-title">
         <div className={styles.logo}>
@@ -58,12 +79,22 @@ function Greeting({ onClose }: { onClose: () => void }) {
         </div>
         <h1 className={styles.slogan}>Ideas are best blocked out.</h1>
         <p className={styles.pitch}>Snap your idea together. Bob builds it for real.</p>
-        <div className={styles.choices}>
-          <button className={styles.demo} autoFocus onClick={() => leave(askDemo)}>
-            Take me through the demo: Maya's bake sale
-          </button>
-          <button className={styles.secondary} onClick={() => leave(firstTour)}>Start my own site</button>
-        </div>
+        {empty ? (
+          <div className={styles.choices}>
+            <button ref={first} className={styles.demo} disabled={off} onClick={askDemo}>Take me to the Demo</button>
+            <button className={styles.secondary} disabled={off} onClick={() => leave(firstTour)}>
+              Start my own site
+            </button>
+          </div>
+        ) : (
+          <div className={styles.choices}>
+            <button ref={first} className={styles.demo} disabled={off} onClick={() => leave(noTour)}>
+              Continue “{found.name}”
+            </button>
+            <button className={styles.secondary} disabled={off} onClick={askDemo}>Take me to the Demo</button>
+            <button className={styles.secondary} disabled={off} onClick={askNewProject}>Start a new site</button>
+          </div>
+        )}
       </div>
     </div>
   )
