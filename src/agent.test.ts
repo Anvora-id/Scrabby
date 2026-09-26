@@ -59,6 +59,16 @@ describe('runAgent', () => {
     expect(fetch).toHaveBeenCalledOnce()
   })
 
+  it('sends a new run id with every run', async () => {
+    const fetch = vi.fn(async (_url: string, _init: RequestInit) => chunked(['data: {"type":"files","files":{}}\n\n']))
+    vi.stubGlobal('fetch', fetch)
+    await collect(runAgent({ kind: 'build', document: 'D', files: {} }))
+    await collect(runAgent({ kind: 'build', document: 'D', files: {} }))
+    const ids = fetch.mock.calls.map(([, init]) => (init.headers as Record<string, string>)['x-scrabby-run'])
+    expect(ids[0]).toMatch(/^[0-9a-f-]{36}$/)
+    expect(ids[1]).not.toBe(ids[0])
+  })
+
   it('a model event sets the badge label; the next run starts on the GET label again', async () => {
     vi.stubGlobal('fetch', async () => chunked(['data: {"type":"start"}\n\ndata: {"type":"model","label":"Gemini"}\n\n']))
     const events = await collect(runAgent({ kind: 'build', document: 'D', files: {} }))

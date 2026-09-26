@@ -10,18 +10,20 @@ import { runAgent } from './agent.ts'
 import { flashBlocks } from './preview.ts'
 import { createStore, getProject, setStep, updateProject } from './store.ts'
 
-export type FailReason = 'time' | 'turns' | 'unreachable' | 'broken' | 'save'
+export type FailReason = 'time' | 'turns' | 'unreachable' | 'broken' | 'save' | 'limit'
 export const FAILURE_LINES: Record<FailReason, string> = {
   time: 'Bob took too long, so this Build was stopped.',
   turns: 'Bob ran out of steps before finishing, so this Build was stopped.',
   unreachable: "Bob couldn't be reached. Check your connection and try again.",
   broken: "Bob's answer came back broken, so this Build was stopped.",
   save: "Bob's website couldn't be saved on this computer, so this Build was stopped.",
+  limit: "Scrabby's Build limit was reached, so this Build didn't start.",
 }
 export interface BuildRun {
   n: number; state: 'running' | 'done' | 'failed'
   chips: { id: string; name: string; category: Category }[]
   lit: string[]; loose: number; skipped: string[]; reason?: FailReason
+  message?: string // the server's words for a `limit`, shown instead of its failure line
 }
 
 const run = createStore<BuildRun | undefined>(undefined)
@@ -60,7 +62,7 @@ export function buildProblem(p: Project): string | null {
 // The button is only disabled once `start` arrives, so a second press before that must do nothing.
 let busy = false
 
-export async function runBuild(): Promise<string | undefined> {
+export async function runBuild(): Promise<void> {
   if (busy) return
   busy = true
   try {
@@ -70,7 +72,7 @@ export async function runBuild(): Promise<string | undefined> {
   }
 }
 
-async function build(): Promise<string | undefined> {
+async function build(): Promise<void> {
   const p = getProject()
   const doc = instructionDocument(p)
   if ('error' in doc) return
@@ -88,9 +90,13 @@ async function build(): Promise<string | undefined> {
   }
 
   for await (const e of runAgent({ kind: 'build', document: doc.document, files: p.files })) {
-    if (e.type === 'limit') return e.message
     if (e.type === 'text') continue
     begin()
+    // A limit shows on the Build step, where it stays until the next press (a bubble closed on the next click).
+    if (e.type === 'limit') {
+      set({ state: 'failed', reason: 'limit', message: e.message })
+      return
+    }
     if (e.type === 'block') set({ lit: [...run.get()!.lit, e.id] })
     if (e.type === 'error') {
       set({ state: 'failed', reason: e.reason })

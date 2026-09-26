@@ -77,15 +77,14 @@ describe('runBuild', () => {
     expect(getUi().step).toBe('try')
   })
 
-  it('a limit changes nothing, stays on Plan and returns the message', async () => {
-    const before = getBuild()
+  it('a limit changes nothing and shows its message on a failed card on Build', async () => {
     start(demoProject(), [], [{ type: 'limit', message: "You've used this hour's 10 Builds. Try again in 5 minutes." }])
     const p = getProject()
 
-    expect(await runBuild()).toBe("You've used this hour's 10 Builds. Try again in 5 minutes.")
+    await runBuild()
     expect(getProject()).toBe(p)
-    expect(getUi().step).toBe('plan')
-    expect(getBuild()).toBe(before)
+    expect(getUi().step).toBe('build')
+    expect(getBuild()).toMatchObject({ n: 1, state: 'failed', reason: 'limit', message: "You've used this hour's 10 Builds. Try again in 5 minutes." })
     expect(fake.saved).toHaveLength(0)
   })
 
