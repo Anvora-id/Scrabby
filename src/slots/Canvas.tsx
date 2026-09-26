@@ -328,9 +328,11 @@ export default function Canvas() {
     }
 
     // Adds cls, then calls done once the transitions or animations it starts have ended (at once if reduced motion starts none).
+    // A tab that paints no frames never ends them, so done also runs after 1s; every done here is safe to run twice.
     function play(el: HTMLElement, cls: string, done: () => void) {
       el.classList.add(cls)
       Promise.allSettled(el.getAnimations().map(x => x.finished)).then(done)
+      setTimeout(done, 1000)
     }
 
     // Where nothing takes it, a new item's copy fades away and a moved item's copy flies back to its spot.
