@@ -55,7 +55,7 @@ export function tipFor(p: Project, key: string): Tip | null {
     const type = key.slice(3) as keyof typeof BLOCK_TYPES
     const def = BLOCK_TYPES[type]
     if (!def) return null
-    return { icon: def.icon, title: def.label, text: def.tooltip, cat: def.category }
+    return { icon: def.icon, title: def.label, text: def.tooltip.replace('{where}', where), cat: def.category }
   }
 
   if (key.startsWith('nt:')) {

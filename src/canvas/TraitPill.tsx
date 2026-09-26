@@ -232,7 +232,7 @@ export default function TraitPill({ p, id }: { p: Project; id: string; inInst?: 
           placeholder="hint, like something warm"
           value={t.note}
           size={hintSize}
-          onChange={e => updateProject(p => { p.traits[id].note = e.target.value }, null)}
+          onChange={e => updateProject(p => { p.traits[id].note = e.target.value })}
           onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
         />
       )}

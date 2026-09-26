@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { demoProject } from '../fixtures/fixtures.ts'
-import { addBlock } from '../model/project.ts'
+import { addBlock, addTrait } from '../model/project.ts'
 import type { Project } from '../model/types.ts'
 import { canMakeCustom, duplicate, menuItems } from './menu.ts'
 
@@ -182,5 +182,31 @@ describe('menu', () => {
     inst.from = 'some-src'
     inst.ov = { name: true }
     expect(labels(p, instId)).toContain("Use the Custom Block's version")
+  })
+
+  it('Edit Custom Block opens the Custom Block, not its definition Block', () => {
+    const p = demo()
+    const inst = Object.values(p.blocks).find(b => b.inst)!
+    expect(menuItems(p, inst.id).find(i => i.label === 'Edit Custom Block')!.edit).toBe(inst.inst)
+  })
+
+  it('an Instance copy stays an Instance, following the same parts', () => {
+    const p = demo()
+    const home = Object.values(p.blocks).find(b => b.type === 'page' && b.name === 'Home')!
+    const inst = home.children.find(id => p.blocks[id].inst)!
+    duplicate(p, inst)
+    const copy = p.blocks[home.children[home.children.indexOf(inst) + 1]]
+    expect(copy.inst).toBe(p.blocks[inst].inst)
+    expect(copy.traits.map(t => p.traits[t].from)).toEqual(p.blocks[inst].traits.map(t => p.traits[t].from))
+  })
+
+  it('a loose Trait copy +30/+30', () => {
+    const p = demo()
+    const t = addTrait(p, 'color', '#FF0000')
+    p.traits[t].pos = { x: 100, y: 100 }
+    p.blocks.canvas.traits.push(t)
+    duplicate(p, t)
+    const copy = p.blocks.canvas.traits[p.blocks.canvas.traits.indexOf(t) + 1]
+    expect(p.traits[copy].pos).toEqual({ x: 130, y: 130 })
   })
 })

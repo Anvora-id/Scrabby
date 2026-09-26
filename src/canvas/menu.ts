@@ -17,46 +17,25 @@ export function deleteNote(p: Project, id: string): void {
   else if (p.traits[id]) { p.traits[id].note = ''; p.traits[id].noteOn = false }
 }
 
+// Copies every field (inst, from, removed, ov too) so an Instance's copy stays an Instance;
+// `duplicate` unfollows the other copies.
 export function copyOf(p: Project, id: string): string {
-  const isBlock = !!p.blocks[id]
-  if (isBlock) {
-    const newId = duplicateBlock(p, id)
-    return newId
-  } else {
-    const t = p.traits[id]
-    const newId = addTrait(p, t.type, t.value)
-    const nt = p.traits[newId]
-    nt.note = t.note
-    if (t.bobPicks) nt.bobPicks = true
-    return newId
-  }
-}
-
-function duplicateBlock(p: Project, id: string): string {
-  const src = p.blocks[id]
-  const newId = addBlock(p, src.type as Exclude<typeof src.type, 'canvas'>, src.name)
-  const nb = p.blocks[newId]
-  nb.note = src.note
-  if (src.noteOn) nb.noteOn = src.noteOn
-  if (src.folded !== undefined) nb.folded = src.folded
-  nb.traits = src.traits.map(tid => {
-    const t = p.traits[tid]
-    const nid = addTrait(p, t.type, t.value)
-    const nt = p.traits[nid]
-    nt.note = t.note
-    if (t.bobPicks) nt.bobPicks = true
+  const t = p.traits[id]
+  if (t) {
+    const nid = addTrait(p, t.type)
+    p.traits[nid] = { ...structuredClone(t), id: nid }
     return nid
-  })
-  nb.children = src.children.map(cid => {
-    const childNewId = duplicateBlock(p, cid)
-    return childNewId
-  })
-  if (src.layout) {
-    const childMap: Record<string, string> = {}
-    src.children.forEach((cid, i) => { childMap[cid] = nb.children[i] })
-    nb.layout = mapLayout(src.layout, x => childMap[x] ?? x)
   }
-  return newId
+  const src = p.blocks[id]
+  const nid = addBlock(p, src.type as Exclude<typeof src.type, 'canvas'>, src.name)
+  const file = p.blocks[nid].file // a Page copy gets its own file
+  const ids: Record<string, string> = {}
+  const children = src.children.map(cid => (ids[cid] = copyOf(p, cid)))
+  const nb = { ...structuredClone(src), id: nid, traits: src.traits.map(tid => copyOf(p, tid)), children }
+  if (file) nb.file = file
+  if (src.layout) nb.layout = mapLayout(src.layout, x => ids[x] ?? x)
+  p.blocks[nid] = nb
+  return nid
 }
 
 export function duplicate(p: Project, id: string): void {
@@ -84,18 +63,11 @@ export function duplicate(p: Project, id: string): void {
     }
     // a duplicate page gets its own file (already set by addBlock since it calls pageFile)
   } else {
-    // Trait: drop at index + 1 in the same block
-    if (parentId) {
-      const parent = p.blocks[parentId]
-      const idx = parent.traits.indexOf(id)
-      parent.traits.splice(idx + 1, 0, newId)
-    } else {
-      // loose Trait on Canvas
-      const t = p.traits[id]
-      const nt = p.traits[newId]
-      if (t.pos) nt.pos = { x: t.pos.x + 30, y: t.pos.y + 30 }
-      p.blocks['canvas'].traits.push(newId)
-    }
+    // Trait: drop at index + 1 in the same Block; a loose one also moves +30/+30
+    const parent = p.blocks[parentId ?? 'canvas']
+    parent.traits.splice(parent.traits.indexOf(id) + 1, 0, newId)
+    const pos = p.traits[id].pos
+    if (pos) p.traits[newId].pos = { x: pos.x + 30, y: pos.y + 30 }
   }
 }
 
@@ -142,7 +114,7 @@ export function menuItems(p: Project, id: string): MenuItem[] {
   if (b) {
     // Edit Custom Block (an Instance)
     if (b.inst) {
-      items.push({ label: 'Edit Custom Block', edit: b.inst ? (p.defs[b.inst]?.blockId ?? b.inst) : '' })
+      items.push({ label: 'Edit Custom Block', edit: b.inst })
     }
 
     // Duplicate (when canTrash allows it)

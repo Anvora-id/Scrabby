@@ -207,7 +207,7 @@ export function BlockNote({ id, note, noteOn }: { id: string; note: string; note
         className={styles.stickyArea}
         placeholder="Note for Bob"
         value={note}
-        onChange={e => updateProject(p => { p.blocks[id].note = e.target.value }, null)}
+        onChange={e => updateProject(p => { p.blocks[id].note = e.target.value })}
       />
     </div>
   )
@@ -223,7 +223,7 @@ export function TraitNote({ id, note, noteOn }: { id: string; note: string; note
     if (noteOn && !note) ref.current?.focus({ preventScroll: true })
   }, [noteOn, note])
 
-  const set = (v: string) => updateProject(p => { p.traits[id].note = v }, null)
+  const set = (v: string) => updateProject(p => { p.traits[id].note = v })
   const len = note.length
 
   if (big) return (

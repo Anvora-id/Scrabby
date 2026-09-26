@@ -95,4 +95,8 @@ describe('tooltip', () => {
     expect(tip).not.toBeNull()
     expect(tip!.cat).not.toBeNull()
   })
+
+  it('palette Page text fills {where}', () => {
+    expect(tipFor(demo(), 'nb:page')!.text).toBe('One page of your website. Put it inside the Site.')
+  })
 })
