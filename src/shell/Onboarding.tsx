@@ -186,7 +186,3 @@ function SpeechBubble({ target, text, children }: { target: string; text: string
     </>
   )
 }
-
-export function DemoButton() {
-  return <button className={styles.demo} onClick={askDemo}>Try the demo: Maya's bake sale</button>
-}
