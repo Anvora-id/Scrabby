@@ -603,7 +603,7 @@ Constants `MIN_ZOOM 0.3`, `MAX_ZOOM 2`, `CORNER 40`, `DOTS 24`. Refs: viewport, 
 - `customColor({h, s, l})` (exported): `--c1 hsl(h s l)`, `--c2 hsl(h s l-9)`, `--c3 hsl(h s-25 l-26)`, `--c4 hsl(h 100 92.6)`, each clamped 0–100; plus `--ink: #fff` when `l < 55`.
 - `onPointerDown = dragSource({ kind:'block', id })`, except on a definition. `onContextMenu = openMenu(e, id)`.
 - **Header** (`data-tip="b:<id>"`): fold button (not on the Checkpoint Block; title `Open this Block` / `Fold this Block`; the 12px `fold` icon, turned −90° when folded) → `updateProject(d.blocks[id].folded = !folded)`. Then:
-  - Checkpoint Block: lock icon, "Checkpoint", hint "the built site".
+  - Checkpoint Block: lock icon, `checkpointTitle(p, p.checkpoint)` (§12; "Checkpoint" when unset), hint "the built site".
   - Locked Page: lock icon, `Page "<name>"`, hint = its file.
   - Else: icon (`custom` for an Instance/definition, else the type's) and type label (the Custom Block's name for an Instance, "Custom Block" for a definition, else the label), then the name `TextField` (→ `name`; on the Site → the Project `name`, and when focus leaves the header with a blank name, `name = NEW_NAME`), an **Edit** pill on an Instance (title `Edit this Custom Block` → `setEditing(inst)`), then the marker (§9.4).
   - A loose Block adds the `not built` badge. Last: `<Mark id>` (§10.3).

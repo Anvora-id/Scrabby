@@ -5,6 +5,7 @@ import { BLOCK_TYPES, TRAIT_TYPES } from '../model/catalogue.ts'
 import type { CustomBlockDef, Layout, Project } from '../model/types.ts'
 import { hasOverride, NEW_NAME } from '../model/project.ts'
 import { getProject, setEditing, updateProject } from '../store.ts'
+import { checkpointTitle } from '../checkpoints.ts'
 import { cx } from './cx.ts'
 import { dragSource, useDrag } from './drag.ts'
 import { insertInto, isTraitItem, repairLayout } from './tree.ts'
@@ -92,7 +93,7 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
         {checkpoint ? (
           <>
             <ICONS.checkpoint weight="fill" size={16} />
-            Checkpoint
+            {p.checkpoint ? checkpointTitle(p, p.checkpoint) : 'Checkpoint'}
             <span className={styles.hint}>the built site</span>
           </>
         ) : b.locked ? (
