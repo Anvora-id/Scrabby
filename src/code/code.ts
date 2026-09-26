@@ -52,3 +52,10 @@ export function blockInfo(id: string, project: Project, checkpoints: Checkpoint[
   if (!b || b.type === 'canvas') return undefined
   return { name: b.name, category: b.inst ? 'my' : BLOCK_TYPES[b.type].category }
 }
+
+// `name` comes trimmed and lower-cased.
+export function newFileProblem(name: string, files: Files): string | null {
+  if (!/^[a-z0-9][a-z0-9-]*\.(html|css|js)$/.test(name)) return 'Use a name like about.html, extra.css or games.js.'
+  if (name in files) return `${name} already exists.`
+  return null
+}

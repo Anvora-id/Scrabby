@@ -174,6 +174,7 @@ export const DEPENDENCIES: Record<string, string> = {
   '@codemirror/lang-javascript': '^6.2.5',
   '@codemirror/language': '^6.12.4',
   '@codemirror/merge': '^6.12.2',
+  '@codemirror/search': '^6.7.2',
   '@codemirror/state': '^6.7.6',
   '@codemirror/view': '^6.43.13',
   '@lezer/highlight': '^1.2.4',

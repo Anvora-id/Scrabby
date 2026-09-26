@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Compartment, EditorState, StateEffect, StateField, Transaction, type Extension, type Range } from '@codemirror/state'
-import { Decoration, EditorView, WidgetType, type DecorationSet } from '@codemirror/view'
+import { Compartment, EditorState, RangeSet, StateEffect, StateField, Transaction, type Extension, type Range } from '@codemirror/state'
+import { Decoration, EditorView, GutterMarker, gutter, type DecorationSet } from '@codemirror/view'
+import { redo, redoDepth, undo, undoDepth } from '@codemirror/commands'
 import { getProject, updateProject, useProject } from '../store.ts'
 import { listCheckpoints } from '../db.ts'
 import { cardState, decide, openFiles } from '../assistant.ts'
 import type { Checkpoint, Files } from '../model/types.ts'
-import { blockInfo, blockMarks, changedLines } from '../code/code.ts'
+import { blockInfo, blockMarks, changedLines, newFileProblem } from '../code/code.ts'
 import { setup } from '../code/setup.ts'
 import { clearJump, editorSelection, openCheckpointsAtBlock, openFile, useEditorUi } from '../code/navigation.ts'
 import MergeReview from '../code/MergeReview.tsx'
 import styles from '../code/editor.module.css'
 
 const decorations = new Compartment()
-const changedLine = Decoration.line({ class: styles.changed })
 const flashLine = Decoration.line({ class: styles.flash })
 
 const setFlash = StateEffect.define<number | null>()
@@ -26,34 +26,49 @@ const flashField = StateField.define<DecorationSet>({
   provide: f => EditorView.decorations.from(f),
 })
 
-class Chip extends WidgetType {
+class Bar extends GutterMarker {
+  toDOM() {
+    const d = document.createElement('div')
+    d.className = styles.bar
+    return d
+  }
+}
+const bar = new Bar()
+
+class BlockDot extends GutterMarker {
   id: string; name: string; category: string
   constructor(id: string, name: string, category: string) {
     super()
     this.id = id; this.name = name; this.category = category
   }
-  eq(o: Chip) { return o.id === this.id && o.name === this.name && o.category === this.category }
+  eq(o: BlockDot) { return o.id === this.id && o.name === this.name && o.category === this.category }
   toDOM() {
     const b = document.createElement('button')
-    b.className = `${styles.chip} cat-${this.category}`
-    b.textContent = `◧ ${this.name} Block`
-    b.title = 'Show this Block in Checkpoints'
+    b.className = `${styles.blockDot} cat-${this.category}`
+    b.title = `${this.name} Block · Show in Checkpoints`
     b.onclick = () => openCheckpointsAtBlock(this.id)
     return b
   }
 }
 
-function lineDecorations(file: string, base: Files | undefined, checkpoints: Checkpoint[]): Extension {
-  return EditorView.decorations.compute(['doc'], state => {
+// Change bars and Block dots share one narrow gutter left of the line numbers.
+function lineMarks(file: string, base: Files | undefined, checkpoints: Checkpoint[]): Extension {
+  const compute = (state: EditorState) => {
     const text = state.doc.toString()
-    const ranges: Range<Decoration>[] = []
-    if (base) for (const n of changedLines(base[file], text)) ranges.push(changedLine.range(state.doc.line(n).from))
+    const ranges: Range<GutterMarker>[] = []
+    // A file the base does not have gets only its tab dot.
+    if (base?.[file] !== undefined) for (const n of changedLines(base[file], text)) ranges.push(bar.range(state.doc.line(n).from))
     for (const { line, id } of blockMarks(text)) {
       const info = blockInfo(id, getProject(), checkpoints)
-      if (info) ranges.push(Decoration.widget({ widget: new Chip(id, info.name, info.category), side: 1 }).range(state.doc.line(line).to))
+      if (info) ranges.push(new BlockDot(id, info.name, info.category).range(state.doc.line(line).from))
     }
-    return Decoration.set(ranges, true)
+    return RangeSet.of(ranges, true)
+  }
+  const marks = StateField.define<RangeSet<GutterMarker>>({
+    create: compute,
+    update: (v, tr) => tr.docChanged ? compute(tr.state) : v,
   })
+  return [marks, gutter({ class: styles.marks, markers: v => v.state.field(marks) })]
 }
 
 // Ctrl+Z / Ctrl+Y belong to the editor's own history here, not the app's Undo in the menu bar.
@@ -72,11 +87,13 @@ interface FileEditorProps {
   jump: { file: string; line: number } | undefined
   states: Map<string, EditorState>
   stateKey: string
+  track: (v: EditorView | null) => void
 }
 
-function FileEditor({ file, text, base, checkpoints, jump, states, stateKey }: FileEditorProps) {
+function FileEditor({ file, text, base, checkpoints, jump, states, stateKey, track }: FileEditorProps) {
   const host = useRef<HTMLDivElement>(null)
   const view = useRef<EditorView>(null)
+  const flashTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   // Keyed by file: one view per open tab; its state (undo, cursor) waits in `states` while another tab is open.
   useEffect(() => {
@@ -85,8 +102,8 @@ function FileEditor({ file, text, base, checkpoints, jump, states, stateKey }: F
       state: states.get(stateKey) ?? EditorState.create({
         doc: text,
         extensions: [
+          decorations.of([]), // first, so its gutter sits left of the line numbers
           setup(file),
-          decorations.of([]),
           flashField,
           keepUndoInside,
           EditorView.updateListener.of(u => {
@@ -96,15 +113,24 @@ function FileEditor({ file, text, base, checkpoints, jump, states, stateKey }: F
           }),
         ],
       }),
+      // Per view, not per state: a saved state must not keep an old tab's callback.
+      dispatchTransactions(trs, v) {
+        v.update(trs)
+        track(v)
+      },
     })
     view.current = v
+    track(v)
     editorSelection.read = () => {
       const s = v.state.selection.main
       return v.state.sliceDoc(s.from, s.to)
     }
     return () => {
+      clearTimeout(flashTimer.current)
+      v.dispatch({ effects: setFlash.of(null) })
       states.set(stateKey, v.state)
       editorSelection.read = () => null
+      track(null)
       v.destroy()
     }
   }, [])
@@ -117,19 +143,18 @@ function FileEditor({ file, text, base, checkpoints, jump, states, stateKey }: F
   }, [text])
 
   useEffect(() => {
-    view.current!.dispatch({ effects: decorations.reconfigure(lineDecorations(file, base, checkpoints)) })
+    view.current!.dispatch({ effects: decorations.reconfigure(lineMarks(file, base, checkpoints)) })
   }, [base, checkpoints])
 
   useEffect(() => {
     if (!jump || jump.file !== file) return
+    // Cleared at once so a later remount does not jump again; the timer lives in a ref so this does not cancel it.
+    clearJump()
     const v = view.current!
     const line = v.state.doc.line(Math.min(jump.line, v.state.doc.lines))
     v.dispatch({ selection: { anchor: line.from }, effects: [EditorView.scrollIntoView(line.from, { y: 'center' }), setFlash.of(line.from)] })
-    const t = setTimeout(() => {
-      v.dispatch({ effects: setFlash.of(null) })
-      clearJump()
-    }, 1500)
-    return () => clearTimeout(t)
+    clearTimeout(flashTimer.current)
+    flashTimer.current = setTimeout(() => v.dispatch({ effects: setFlash.of(null) }), 1500)
   }, [jump])
 
   return <div ref={host} className={styles.host} />
@@ -140,6 +165,11 @@ export default function CodeEditor() {
   const ui = useEditorUi()
   const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([])
   const states = useRef(new Map<string, EditorState>()).current
+  const view = useRef<EditorView | null>(null)
+  const [undoable, setUndoable] = useState(0)
+  const [redoable, setRedoable] = useState(0)
+  const [newName, setNewName] = useState<string | null>(null)
+  const [problem, setProblem] = useState<string | null>(null)
 
   useEffect(() => {
     let live = true
@@ -152,6 +182,30 @@ export default function CodeEditor() {
     for (const c of checkpoints) if (c.blocks && (!newest || c.number > newest.number)) newest = c
     return newest?.before
   }, [checkpoints])
+
+  const track = (v: EditorView | null) => {
+    view.current = v
+    setUndoable(v ? undoDepth(v.state) : 0)
+    setRedoable(v ? redoDepth(v.state) : 0)
+  }
+
+  const history = (command: typeof undo) => {
+    const v = view.current
+    if (!v) return
+    command(v)
+    v.focus()
+  }
+
+  const cancelNew = () => { setNewName(null); setProblem(null) }
+
+  const createNew = () => {
+    const name = (newName ?? '').trim().toLowerCase()
+    const p = newFileProblem(name, project.files)
+    if (p) return setProblem(p)
+    updateProject(d => { d.files[name] = '' })
+    openFile(name)
+    cancelNew()
+  }
 
   const review = ui.review
   const proposal = review === undefined ? undefined : project.chat.find(m => m.time === review)?.proposal
@@ -169,16 +223,36 @@ export default function CodeEditor() {
 
   return (
     <div className={styles.codeEditor}>
-      <div className={styles.tabs} role="tablist">
-        {tabs.map(f => (
-          <button key={f} role="tab" aria-selected={f === file} className={styles.tab} onClick={() => openFile(f)}>
-            {f}
-            {reviewFiles.includes(f)
-              ? <span className={styles.dot} title="Bob's suggested changes">●</span>
-              : base && project.files[f] !== base[f] && <span className={styles.dot} title="changed by the last Build">●</span>}
-          </button>
-        ))}
+      <div className={styles.strip}>
+        <div className={styles.tabs} role="tablist">
+          {tabs.map(f => (
+            <button key={f} role="tab" aria-selected={f === file} className={styles.tab} onClick={() => openFile(f)}>
+              {f}
+              {reviewFiles.includes(f)
+                ? <span className={styles.dot} title="Bob's suggested changes">●</span>
+                : base && project.files[f] !== base[f] && <span className={styles.dot} title="changed by the last Build">●</span>}
+            </button>
+          ))}
+        </div>
+        {newName === null
+          ? <button type="button" className={styles.tool} title="New file" onClick={() => setNewName('')}>+</button>
+          : <input
+              className={styles.newName}
+              autoFocus
+              placeholder="name.html, .css or .js"
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') createNew()
+                else if (e.key === 'Escape') cancelNew()
+              }}
+              onBlur={cancelNew}
+            />}
+        <span className={styles.spacer} />
+        <button type="button" className={styles.tool} title="Undo (Ctrl+Z)" disabled={undoable === 0} onClick={() => history(undo)}>↶</button>
+        <button type="button" className={styles.tool} title="Redo (Ctrl+Y)" disabled={redoable === 0} onClick={() => history(redo)}>↷</button>
       </div>
+      {problem && <p className={styles.problem}>{problem}</p>}
       <div className={styles.body}>
         {proposal && review !== undefined && reviewFiles.includes(file)
           ? <MergeReview
@@ -197,6 +271,7 @@ export default function CodeEditor() {
               jump={ui.jump}
               states={states}
               stateKey={project.id + ':' + file}
+              track={track}
             />}
       </div>
     </div>

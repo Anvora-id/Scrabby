@@ -19,7 +19,7 @@ export function clearJump(): void {
 }
 
 export function startReview(time: number, file: string): void {
-  editorUi.set({ file, review: time })
+  editorUi.set({ ...editorUi.get(), review: time, file })
 }
 
 // The mounted editor replaces `read`.
