@@ -1,15 +1,13 @@
-# Triage Labels
+# Triage labels
 
-The skills speak in terms of five canonical triage roles. This file maps those roles to the actual label strings used in this repo's issue tracker.
+Skills speak in five canonical triage roles. This repo records them as the `Status:` line of each issue in `plan/issues/`.
 
-| Label in mattpocock/skills | Label in our tracker | Meaning                                  |
-| -------------------------- | -------------------- | ---------------------------------------- |
-| `needs-triage`             | `needs-triage`       | Maintainer needs to evaluate this issue  |
-| `needs-info`               | `needs-info`         | Waiting on reporter for more information |
-| `ready-for-agent`          | `ready-for-agent`    | Fully specified, ready for an AFK agent  |
-| `ready-for-human`          | `ready-for-human`    | Requires human implementation            |
-| `wontfix`                  | `wontfix`            | Will not be actioned                     |
+| Canonical role | `Status:` value | Meaning |
+|---|---|---|
+| `needs-triage` | `needs-triage` | New issue; a developer must check it and add it to `plan/build-map.md` |
+| `needs-info` | `needs-info` | Stopped: the issue's `## Question` needs a developer's answer |
+| `ready-for-agent` | `ready-for-agent` | Fully specified; Bob can do it once its `Blocked by:` issues are `done` |
+| `ready-for-human` | `ready-for-human` | A developer does it (Vercel setup, keys, the done walk) |
+| `wontfix` | `wontfix` | Will not be done |
 
-When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
-
-Edit the right-hand column to match whatever vocabulary you actually use.
+One extra value closes an issue: `done` (checks passed, `## Answer` written).
