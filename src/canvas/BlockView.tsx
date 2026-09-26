@@ -3,8 +3,8 @@ import type { CSSProperties, ReactNode } from 'react'
 import { ICONS } from '../icons.ts'
 import { BLOCK_TYPES, TRAIT_TYPES } from '../model/catalogue.ts'
 import type { CustomBlockDef, Layout, Project } from '../model/types.ts'
-import { hasOverride } from '../model/project.ts'
-import { setEditing, updateProject } from '../store.ts'
+import { hasOverride, NEW_NAME } from '../model/project.ts'
+import { getProject, setEditing, updateProject } from '../store.ts'
 import { cx } from './cx.ts'
 import { dragSource, useDrag } from './drag.ts'
 import { insertInto, isTraitItem, repairLayout } from './tree.ts'
@@ -81,7 +81,8 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
       onPointerDown={b.defines ? undefined : dragSource({ kind: 'block', id })}
       onContextMenu={e => openMenu(e, id)}
     >
-      <div className={cx(styles.header, !drag && styles.pressable)} data-tip={`b:${id}`}>
+      <div className={cx(styles.header, !drag && styles.pressable)} data-tip={`b:${id}`}
+        onBlur={b.type === 'site' ? () => { if (!getProject().name.trim()) updateProject(d => { d.name = NEW_NAME }) } : undefined}>
         {!checkpoint && (
           <button className={o.fold} title={folded ? 'Open this Block' : 'Fold this Block'}
             onClick={() => updateProject(d => { d.blocks[id].folded = !folded })}>
@@ -106,7 +107,11 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
               <Icon weight="fill" size={16} />
               {b.inst ? p.blocks[def?.blockId ?? '']?.name : b.defines ? 'Custom Block' : type.label}
             </span>
-            <TextField className={styles.name} value={b.name} onChange={v => updateProject(d => { d.blocks[id].name = v })} />
+            {/* The Site's name is the Project name (applyChange copies it onto the Site) */}
+            <TextField className={styles.name} value={b.name} onChange={v => updateProject(d => {
+              if (b.type === 'site') d.name = v
+              else d.blocks[id].name = v
+            })} />
             {b.inst && (
               <button
                 className={o.editPill}
