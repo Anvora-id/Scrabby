@@ -12,6 +12,10 @@ The product's Bob runs on IBM Bob's inference endpoint (`AGENT_BASE_URL`).
 3. `pnpm dev` — app on http://localhost:5173, preview shell on http://localhost:5174.
 4. `pnpm test` — run the test suite.
 
+## Before you push
+
+Run `git config core.hooksPath .githooks` once per clone. Every `git push` then runs `pnpm check`, which looks for keys in the files and the git history, checks the AGENTS.md safety rules and the TDD §1 config, and runs typecheck, tests and both builds. GitHub runs the same check on every pull request into `main`.
+
 ## Vercel projects
 
 Two Vercel Hobby projects are deployed from this repo:

@@ -9,7 +9,8 @@
     "build:preview": "vite build --config preview/vite.config.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build-demo": "node scripts/build-demo.ts"
+    "build-demo": "node scripts/build-demo.ts",
+    "check": "node scripts/check.ts"
   },
   "dependencies": {
     "@codemirror/commands": "^6.11.1",

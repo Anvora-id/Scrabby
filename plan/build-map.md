@@ -49,7 +49,7 @@ Two developers, each driving Bob on one lane. Merge each issue to `main` as soon
 | Order | Lane A (Canvas) | Lane B (engine) |
 |---|---|---|
 | 1 | 01 Scaffold and deploy skeleton | Step 0 items 2–4 |
-| 2 | 02 Project model and catalogue | (waits for 02) |
+| 2 | 02 Project model and catalogue | 18 Deploy checks (while waiting for 02) |
 | 3 | 03 Store, storage, fixtures, shell | 09 Agent route and Bob model client |
 | 4 | 04 Canvas logic | 10 Preview |
 | 5 | 05 Canvas UI | 11 Code editor |
@@ -86,6 +86,7 @@ Hour 34 (Sun 01:00 UTC): one developer moves to the submission package (PRD §13
 | [15](issues/15-onboarding.md) | Onboarding, demo and age check | 05, 12 | §17 | ~3 |
 | [16](issues/16-assistant.md) | Assistant | 13, 14 | §15, §14 | ~5 |
 | [17](issues/17-deploy-done-walk.md) | Deploy and done walk | all | §1, §20 | ~3 |
+| [18](issues/18-deploy-checks.md) | Deploy checks before push and PR | 01 | §1 | ~3 |
 
 Budget = rough Bobcoins per fresh task (about 70 total of the team's 80). Re-plan if an issue costs double.
 
