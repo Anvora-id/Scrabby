@@ -1,0 +1,253 @@
+/* ── modals: age check and replace warnings ─────────────────────────────────── */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: color-mix(in srgb, var(--brand) 88%, transparent);
+}
+
+.modal {
+  position: absolute;
+  top: 100px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: 480px;
+  max-width: calc(100% - 32px);
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: 0 6px 0 #0000002e;
+  overflow: hidden;
+  color: var(--text);
+  font-weight: 600;
+  animation: pop var(--t-pop) var(--spring);
+}
+
+.title {
+  margin: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--brand);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.body {
+  padding: 24px;
+  line-height: 1.45;
+}
+
+.body p {
+  margin: 0 0 20px;
+}
+
+.ageBody {
+  display: flex;
+  gap: 20px;
+}
+
+.ageBob {
+  height: 110px;
+  flex: none;
+}
+
+.body .later {
+  margin: 12px 0 0;
+  font-size: var(--fs-sm);
+  color: var(--hint);
+}
+
+.buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ── buttons ────────────────────────────────────────────────────────────────── */
+
+.primary,
+.secondary,
+.text,
+.demo {
+  font: inherit;
+  cursor: pointer;
+  transition: transform var(--t-press), box-shadow var(--t-press);
+}
+
+.primary {
+  background: var(--brand);
+  color: #fff;
+  font-weight: 900;
+  font-size: var(--fs);
+  border: none;
+  border-radius: var(--r-btn);
+  padding: 8px 16px;
+  box-shadow: 0 3px 0 var(--brand-dark);
+}
+
+.primary:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--brand-dark);
+}
+
+.secondary {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 800;
+  font-size: var(--fs);
+  border: 2px solid var(--line);
+  border-radius: var(--r-btn);
+  padding: 8px 12px;
+  box-shadow: 0 2px 0 var(--line);
+}
+
+.secondary:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--line);
+}
+
+.text {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-weight: 700;
+  font-size: var(--fs);
+  padding: 5px 6px;
+}
+
+.text:hover {
+  text-decoration: underline;
+}
+
+.demo {
+  display: block;
+  margin-top: 24px;
+  white-space: nowrap;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 900;
+  font-size: 16px;
+  border: none;
+  border-radius: var(--r-btn);
+  padding: 12px 24px;
+  box-shadow: 0 4px 0 var(--brand-dark);
+}
+
+.demo:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--brand-dark);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible,
+.text:focus-visible,
+.demo:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+}
+
+/* ── speech bubble ──────────────────────────────────────────────────────────── */
+
+.ring[hidden],
+.bubble[hidden] {
+  display: none;
+}
+
+.ring {
+  position: fixed;
+  z-index: 49;
+  outline: 3px solid var(--bob);
+  outline-offset: 3px;
+  pointer-events: none;
+}
+
+.bubble {
+  position: fixed;
+  z-index: 50;
+  width: max-content;
+  max-width: 280px;
+  background: var(--surface);
+  border: 2.5px solid var(--bob);
+  border-radius: 18px;
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--bob) 25%, transparent);
+  padding: 12px 14px;
+  color: var(--ink);
+  font-weight: 700;
+  font-size: var(--fs-md);
+  line-height: 1.4;
+  animation: pop var(--t-pop) var(--spring);
+}
+
+/* Under the text, over the bubble's own border, so the tail joins the bubble. */
+.tail {
+  position: absolute;
+  z-index: -1;
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  background: var(--surface);
+  border: 0 solid var(--bob);
+  transform: rotate(45deg);
+}
+
+.bubble[data-side='right'] .tail { left: -10px; top: calc(var(--tail) - 10px); border-width: 0 0 2.5px 2.5px; }
+.bubble[data-side='left'] .tail { right: -10px; top: calc(var(--tail) - 10px); border-width: 2.5px 2.5px 0 0; }
+.bubble[data-side='below'] .tail { top: -10px; left: calc(var(--tail) - 10px); border-width: 2.5px 0 0 2.5px; }
+.bubble[data-side='above'] .tail { bottom: -10px; left: calc(var(--tail) - 10px); border-width: 0 2.5px 2.5px 0; }
+.bubble[data-side='inside'] .tail { display: none; }
+
+/* Bob stands on the top corner away from the target. */
+.bob {
+  position: absolute;
+  bottom: calc(100% - 10px);
+  right: 10px;
+  height: 74px;
+  pointer-events: none;
+  animation: hop 450ms var(--spring);
+}
+
+.bubble[data-side='left'] .bob {
+  right: auto;
+  left: 10px;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.count {
+  margin-right: auto;
+  font-size: var(--fs-sm);
+  color: var(--hint);
+}
+
+@keyframes pop {
+  from { transform: scale(.9); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@keyframes hop {
+  40% { transform: translateY(-10px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal,
+  .bubble,
+  .bob {
+    animation: none;
+  }
+
+  .primary:active,
+  .secondary:active,
+  .demo:active {
+    transform: none;
+  }
+}
