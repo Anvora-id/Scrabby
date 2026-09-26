@@ -1,6 +1,6 @@
 # 13: Build
 
-Status: ready-for-agent
+Status: done
 Blocked by: 08, 09, 10, 11
 Wave: 2
 
@@ -29,11 +29,18 @@ Modify: `src/slots/Checkpoints.tsx` (export the `Warning` dialog component of TD
 
 ## Steps
 
-- [ ] `build.ts` exactly as TDD §11: `FAILURE_LINES`, `BuildRun`, the run store, `requestBlocks`, `nothingNew`, `buildProblem`, `runBuild` (with `start`/`limit` handling, all or nothing, `.builds/build-N.md`, `addCheckpoint`, `consume` with `key = null`, `flashBlocks`, 900 ms to Try & tweak), `builtBlocks`, `consume`, `pageName`.
-- [ ] BuildButton and BuildCard per TDD §11, with `<BobBadge/>` in the running title. Include the Assistant's pending-change check now, with `hasPending` and `dropPending` from `src/assistant.ts` (issue 19 stubs; issue 16 fills them).
-- [ ] Tests: the `build.test.ts` row of TDD §20 (mock `./db` and `./agent`; fake timers).
+- [x] `build.ts` exactly as TDD §11: `FAILURE_LINES`, `BuildRun`, the run store, `requestBlocks`, `nothingNew`, `buildProblem`, `runBuild` (with `start`/`limit` handling, all or nothing, `.builds/build-N.md`, `addCheckpoint`, `consume` with `key = null`, `flashBlocks`, 900 ms to Try & tweak), `builtBlocks`, `consume`, `pageName`.
+- [x] BuildButton and BuildCard per TDD §11, with `<BobBadge/>` in the running title. Include the Assistant's pending-change check now, with `hasPending` and `dropPending` from `src/assistant.ts` (issue 19 stubs; issue 16 fills them).
+- [x] Tests: the `build.test.ts` row of TDD §20 (mock `./db` and `./agent`; fake timers).
 
 ## Done when
 
 - `pnpm typecheck` and `pnpm test` pass.
 - In the browser with the Bob key: load the demo, ▶ Build: chips light up, "Building …" lines appear, the Build finishes (note the time), Try & tweak opens with the site running. Back in Plan, ▶ Build is greyed and explains "Nothing new to build…". Drop a Section with a text Trait into a Built page, hand-edit `style.css`, ▶ Build: the hand edit survives. Stop the dev server's network (or point `AGENT_BASE_URL` at a bad host) and ▶ Build: "Build N did not finish", "Nothing changed…", the unreachable line, Try again and ← Back to the Blocks.
+
+## Answer
+
+- `requestBlocks(p, top)` takes the top Block, not its id; `builtBlocks(p, topId)` reuses the fixtures' clone helper.
+- `Warning` is exported from `src/slots/Checkpoints.tsx` (CSS in `Checkpoints.module.css`); the tab itself is still the placeholder.
+- Chips follow TDD §11 literally, so an unlocked Site Block gets a chip too. The card keeps each chip's icon while its Block exists, because `consume` removes the Blocks.
+- The Build stage loop uses the Web Animations API (per-piece timing); reduced motion skips it.
