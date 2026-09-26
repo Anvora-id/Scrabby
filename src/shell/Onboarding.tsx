@@ -33,17 +33,25 @@ function Greeting() {
   const empty = isEmptyProject(found)
   const ask = askStore.use()
   const busy = replacingStore.use()
-  const [then, setThen] = useState<(() => void) | null>(null)
+  const [afterLeave, setAfterLeave] = useState<(() => void) | null>(null)
+  const backdrop = useRef<HTMLDivElement>(null)
   const first = useRef<HTMLButtonElement>(null)
-  const off = busy || then !== null
+  const off = busy || afterLeave !== null
 
-  // Close, then act: once the leave animation ends, or at once with reduced motion.
-  const leave = (act: () => void) => {
-    if (then) return
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { greetingStore.set(false); act() }
-    else setThen(() => act)
-  }
+  const leave = (act: () => void) => { if (!afterLeave) setAfterLeave(() => act) }
   const noTour = () => {}
+
+  // Close, then act, once the leave animations have run. With none running (reduced motion, or
+  // animations turned off some other way) that is at once, so the card can't get stuck.
+  useEffect(() => {
+    if (!afterLeave) return
+    let live = true
+    const running = backdrop.current!.getAnimations({ subtree: true }).map(a => a.finished)
+    void Promise.allSettled(running).then(() => {
+      if (live) { greetingStore.set(false); afterLeave() }
+    })
+    return () => { live = false }
+  }, [afterLeave])
 
   // The card waits for a demo or a new Project to be in place, then leaves; a failed load leaves it up.
   useEffect(() => {
@@ -61,16 +69,14 @@ function Greeting() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [then, ask, busy])
+  }, [afterLeave, ask, busy])
 
   return (
     <div
+      ref={backdrop}
       className={`${styles.backdrop} ${styles.center}`}
       inert={ask !== null}
-      data-leaving={then ? '' : undefined}
-      onAnimationEnd={e => {
-        if (then && e.target === e.currentTarget) { greetingStore.set(false); then() }
-      }}
+      data-leaving={afterLeave ? '' : undefined}
     >
       <div className={styles.greeting} role="dialog" aria-modal="true" aria-labelledby="greeting-title">
         <div className={styles.logo}>
