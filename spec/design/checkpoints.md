@@ -5,8 +5,8 @@ The third tab in Plan ([Shell](#shell)), after Canvas and Library (ADR 0005). Ev
 
 - **Panel:** `--surface`, padding 14px, entries stacked with gap 10px, newest first. Empty: "No Checkpoints yet. Every Build saves one here." (`--hint`, italic).
 - **Entry:** `--surface`, 2px `--line` border, a 3px `--line` bottom edge, radius `--r-panel`, padding 12px 14px, `--ink`.
-  1. **Title row** (gap 8px, baseline): "Checkpoint N" (`--fs-lg` weight 900), the time (`--fs`, `--hint`), then tags.
-  2. **Gist** (4px above, 8px below, `--fs`): "Built the site: N pages." for a first Build or a remake; "Added: Footer, Contact form." (its request Blocks' names) for a later Build; "Before loading Checkpoint N: your code with its hand edits." for a saved one.
+  1. **Title row** (gap 8px, baseline): "Checkpoint N" (`--fs-lg` weight 900), or "Checkpoint N · Menu page" once named, the time (`--fs`, `--hint`), then tags, then at the row's end a 24px rename button (14px pencil, `--hint`, radius 8px, `--soft` fill and `--ink` on hover). Renaming puts a field after "Checkpoint N" (`--fs-md` weight 800, `--ink`, 2px `--line` border, radius 8px, padding 1px 6px, 24ch wide, up to 40 characters): Enter saves, Escape or clicking away cancels, an empty name removes it. A Checkpoint's name shows wherever that Checkpoint is named: its tags, the "Before loading" gists, the Checkpoint warning, the chat lines, the Checkpoint Block and the Preview bar.
+  2. **Gist** (4px above, 8px below, `--fs`): "Built the site: N pages." for a first Build or a remake; "Added: Footer, Contact form." (its request Blocks' names) for a later Build; "Before loading Checkpoint N: your code with its hand edits." (with that Checkpoint's name when it has one) for a saved one.
   3. **Buttons** (ghost, [Buttons](#buttons), gap 6px): **Go back to this**, then **Edit its Blocks**. A "Before loading" Checkpoint has only Go back to this. Both open the Checkpoint warning ([Menus](#menus)).
 - **Tags:** `--fs-sm` weight 800, radius `--r-pill`, padding 1px 8px, `--soft` fill, `--ink`:
   - "from Checkpoint N" or "remade from scratch", on a Build made after an older Checkpoint was loaded;

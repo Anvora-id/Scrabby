@@ -37,7 +37,7 @@
   - Textbox "Textbox" #b15
     - text (exact words to show, as written): "Fresh cakes every Saturday"
   - Frame "Frame" #b14
-    - image (show this picture): assets/cupcakes.png
+    - image (show this picture): assets/cupcakes.jpg
   - Button "Order" #b13
     - on click (when a visitor clicks this Block): open "Order" popup #b12
 - Popup "Order" #b12
@@ -87,10 +87,12 @@
 
 ## Library
 
-- assets/cupcakes.png: image, 1200×800 px, used by a Trait
-- assets/layer-cake.png: image, 1200×800 px
-- assets/cookies.png: image, 1200×800 px
-- assets/bake-stall.png: image, 1200×800 px
+- assets/cupcakes.jpg: image, 1200×800 px, used by a Trait
+- assets/layer-cake.jpg: image, 1200×800 px
+- assets/cookies.jpg: image, 1200×800 px
+- assets/bake-stall.jpg: image, 1200×800 px
+- assets/lemon-drizzle.jpg: image, 1200×800 px
+- assets/brownie.jpg: image, 1200×800 px
 ```
 
 (The document ends with one newline after the last Library line.)
