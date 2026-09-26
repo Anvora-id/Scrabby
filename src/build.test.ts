@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AgentEvent, AgentRequest } from './agent.ts'
 import type { Checkpoint, Project } from './model/types.ts'
@@ -226,6 +227,15 @@ describe('guardImages', () => {
     expect(guardImages(none)).toBe(none)
     const compact = { 'style.css': 'body{margin:0}img,video{max-width:100%}' }
     expect(guardImages(compact)).toBe(compact)
+    const withSvg = { 'style.css': 'img, video, svg { max-width: 100%; }' }
+    expect(guardImages(withSvg)).toBe(withSvg)
+  })
+  it('leaves style.css alone when base.css has the rule, and adds it when base.css lost it', () => {
+    // Read from disk: Vitest stubs CSS imports, even with ?raw.
+    const files = { 'base.css': readFileSync('skills/base.css', 'utf8'), 'style.css': 'body { margin: 0; }' }
+    expect(guardImages(files)).toBe(files)
+    const lost = { 'base.css': 'body { margin: 0; }', 'style.css': 'body { margin: 0; }' }
+    expect(guardImages(lost)['style.css']).toMatch(/^\/\* Pictures and videos never grow wider than their box \*\//)
   })
   it('adds the rule when the only one is commented out, inside @media or behind another selector', () => {
     for (const css of [
@@ -237,7 +247,7 @@ describe('guardImages', () => {
   it('stays fast on style.css that would make a regex backtrack', () => {
     // process.hrtime, not performance.now: this file fakes the timers.
     const started = process.hrtime.bigint()
-    for (const css of ['@import ' + 'url(a)'.repeat(40) + ' x', '/*' + ' x'.repeat(200_000), '/*'.repeat(100_000), ';img,video{'.repeat(20_000)]) {
+    for (const css of ['@import ' + 'url(a)'.repeat(40) + ' x', '/*' + ' x'.repeat(200_000), '/*'.repeat(100_000), ';img,video{'.repeat(20_000), ';img,video' + ' '.repeat(200_000)]) {
       expect(guardImages({ 'style.css': css })['style.css']).toContain('img, video { max-width: 100%; height: auto; }')
     }
     expect(Number(process.hrtime.bigint() - started) / 1e6).toBeLessThan(50)
