@@ -232,13 +232,16 @@
   font-weight: 800;
 }
 
-/* The pile: 10 units of 36px by 7 rows of 22px, clear of the caption and of Bob. */
+/* The pile: 10 units of 36px by 7 rows of 22px, clear of the caption and of Bob.
+   Clipped from 20px above it (8px under the caption), so a falling brick appears below the caption and never crosses it;
+   the 8px at the sides and bottom keep the squash, the flash and the bottom edges. */
 .base {
   position: absolute;
   left: 28px;
   bottom: 14px;
   width: 360px;
   height: 152px;
+  clip-path: inset(-20px -8px -8px);
 }
 
 .brick {
