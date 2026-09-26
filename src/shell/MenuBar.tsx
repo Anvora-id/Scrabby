@@ -66,7 +66,6 @@ export default function MenuBar() {
       {/* Logo */}
       <img src="/bob.svg" alt="" className={styles.logo} />
       <span className={styles.wordmark}>Scrabby</span>
-      <div style={{ width: 10 }} />
 
       {/* Project name chip */}
       <span className={styles.projectName}>{project.name}</span>

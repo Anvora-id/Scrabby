@@ -1,5 +1,6 @@
+import { Fragment } from 'react'
 import { ICONS } from '../icons.ts'
-import { useUi, setStep, setPlanTab, type Step } from '../store.ts'
+import { useUi, setStep, type Step } from '../store.ts'
 import styles from './StepBar.module.css'
 
 const STEPS: { id: Step; label: string; n: number }[] = [
@@ -22,8 +23,9 @@ export default function StepBar() {
         const disabled = step.id === 'build' || building
         const CheckIcon = ICONS.check
         return (
+          <Fragment key={step.id}>
+          {i > 0 && <span className={styles.sep}>›</span>}
           <button
-            key={step.id}
             className={styles.step}
             data-state={state}
             disabled={disabled}
@@ -34,12 +36,13 @@ export default function StepBar() {
             </span>
             {step.label}
           </button>
+          </Fragment>
         )
       })}
       {ui.step === 'try' && (
         <button
           className={`${styles.back} ${styles.ghost}`}
-          onClick={() => { setStep('plan'); setPlanTab('canvas') }}
+          onClick={() => setStep('plan')}
         >
           ← Back to the Blocks
         </button>

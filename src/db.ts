@@ -11,7 +11,6 @@ interface ScrabbyDB extends DBSchema {
   projects: {
     key: string
     value: Project
-    indexes: { updated: number }
   }
   checkpoints: {
     key: [string, number]
@@ -31,8 +30,7 @@ function getDb(): Promise<IDBPDatabase<ScrabbyDB>> {
   if (!dbPromise) {
     dbPromise = openDB<ScrabbyDB>('scrabby', 1, {
       upgrade(db) {
-        const projects = db.createObjectStore('projects', { keyPath: 'id' })
-        projects.createIndex('updated', 'updated')
+        db.createObjectStore('projects', { keyPath: 'id' })
         const checkpoints = db.createObjectStore('checkpoints', { keyPath: ['projectId', 'number'] })
         checkpoints.createIndex('projectId', 'projectId')
         const assets = db.createObjectStore('assets', { keyPath: ['projectId', 'id'] })
@@ -45,9 +43,8 @@ function getDb(): Promise<IDBPDatabase<ScrabbyDB>> {
 
 export async function loadLatestProject(): Promise<Project | undefined> {
   const db = await getDb()
-  const all = await db.getAllFromIndex('projects', 'updated')
-  if (all.length === 0) return undefined
-  return all[all.length - 1]
+  const all = await db.getAll('projects')
+  return all.sort((a, b) => b.updated - a.updated)[0]
 }
 
 export async function saveProject(p: Project): Promise<void> {

@@ -54,7 +54,7 @@ export function setProject(p: Project): void {
   saveProject(p).catch(e => console.error('Saving the Project failed', e))
 }
 
-export function updateProject(recipe: (p: Project) => void, key: string | null = focusedField()): void {
+export function updateProject(recipe: (p: Project) => void, key: unknown = focusedField()): void {
   const before = getProject()
   updateProjectWithoutUndo(recipe)
   history.record(before, key)
@@ -89,9 +89,9 @@ export async function startStore(): Promise<void> {
   }
 }
 
-function focusedField(): string | null {
+function focusedField(): Element | null {
   if (typeof globalThis.document === 'undefined') return null
-  return document.activeElement?.closest('input, textarea') ? document.activeElement!.id || 'field' : null
+  return document.activeElement?.closest('input, textarea') ?? null
 }
 
 // ── UI store ──────────────────────────────────────────────────────────────────

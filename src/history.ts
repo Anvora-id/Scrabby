@@ -1,6 +1,6 @@
 // ponytail: whole-project copies for every undo step
 export interface History<T> {
-  record(before: T, key?: string | null): void
+  record(before: T, key?: unknown): void
   undo(current: T): T | undefined
   redo(current: T): T | undefined
   clear(): void
@@ -11,10 +11,10 @@ export interface History<T> {
 export function createHistory<T>(limit = 100): History<T> {
   const past: T[] = []
   const future: T[] = []
-  let lastKey: string | null = null
+  let lastKey: unknown = null
 
   return {
-    record(before: T, key: string | null = null): void {
+    record(before: T, key: unknown = null): void {
       future.splice(0)
       if (key != null && key === lastKey) return // merge into open step
       lastKey = key
