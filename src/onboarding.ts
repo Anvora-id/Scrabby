@@ -46,7 +46,9 @@ export async function replaceProject(
 }
 
 export async function loadDemo(): Promise<void> {
-  try { await replaceProject(demoProject()) } catch (e) { console.error('Loading the demo failed', e) }
+  try { await replaceProject(demoProject()) } catch (e) { console.error('Loading the demo failed', e); return }
+  once('scrabby.tour.plan') // seen now, so a later first-visit check doesn't repeat it
+  startTour('plan')
 }
 
 export async function newProject(): Promise<void> {
@@ -94,6 +96,10 @@ export function nextBubble(): void {
   else endTour()
 }
 export function endTour(): void { tourStore.set(null) }
+/** The Plan show-around on this browser's first visit. */
+export function firstTour(): void {
+  if (once('scrabby.tour.plan')) startTour('plan')
+}
 
 /** True the first time for this key; true every time when storage throws. */
 export function once(key: string): boolean {

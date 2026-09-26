@@ -118,6 +118,7 @@ The category colors are "Medium" strength (D-Q18): stronger than the old pastels
   | Menu bar | Full figure, 40px tall, before the wordmark ([Shell](#shell)) |
   | Build card | Full figure, 118px tall, hopping on the Build stage ([Build button and Build card](#build-button-and-build-card)) |
   | Speech bubbles | Full figure, 74px tall, beside the bubble ([Speech bubble](#speech-bubble)) |
+  | Greeting | The logo, Bob 160px tall, at the top of the greeting card ([Screen layout](#screen-layout)) |
 
 - **Logo** = Bob's full figure + the **wordmark** "Scrabby" in Nunito 900, letter-spacing −.01em, gap 8px, figure bottom-aligned with the text's baseline. The logo is for the app, video, deck and cover. The favicon is `bob-head.svg`.
 
@@ -136,7 +137,8 @@ The category colors are "Medium" strength (D-Q18): stronger than the old pastels
 | Step change | The new step's area fades in and rises 12px over 220ms with `--ease`. |
 | Build chips | A chip that lights up pops from `scale(.94)` to 1 over `--t-pop` with `--spring`. On a failed Build every chip goes back to dim at once. |
 | Flash (jumped-to Block, changed page part) | A `--flash` ring that fades out, as each component says. |
-| Bob | Hops only on the Build stage (loop) and once when a speech bubble appears ([Brand and Bob](#brand-and-bob)). |
+| Bob | Hops only on the Build stage (loop) and once when a speech bubble or the greeting appears ([Brand and Bob](#brand-and-bob)). |
+| Greeting leaves | The backdrop fades out while the card shrinks to `scale(.9)`, over `--t-pop` with `--ease`. |
 
 **Reduced motion** (`prefers-reduced-motion: reduce`): no transforms or loops. Presses, drops, pops and step changes happen at once. Flashes still fade (opacity only). The Build stage shows the finished stack standing still and Bob standing still.
 
@@ -283,7 +285,6 @@ The dotted paper. It sits right of the [Palette](#palette).
 - **Dragging:** the app's own pointer code, not the browser's drag-and-drop. A drag starts after 4px of movement. Closest-edge drop: the middle of a Block drops into it, near an edge drops beside, above or below it. How things move: [Motion](#motion).
 - **Drop indicator:** a 4px `--drop` line, radius 3px, a 2px white halo, at the closest edge. A `--drop-gap` placeholder the size of the dragged item (radius `--r-block`, or `--r-pill` for stickers) opens where it will land. Nothing else moves during a drag. Where nothing can take the item (for example a Page over a Hero, or anywhere outside the definition in a Custom Block's edit view), no indicator shows, and on release the item springs back to where it came from. Dropping an item back on its own spot changes nothing and adds no undo step.
 - **Empty hint** (PRD §9): while the Site Block holds no Page Block, its inside grows to 120px and shows, centered, "Drag a Page into your Site to start." (`--hint`, `--fs-md`, weight 700, italic). It disappears once a Page is inside.
-- **Demo button** (PRD-43), shown under the same condition: 24px below the Site Block, left edges lined up, moving with the Canvas. A big primary button: `--brand` fill, white weight-900 16px, radius `--r-btn`, padding 12px 24px, a 4px `--brand-dark` bottom edge, "Try the demo: Maya's bake sale". It loads the demo Project (warning first only if the current Project isn't empty, [Menus](#menus)). The menu bar's **Demo** button does the same ([Shell](#shell)).
 - **After a Build:** the Build's Blocks leave the Canvas. It holds the Checkpoint Block in the Site Block's place, plus any loose ideas ([Block](#block), ADR 0005).
 - **Warnings:** marks on Blocks and Traits, and a stepper at the top right: [Warnings](#warnings).
 - **Custom Block edit view** (Stretch, PRD §6): the Canvas shows only the definition, with the edit bar ([Menus](#menus)) across the top.
@@ -503,7 +504,7 @@ From ticket 02. Three steps, and only one is on screen at a time: **1 Plan › 2
 - **Block chip:** clicking a chip in the code opens Plan on the Checkpoints tab, at the Checkpoint whose Build made that code, with that Block flashing and scrolled to the center.
 - Whatever is jumped to scrolls smoothly to the center.
 
-**First visit** (PRD §9): Plan opens on an empty Project, with the empty hint ([Canvas](#canvas)), and the show-around starts ([Speech bubble](#speech-bubble)). Below the Site Block, **Try the demo: Maya's bake sale** loads the demo Project ([Canvas](#canvas)); so does **Demo** in the menu bar.
+**Greeting** (PRD §9): when a page load finds the saved Project empty, a card sits over Plan, behind the same `--brand` backdrop as the replace warnings ([Menus](#menus)). A click on the backdrop does nothing. The card is 560px wide, radius `--r-card`, padding 32px 40px 36px, centered text. From the top: the logo big (Bob 160px tall, hopping once, and the wordmark 64px in `--brand`), the slogan "Ideas are best blocked out." (28px, weight 900, `--ink`), the line "Snap your idea together. Bob builds it for real." (`--fs-lg`, weight 700), then, in a centered column 12px apart, the big primary **Take me through the demo: Maya's bake sale** (`--brand` fill, white weight-900 16px, radius `--r-btn`, padding 12px 24px, a 4px `--brand-dark` bottom edge) and a Secondary **Start my own site**. The demo button loads the demo Project, then runs the Plan show-around ([Speech bubble](#speech-bubble)); **Demo** in the menu bar does the same, with a warning first when the Project isn't empty. Start my own site, or Escape, leaves the empty Project on the Canvas with the empty hint ([Canvas](#canvas)), and the show-around starts on the first visit. The card leaves as [Motion](#motion) says.
 
 **Scrollbars:** thin and light app-wide (`scrollbar-width: thin; scrollbar-color: var(--placeholder) transparent`, and for WebKit 8px, thumb `--placeholder` radius 8px, transparent track, thumb hover `--hint`). The code editor has its own dark ones ([Code editor](#code-editor)); the Preview's page scrollbars belong to the user's website.
 

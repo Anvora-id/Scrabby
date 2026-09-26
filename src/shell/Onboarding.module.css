@@ -51,6 +51,83 @@
   gap: 8px;
 }
 
+/* ── greeting ───────────────────────────────────────────────────────────────── */
+
+.center {
+  display: grid;
+  place-items: center;
+}
+
+.greeting {
+  width: 560px;
+  max-width: calc(100% - 32px);
+  padding: 32px 40px 36px;
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: 0 6px 0 #0000002e;
+  color: var(--text);
+  text-align: center;
+  animation: pop var(--t-pop) var(--spring);
+}
+
+/* The logo: Bob's feet on the wordmark's baseline. */
+.logo {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+}
+
+.logo img {
+  height: 160px;
+  animation: hop 450ms var(--spring);
+}
+
+.wordmark {
+  font-size: 64px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--brand);
+}
+
+.slogan {
+  margin: 24px 0 8px;
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--ink);
+}
+
+.pitch {
+  margin: 0 0 28px;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Leaving: the backdrop fades (and the card with it) while the card shrinks. */
+.backdrop[data-leaving] {
+  animation: fade-out var(--t-pop) var(--ease) forwards;
+}
+
+.backdrop[data-leaving] .greeting {
+  animation: shrink var(--t-pop) var(--ease) forwards;
+}
+
+@keyframes fade-out {
+  to { opacity: 0; }
+}
+
+@keyframes shrink {
+  to { transform: scale(.9); }
+}
+
 /* ── buttons ────────────────────────────────────────────────────────────────── */
 
 .primary,
@@ -108,8 +185,6 @@
 }
 
 .demo {
-  display: block;
-  margin-top: 24px;
   white-space: nowrap;
   background: var(--brand);
   color: #fff;
@@ -224,6 +299,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .modal,
+  .greeting,
+  .logo img,
   .bubble,
   .bob {
     animation: none;
