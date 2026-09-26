@@ -312,6 +312,8 @@
   .modal,
   .greeting,
   .logo img,
+  .backdrop[data-leaving],
+  .backdrop[data-leaving] .greeting,
   .bubble,
   .bob {
     animation: none;
