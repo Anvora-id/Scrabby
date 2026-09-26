@@ -1,0 +1,3 @@
+#!/bin/sh
+# Runs the deploy checks before every push (plan/issues/18-deploy-checks.md).
+exec pnpm check
