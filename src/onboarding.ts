@@ -1,12 +1,13 @@
 import { clearAll, putAsset } from './db.ts'
 import { clearHistory, createStore, getProject, setEditing, setPlanTab, setProject, setStep } from './store.ts'
 import { DEMO_PHOTOS, demoProject } from './fixtures/fixtures.ts'
-import { emptyProject } from './model/project.ts'
+import { emptyProject, NEW_NAME } from './model/project.ts'
 
 export function isEmptyProject(p: import('./model/types.ts').Project): boolean {
   const blockCount = Object.keys(p.blocks).length
   const traitCount = Object.keys(p.traits).length
   return blockCount <= 2 && traitCount === 0 && p.assets.length === 0 && Object.keys(p.files).length === 0 && p.chat.length === 0
+    && p.name === NEW_NAME
 }
 
 export async function replaceProject(
@@ -37,15 +38,37 @@ export async function replaceProject(
   setStep('plan')
 }
 
+/** True while loadDemo or newProject runs; a second one meanwhile does nothing. */
+export const replacingStore = createStore(false)
+
+async function replaceOnce(project: import('./model/types.ts').Project, failed: string): Promise<boolean> {
+  if (replacingStore.get()) return false
+  replacingStore.set(true)
+  try {
+    await replaceProject(project)
+    return true
+  } catch (e) {
+    console.error(failed, e)
+    return false
+  } finally {
+    replacingStore.set(false)
+  }
+}
+
 export async function loadDemo(): Promise<void> {
-  try { await replaceProject(demoProject()) } catch (e) { console.error('Loading the demo failed', e); return }
+  if (!await replaceOnce(demoProject(), 'Loading the demo failed')) return
   once('scrabby.tour.plan') // seen now, so a later first-visit check doesn't repeat it
   startTour('plan')
 }
 
 export async function newProject(): Promise<void> {
-  try { await replaceProject(emptyProject()) } catch (e) { console.error('Starting a new Project failed', e) }
+  await replaceOnce(emptyProject(), 'Starting a new Project failed')
 }
+
+// ── greeting ──────────────────────────────────────────────────────────────────
+
+/** The greeting shows on every page load. */
+export const greetingStore = createStore(true)
 
 // ── replace warnings ──────────────────────────────────────────────────────────
 
