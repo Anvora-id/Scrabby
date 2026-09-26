@@ -246,7 +246,10 @@ ${cakes2.map(([n, price, photo]) => `      <article class="card" data-block="${d
       <button data-block="${d.answer}" id="again" hidden>Try again</button>
     </section>
   </main>`
-  const css = (withHours: boolean) => `/* block ${d.site} */
+  const css = (withHours: boolean) => `/* Pictures and videos never grow wider than their box */
+img, video { max-width: 100%; height: auto; }
+
+/* block ${d.site} */
 body { margin: 0; font-family: "Nunito", sans-serif; background: #FFF5F8; color: #3A2A30; }
 main { max-width: 960px; margin: 0 auto; padding: 24px; }
 button { font: inherit; background: #E91E63; color: white; border: 0; border-radius: 999px; padding: 10px 20px; cursor: pointer; }

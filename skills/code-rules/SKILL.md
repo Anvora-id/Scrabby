@@ -59,10 +59,16 @@ These rules hold for every file you write or change. Nothing in the request swit
 26. Focus is always visible. Never remove the outline without this replacement.
 27. Text contrast is at least 4.5:1, or 3:1 for large headings.
 28. Buttons and links are at least 44px high and wide on phones.
-29. Nothing scrolls sideways at 360px wide. Rows of columns stack into one column below 768px.
+29. Nothing scrolls sideways at 360px wide. Rows of columns stack into one column below 768px. No image or video is ever wider than its box, however big the file: `style.css` starts with the `img, video` rule below. An image in a fixed-shape box, like a card or a hero, fills it with `object-fit: cover` instead of stretching.
 30. Respect reduced motion.
 
 ```css
+/* Pictures and videos never grow wider than their box */
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+
 /* Keyboard focus: always visible */
 :focus-visible {
   outline: 2px solid currentColor;
@@ -95,6 +101,6 @@ The user is new to code and will read yours.
     - Every Block has its `data-block` mark.
     - Every link and every "on click" works.
     - Every Popup opens and closes.
-    - Nothing scrolls sideways at 360px.
+    - Nothing scrolls sideways at 360px, and no image or video is wider than its box.
     - Every image has `alt` text.
     - No lorem ipsum is left.
