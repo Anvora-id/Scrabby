@@ -20,9 +20,13 @@
   position: absolute;
 }
 
-.avatar {
+/* body > outranks the copied element's own classes: a palette Block's position: relative
+   loads later and would drop the copy into the page flow, below the screen. */
+body > .avatar {
   position: fixed;
   z-index: 50;
+  box-sizing: border-box;
+  margin: 0;
   pointer-events: none;
   filter: var(--shadow-drag);
   transform-origin: 0 0;
@@ -31,8 +35,59 @@
 }
 
 @starting-style {
-  .avatar {
+  body > .avatar {
     scale: 1;
+  }
+}
+
+/* let go where nothing takes it, or on the palette to delete it */
+body > .avatar.gone {
+  opacity: 0;
+  scale: 0.9;
+  transition: opacity var(--t-pop) var(--ease), scale var(--t-pop) var(--ease);
+}
+
+/* a moved item's copy flies back to its spot */
+body > .avatar.back {
+  scale: 1;
+  transition: left var(--t-pop) var(--spring), top var(--t-pop) var(--spring),
+    scale var(--t-pop) var(--spring), transform var(--t-pop) var(--spring);
+}
+
+/* the item waits in its spot until its copy is back */
+.waiting {
+  visibility: hidden;
+}
+
+.landed {
+  transform-origin: 50% 100%;
+  animation: land calc(90ms + var(--t-pop));
+}
+
+/* squash for 90ms, then settle over --t-pop */
+@keyframes land {
+  0%, 22% {
+    scale: 1.04 0.94;
+    animation-timing-function: var(--spring);
+  }
+  to {
+    scale: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body > .avatar,
+  body > .avatar.back {
+    transition: none;
+  }
+
+  body > .avatar.gone {
+    scale: 1.03;
+    transition: opacity var(--t-pop) var(--ease);
+  }
+
+  .landed {
+    animation: none;
   }
 }
 
