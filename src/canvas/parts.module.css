@@ -179,10 +179,6 @@
   font-style: italic;
 }
 
-.emptyHint img {
-  height: 64px;
-}
-
 .dropHint {
   padding: 2px;
   color: var(--hint);

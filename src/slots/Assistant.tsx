@@ -55,7 +55,6 @@ export default function Assistant() {
   return (
     <div className={styles.root}>
       <div className={styles.title}>
-        <img className={styles.head} src="/bob-head.svg" alt="" />
         <span className={styles.name}>Bob</span>
         <BobBadge />
       </div>
@@ -72,7 +71,6 @@ export default function Assistant() {
       <div className={styles.chat} ref={chatRef} onScroll={onScroll}>
         {chat.length === 0 && (
           <div className={styles.empty}>
-            <img className={styles.emptyHead} src="/bob-head.svg" alt="" />
             Ask Bob what a part of your code does, or ask for a change.
           </div>
         )}

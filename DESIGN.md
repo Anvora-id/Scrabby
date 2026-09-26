@@ -117,11 +117,7 @@ The category colors are "Medium" strength (D-Q18): stronger than the old pastels
   |---|---|
   | Menu bar | Full figure, 40px tall, before the wordmark ([Shell](#shell)) |
   | Build card | Full figure, 118px tall, hopping on the Build stage ([Build button and Build card](#build-button-and-build-card)) |
-  | Assistant title bar | Head avatar, 30px ([Assistant](#assistant)) |
   | Speech bubbles | Full figure, 74px tall, beside the bubble ([Speech bubble](#speech-bubble)) |
-  | Empty Canvas | Full figure, 64px tall, above the empty hint ([Canvas](#canvas)) |
-  | Empty Preview | Full figure, 64px tall, above the empty line ([Preview](#preview)) |
-  | Empty chat | Head, 40px, above the empty line ([Assistant](#assistant)) |
 
 - **Logo** = Bob's full figure + the **wordmark** "Scrabby" in Nunito 900, letter-spacing −.01em, gap 8px, figure bottom-aligned with the text's baseline. The logo is for the app, video, deck and cover. The favicon is `bob-head.svg`.
 
@@ -286,7 +282,7 @@ The dotted paper. It sits right of the [Palette](#palette).
 - **Zoom:** Ctrl + scroll or pinch, at the pointer, from 30% to 200%. Zoom buttons stacked at the bottom right: +, −, = with 8px between them. Each is a 42px circle, `--surface`, 2px `--line` border, a 3px `--line` bottom edge, with an 18px `--text` icon ([Icons](#icons)). ×1.25 per click; = resets to 100%. In Plan the big Build button takes the corner (20px in from the right, 22px from the bottom), and the zoom buttons stack 14px above it, right edges lined up (D-Q8).
 - **Dragging:** the app's own pointer code, not the browser's drag-and-drop. A drag starts after 4px of movement. Closest-edge drop: the middle of a Block drops into it, near an edge drops beside, above or below it. How things move: [Motion](#motion).
 - **Drop indicator:** a 4px `--drop` line, radius 3px, a 2px white halo, at the closest edge. A `--drop-gap` placeholder the size of the dragged item (radius `--r-block`, or `--r-pill` for stickers) opens where it will land. Nothing else moves during a drag. Where nothing can take the item (for example a Page over a Hero, or anywhere outside the definition in a Custom Block's edit view), no indicator shows, and on release the item springs back to where it came from. Dropping an item back on its own spot changes nothing and adds no undo step.
-- **Empty hint** (PRD §9): while the Site Block holds no Page Block, its inside grows to 120px and shows, centered, Bob (64px, [Brand and Bob](#brand-and-bob)) above "Drag a Page into your Site to start." (`--hint`, `--fs-md`, weight 700, italic). It disappears once a Page is inside.
+- **Empty hint** (PRD §9): while the Site Block holds no Page Block, its inside grows to 120px and shows, centered, "Drag a Page into your Site to start." (`--hint`, `--fs-md`, weight 700, italic). It disappears once a Page is inside.
 - **Demo button** (PRD-43), shown under the same condition: 24px below the Site Block, left edges lined up, moving with the Canvas. A big primary button: `--brand` fill, white weight-900 16px, radius `--r-btn`, padding 12px 24px, a 4px `--brand-dark` bottom edge, "Try the demo: Maya's bake sale". It loads the demo Project (warning first only if the current Project isn't empty, [Menus](#menus)). The menu bar's **Demo** button does the same ([Shell](#shell)).
 - **After a Build:** the Build's Blocks leave the Canvas. It holds the Checkpoint Block in the Site Block's place, plus any loose ideas ([Block](#block), ADR 0005).
 - **Warnings:** marks on Blocks and Traits, and a stepper at the top right: [Warnings](#warnings).
@@ -402,7 +398,7 @@ The middle column of Try & tweak ([Screen layout](#screen-layout)). CodeMirror 6
 The left and widest column of Try & tweak ([Screen layout](#screen-layout)): the live, clickable Prototype.
 
 - **Address bar:** a panel sub-bar ([Shell](#shell)), gap 8px, weight 700 12.5px `--text`. Left to right: a ↻ ghost button (reload, [Buttons](#buttons)); the address pill (`--surface`, 2px `--line-soft`, radius `--r-pill`, padding 4px 12px, fills the space), for example "mayas-bake-sale / index.html"; "Build N"; then the **Pause live updates** switch.
-- **Before the first Build:** the page area is `--ws` with the dots, and in its center Bob (64px, [Brand and Bob](#brand-and-bob)) above "Press Build to make your website." (`--hint`, `--fs-md`, weight 700). The address pill reads "not built yet" and "Build N" is left out.
+- **Before the first Build:** the page area is `--ws` with the dots, and in its center "Press Build to make your website." (`--hint`, `--fs-md`, weight 700). The address pill reads "not built yet" and "Build N" is left out.
 - **Page:** the Prototype (plain HTML, CSS and JS, W-9) fills the rest on white, in a sandboxed `srcdoc` frame. Its page links, popups and fake form submits work, as on a real website. It redraws by itself a moment after the user stops typing (W-16). There is no full-size button and no phone/desktop width switch (W-17). The Prototype's own look is whatever the Blocks asked for; Scrabby's tokens never leak into it.
 - **Pause live updates switch** (W-16): the label "Pause live updates" (`--fs-sm`, `--text`), then a 32×18px switch: an `--idle` track with a 14px white knob (a 2px `#0000001f` bottom edge) on the left when off; a `--brand` track with the knob on the right when on. The knob slides with `--spring`. Off by default. It's there so a quiz or to-do list can be tried out without resetting at every keystroke.
 - **Paused state:** a strip under the address bar, `--note-bg` fill, 1.5px `--note-edge` bottom border, padding 5px 10px, `--note-text` weight 700 `--fs-sm`: "Live updates are paused. Press ↻ to see your latest code." While code has changed since the last redraw, ↻ carries a 7px `--brand` dot. Builds, accepted Bob changes and page switches still redraw, and turning the switch off redraws once.
@@ -413,10 +409,10 @@ The left and widest column of Try & tweak ([Screen layout](#screen-layout)): the
 
 **Drop order 3** if Bobcoins run low (PRD §6): it goes after the show-around and the Preview error bar. The right column of Try & tweak, 320px wide. It appears nowhere else (ticket 08: Plan has tooltips instead). What it sees and can change belongs to the PRD lane (ticket 08, `docs/prd.md` §5). In the UI it is always called **Bob** (W-14).
 
-- **Title bar:** `--bob-tint` fill, 2px `--line-soft` bottom border, padding 10px 12px, gap 8px. Bob's head (30px, [Brand and Bob](#brand-and-bob)), "Bob" (weight 900 `--fs-lg`, `--bob`), then the [Bob badge](#bob-badge).
+- **Title bar:** `--bob-tint` fill, 2px `--line-soft` bottom border, padding 10px 12px, gap 8px. "Bob" (weight 900 `--fs-lg`, `--bob`), then the [Bob badge](#bob-badge).
 - **Explanation picker** (PRD §5), right under the title bar: a panel sub-bar ([Shell](#shell)). "Explain:" (weight 700 `--fs-sm`, `--text`), then a segmented control: one pill with a 2px `--line` border and three segments, **very simply · simply · in detail** (weight 700 `--fs-sm`, padding 3px 10px, `--text`). The chosen segment gets `--brand` fill and white text (the user's choice, so Grape). The default is "simply". No ages are shown.
 - **Chat:** `--surface`, padding 12px, gap 10px, scrolls. When already at the bottom, it stays pinned there as messages arrive. It is saved with the Project, so it's still there after a reload. New messages pop in ([Motion](#motion)).
-- **Empty chat:** centered in the chat area, Bob's head (40px) above "Ask Bob what a part of your code does, or ask for a change." (`--hint`, `--fs-md`, weight 700).
+- **Empty chat:** centered in the chat area, "Ask Bob what a part of your code does, or ask for a change." (`--hint`, `--fs-md`, weight 700).
 - **Bob is answering:** from Send until the first words arrive, a Bob message (same look as Bob's messages) holding three 7px `--bob` dots (aria-label "Bob is thinking…") that bounce in turn: each rises 4px and settles, 0.15s apart, in a 1s loop (reduced motion: the dots fade in turn). Then the text replaces the dots. The Send button is disabled until the answer ends.
 - **Messages:** max-width 90%, padding 9px 12px, radius 16px, weight 700 `--fs`, line-height 1.45. The user's: right-aligned, `--brand` fill, white text, the bottom-right corner 5px, a 3px `--brand-dark` bottom edge. Bob's: left-aligned, `--bob-tint` fill, `--ink` text, the bottom-left corner 5px, a 3px bottom edge of `--bob` at 20%.
 - **Diff card** (inside a message from Bob, 8px below its text): `--surface`, 2px `--line`, radius `--r-btn`, padding 10px, gap 6px, `--font`. It shows **no code** (PRD-22):
@@ -498,7 +494,7 @@ From ticket 02. Three steps, and only one is on screen at a time: **1 Plan › 2
 |---|---|
 | Plan | Canvas / Library / Checkpoints tabs ([Shell](#shell)) over one panel: the [Palette](#palette) and the [Canvas](#canvas), the [Library](#library), or the [Checkpoints](#checkpoints) list. The big Build button floats at the Canvas's bottom right, with the zoom buttons stacked above it. No code, Preview or Assistant. |
 | Build | The [Build card](#build-button-and-build-card), centered. |
-| Try & tweak | Three panels in a grid of `minmax(0,1.2fr) minmax(0,1fr) 320px`, gap `--gap`: [Preview](#preview), [Code editor](#code-editor), [Assistant](#assistant). If the Assistant drops (PRD §6), two panels: `minmax(0,1.2fr) minmax(0,1fr)`. |
+| Try & tweak | Three panels in a grid of `minmax(0,1.2fr) minmax(0,1fr) 320px`, gap `--gap`: [Preview](#preview), [Code editor](#code-editor), [Assistant](#assistant). If the Assistant drops (PRD §6), two panels: `minmax(0,1.2fr) minmax(0,1fr)`. Two 8px drag handles sit between the panels (`role="separator"`, `aria-orientation="vertical"`, title `Drag to resize, double-click to reset`): transparent, `cursor: col-resize`, a 2px `--line` bar in the middle that turns `--brand` on hover and while dragging. Dragging sets the columns in px, with minimums Preview 320, Code 320, Assistant 260; the rest stays with the Preview. While dragging, the handle has pointer capture, `body` gets `user-select: none` and the Preview iframe `pointer-events: none`. Left/Right arrow keys on a focused handle move it by 16px. Double-click resets to the default grid. The widths are kept in `localStorage['scrabby.tryCols']` (no storage = the default grid). |
 
 **Moving between the steps:**
 - Click Plan or Try & tweak in the step bar, or "← Back to the Blocks". While a Build runs, the step bar stays on Build.
@@ -508,6 +504,8 @@ From ticket 02. Three steps, and only one is on screen at a time: **1 Plan › 2
 - Whatever is jumped to scrolls smoothly to the center.
 
 **First visit** (PRD §9): Plan opens on an empty Project, with the empty hint ([Canvas](#canvas)), and the show-around starts ([Speech bubble](#speech-bubble)). Below the Site Block, **Try the demo: Maya's bake sale** loads the demo Project ([Canvas](#canvas)); so does **Demo** in the menu bar.
+
+**Scrollbars:** thin and light app-wide (`scrollbar-width: thin; scrollbar-color: var(--placeholder) transparent`, and for WebKit 8px, thumb `--placeholder` radius 8px, transparent track, thumb hover `--hint`). The code editor has its own dark ones ([Code editor](#code-editor)); the Preview's page scrollbars belong to the user's website.
 
 **Screen sizes** (D-Q6): design for 1920×1080, the demo recording. The smallest supported size is 1366×768: nothing may scroll sideways or get cut off there, and the palette folds to give the Canvas room. No tablets or phones.
 

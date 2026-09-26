@@ -17,15 +17,6 @@
   border-bottom: 2px solid var(--line-soft);
 }
 
-.head {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: #fff;
-  border: 2px solid var(--line);
-}
-
 .name {
   font-weight: 900;
   font-size: var(--fs-lg);
@@ -98,15 +89,6 @@
   color: var(--hint);
   font-size: var(--fs-md);
   font-weight: 700;
-}
-
-.emptyHead {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: #fff;
-  border: 2px solid var(--line);
 }
 
 .line {
