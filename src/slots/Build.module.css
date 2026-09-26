@@ -211,7 +211,7 @@
 
 .stage {
   position: relative;
-  height: 150px;
+  height: 220px;
   flex: none;
   border-radius: var(--r-panel);
   background: var(--bob-tint) radial-gradient(circle, var(--ws-dot) 1.4px, transparent 1.6px) 0 0 / 18px 18px;
@@ -232,85 +232,47 @@
   font-weight: 800;
 }
 
+/* The pile: 10 units of 36px by 7 rows of 22px, clear of the caption and of Bob. */
 .base {
   position: absolute;
-  left: 32px;
+  left: 28px;
   bottom: 14px;
-  width: 292px;
-  height: 96px;
-}
-
-.lot,
-.brick,
-.sticker {
-  position: absolute;
-  box-sizing: border-box;
-  background: var(--c1);
-  transform-origin: bottom center;
-}
-
-/* The Site Block the bricks stack inside: a header strip standing for its name, a pale body. */
-.lot {
-  border: 2px solid var(--c3);
-  border-radius: 10px;
-  background: var(--c4);
-  box-shadow: 0 3px 0 var(--c3);
-}
-
-.lot::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 14px;
-  border-radius: 8px 8px 0 0;
-  background: var(--c1);
-}
-
-.lot::after {
-  content: '';
-  position: absolute;
-  top: 5px;
-  left: 8px;
-  width: 56px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--c4);
+  width: 360px;
+  height: 152px;
 }
 
 .brick {
-  border: 1.5px solid var(--c3);
-  border-radius: 4px;
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid var(--c3);
+  border-radius: 5px;
+  background: var(--c1);
   box-shadow: 0 2px 0 var(--c3);
+  transform-origin: bottom center;
 }
 
 .brick::after {
   content: '';
   position: absolute;
-  left: 3px;
-  right: 3px;
-  bottom: 2px;
+  left: 4px;
+  right: 4px;
+  bottom: 3px;
   height: 2px;
   border-radius: 1px;
   background: var(--c4);
 }
 
-.sticker {
-  border: 1.5px solid #fff;
-  border-radius: var(--r-pill);
-  box-shadow: 0 0 0 1px var(--c3);
-}
-
-.stage-failed .base > :last-child {
-  animation: slideOff 600ms var(--ease) forwards;
+/* A failed Build: the whole pile tips over and slides out of view. */
+.stage-failed .base {
+  transform-origin: bottom right;
+  animation: tipOff 600ms var(--ease) forwards;
 }
 
 .bob {
   position: absolute;
   right: 26px;
   bottom: 10px;
-  height: 118px;
+  height: 170px;
   transform-origin: bottom center;
 }
 
@@ -337,9 +299,9 @@
   80% { transform: scale(1.04, .95); }
 }
 
-@keyframes slideOff {
-  40% { transform: translateX(40px); }
-  100% { transform: translate(60px, 200px); }
+@keyframes tipOff {
+  30% { transform: rotate(6deg); }
+  100% { transform: translate(140px, 260px) rotate(18deg); }
 }
 
 /* Chips */
@@ -568,8 +530,11 @@
     transition: none;
     transform: none;
   }
-  .bubble, .spinner, .buttonSpinner, .stage .bob, .stage-failed .base > :last-child {
+  .bubble, .spinner, .buttonSpinner, .stage .bob, .stage-failed .base {
     animation: none;
+  }
+  .stage-failed .base {
+    visibility: hidden;
   }
   .chip, .chevron, .drawer {
     transition: none;
