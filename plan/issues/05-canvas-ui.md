@@ -1,6 +1,6 @@
 # 05: Canvas UI: Blocks, Traits, palette, drag, pan and zoom
 
-Status: ready-for-agent
+Status: done
 Blocked by: 03, 04
 Lane: A
 
@@ -21,13 +21,21 @@ Create: `src/canvas/BlockView.tsx`, `src/canvas/TraitPill.tsx`, `src/canvas/Canv
 
 ## Steps
 
-- [ ] Canvas.tsx per TDD §8.4 without: Warnings (marks, stepper, popover: issue 08), the edit view and EditBar (issue 07), ContextMenu and Tooltip (issue 06), `droppedBlock` (issue 15), the Demo button (issue 15). Leave one `// issue NN` comment where each goes.
-- [ ] BlockView per TDD §9.1 without Notes, markers, the Edit pill and `<Mark>` (issues 06, 07, 08).
-- [ ] TraitPill with every value field of TDD §9.2 (TextField, LongText, Dropdown with `custom…` and `▾`, ColorField and ColorMenu). Show the `💡 Bob picks` option in dropdowns but leave its handler, the bulb and the chip to issue 06.
-- [ ] Palette per TDD §9.6 without My Blocks (issue 07). Sound is hidden.
-- [ ] Every change goes through `updateProject`. A drop that changes nothing adds no undo step.
+- [x] Canvas.tsx per TDD §8.4 without: Warnings (marks, stepper, popover: issue 08), the edit view and EditBar (issue 07), ContextMenu and Tooltip (issue 06), `droppedBlock` (issue 15), the Demo button (issue 15). Leave one `// issue NN` comment where each goes.
+- [x] BlockView per TDD §9.1 without Notes, markers, the Edit pill and `<Mark>` (issues 06, 07, 08).
+- [x] TraitPill with every value field of TDD §9.2 (TextField, LongText, Dropdown with `custom…` and `▾`, ColorField and ColorMenu). Show the `💡 Bob picks` option in dropdowns but leave its handler, the bulb and the chip to issue 06.
+- [x] Palette per TDD §9.6 without My Blocks (issue 07). Sound is hidden.
+- [x] Every change goes through `updateProject`. A drop that changes nothing adds no undo step.
 
 ## Done when
 
 - `pnpm typecheck` and `pnpm test` pass.
 - In the browser (dev select → demo): drag a Hero into a Page, beside another Block (the line and the grey shadow show where), out onto the Canvas (it fades as a loose idea with "not built"), and back onto the palette (the palette turns pink and the Block is deleted). A Page will not go into a Hero. Values change in place; a 31-character text shows ⤢. Fold and unfold. Scroll pans, Ctrl+scroll zooms at the pointer, the zoom buttons work, panning stops with 40px still in view. Undo and Redo undo each of these.
+
+## Answer
+
+- `TextField` is exported from `TraitPill.tsx` (optional `className`); the Block name uses it. The `💡 Bob picks` option is a no-op in `Dropdown` until issue 06.
+- Each Canvas child and loose Trait sits in an absolute `.placed` wrapper; put `<DemoButton/>` inside the Site Block's wrapper.
+- A dropped item is compared with layouts repaired and keys sorted, so a Block without a stored layout adds no undo step on a no-op drop.
+- Site, Checkpoint and locked Page set `--c3: var(--muted)` and `--c4: var(--idle)`, so their fold button has a border.
+- Not built yet: the drop squash, Trait pop-in and fold height animations from DESIGN Motion.

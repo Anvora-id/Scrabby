@@ -1,0 +1,70 @@
+.viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--ws) radial-gradient(circle, var(--ws-dot) 1.6px, transparent 1.8px) 0 0 / 24px 24px;
+  border-radius: var(--r-inside);
+  cursor: grab;
+}
+
+.panning {
+  cursor: grabbing;
+}
+
+.world {
+  position: absolute;
+  transform-origin: 0 0;
+}
+
+.placed {
+  position: absolute;
+}
+
+.avatar {
+  position: fixed;
+  z-index: 50;
+  pointer-events: none;
+  filter: var(--shadow-drag);
+  transform-origin: 0 0;
+  scale: 1.03;
+  transition: scale var(--t-quick);
+}
+
+@starting-style {
+  .avatar {
+    scale: 1;
+  }
+}
+
+.dropLine {
+  position: fixed;
+  z-index: 20;
+  background: var(--drop);
+  border-radius: 3px;
+  box-shadow: 0 0 0 2px #fff;
+  pointer-events: none;
+}
+
+.zoom {
+  position: absolute;
+  right: 20px;
+  bottom: 96px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zoomButton {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  box-shadow: 0 3px 0 var(--line);
+  color: var(--text);
+  cursor: pointer;
+}

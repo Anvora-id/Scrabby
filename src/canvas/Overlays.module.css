@@ -1,0 +1,75 @@
+/* Fold button */
+
+.fold {
+  --ink: #1F1A33;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: var(--surface);
+  border: 2px solid var(--c3);
+  border-radius: 50%;
+  box-shadow: 0 2px 0 var(--c3);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.fold:hover {
+  background: var(--c4);
+  border-color: var(--ink);
+}
+
+.chevron {
+  transition: transform var(--t-quick);
+}
+
+.chevron.turned {
+  transform: rotate(-90deg);
+}
+
+/* Folded chips */
+
+.chips {
+  --ink: #1F1A33;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-width: 360px;
+  margin-top: 4px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  background: var(--c4);
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  font-weight: var(--w-bold);
+}
+
+.chip.none {
+  color: var(--muted);
+}
+
+.chipGhost {
+  width: 40px;
+  height: 18px;
+}
+
+/* Loose badge */
+
+.badge {
+  --ink: #1F1A33;
+  padding: 1px 8px;
+  background: var(--surface);
+  border: 2px dashed var(--c3);
+  border-radius: var(--r-pill);
+  color: var(--ink);
+  font-size: var(--fs-xs);
+  font-weight: var(--w-bold);
+}
