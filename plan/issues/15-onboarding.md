@@ -1,6 +1,6 @@
 # 15: Onboarding, demo and age check
 
-Status: ready-for-agent
+Status: done
 Blocked by: 19
 Wave: 1
 
@@ -29,11 +29,18 @@ Already wired by issue 19, do not edit: `src/App.tsx`, `src/shell/MenuBar.tsx`, 
 
 ## Steps
 
-- [ ] `onboarding.ts`: `isEmptyProject`, `loadDemo`, `newProject`, the ask store, `TOURS` (texts exactly as PRD §9), tour store, `once`, the tip store and `droppedBlock`, `placeBubble` (TDD §17).
-- [ ] `Onboarding.tsx`: the age check first (nothing else renders until it is accepted), then the tours, the tip and the replace warnings; `SpeechBubble`; exported `DemoButton`.
-- [ ] Tests: the `onboarding.test.ts` row of TDD §20.
+- [x] `onboarding.ts`: `isEmptyProject`, `loadDemo`, `newProject`, the ask store, `TOURS` (texts exactly as PRD §9), tour store, `once`, the tip store and `droppedBlock`, `placeBubble` (TDD §17).
+- [x] `Onboarding.tsx`: the age check first (nothing else renders until it is accepted), then the tours, the tip and the replace warnings; `SpeechBubble`; exported `DemoButton`.
+- [x] Tests: the `onboarding.test.ts` row of TDD §20.
 
 ## Done when
 
 - `pnpm typecheck` and `pnpm test` pass.
 - In a private window: the age check shows first and only once; then the show-around steps through palette, Canvas, Build button and step bar; the empty hint and the demo button show; the demo loads without a warning (empty Project) and with the warning otherwise; New Project always warns; the first dropped Block gets the one-time tip; opening Try & tweak the first time runs its two bubbles.
+
+## Answer
+
+- Tour targets are `[data-tour="…"]`. The Build button (issue 11) must carry `data-tour="build"`, or bubble 3 stays hidden.
+- `onboarding.ts` exports the stores (`askStore`, `adultStore`, `tourStore`, `tipStore`) and `loadDemo`, `newProject`, `closeAsk`, `nextBubble`, `endTour`, `closeTip`, `once`, `placeBubble`.
+- The Primary, Secondary and Text button looks are in `Onboarding.module.css`. The app has no shared button styles yet.
+- The Demo warnings test (TDD §20) is not here: no Warnings function exists yet.
