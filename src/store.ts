@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import { applyChange, emptyProject } from './model/project.ts'
+import { applyChange, emptyProject, NEW_NAME } from './model/project.ts'
 import type { Project } from './model/types.ts'
 import { createHistory } from './history.ts'
 import { loadLatestProject, saveProject } from './db.ts'
@@ -62,6 +62,13 @@ export function updateProject(recipe: (p: Project) => void, key: unknown = focus
 
 export function updateProjectWithoutUndo(recipe: (p: Project) => void): void {
   setProject({ ...applyChange(getProject(), recipe), updated: Date.now() })
+}
+
+// A name field (the chip or the Site's) left blank goes back to the new-Project name, inside the typing's
+// Undo step so Undo never brings back a blank name. A field that still has focus lost only the window.
+export function fillBlankName(field: Element): void {
+  if (document.activeElement === field || getProject().name.trim()) return
+  updateProject(d => { d.name = NEW_NAME }, field)
 }
 
 export function undo(): void {

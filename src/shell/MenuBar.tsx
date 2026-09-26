@@ -1,10 +1,9 @@
 import { useEffect } from 'react'
 import { ICONS } from '../icons.ts'
 import {
-  useProject, useUi, getProject, updateProject,
+  useProject, useUi, updateProject, fillBlankName,
   undo, redo, canUndo, canRedo,
 } from '../store.ts'
-import { NEW_NAME } from '../model/project.ts'
 import { askDemo, askNewProject, startTour } from '../onboarding.ts'
 import { downloadCode } from '../download.ts'
 import { FIXTURES, loadFixture } from '../fixtures/dev.ts'
@@ -82,7 +81,7 @@ export default function MenuBar() {
         aria-label="Project name"
         onChange={e => updateProject(d => { d.name = e.target.value })}
         onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
-        onBlur={() => { if (!getProject().name.trim()) updateProject(d => { d.name = NEW_NAME }) }}
+        onBlur={e => fillBlankName(e.currentTarget)}
       />
 
       {/* Buttons */}
