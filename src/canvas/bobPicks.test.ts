@@ -17,8 +17,8 @@ describe('bobPicks', () => {
     expect(bobPicksControl('letbobpick', '')).toBeNull()
   })
 
-  it('color → bulb', () => {
-    expect(bobPicksControl('color', '#FF0000')).toBe('bulb')
+  it('color → option (in the color menu)', () => {
+    expect(bobPicksControl('color', '#FF0000')).toBe('option')
   })
 
   it('text empty → bulb', () => {

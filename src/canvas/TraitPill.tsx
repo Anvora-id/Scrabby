@@ -56,7 +56,13 @@ function LongText({ value, onChange, placeholder }: { value: string; onChange: (
   )
 }
 
-type At = { left: number; top: number }
+// Under the button (top), or ending just above it (above) when there's no room below.
+type At = { left: number; top: number; above: number }
+
+function under(el: Element): At {
+  const r = el.getBoundingClientRect()
+  return { left: r.left, top: r.bottom + 4, above: r.top - 4 }
+}
 
 // The context menu look, shared by the dropdown lists and the color menu.
 function Popover({ at, title, onClose, children }: { at: At; title: string; onClose: () => void; children: ReactNode }) {
@@ -64,22 +70,29 @@ function Popover({ at, title, onClose, children }: { at: At; title: string; onCl
   useLayoutEffect(() => {
     // Keep it inside the window; offsetWidth ignores the pop-in scale.
     const el = ref.current!
+    const h = el.offsetHeight
+    const top = at.top + h <= innerHeight - 8 ? at.top : at.above - h
     el.style.left = `${Math.max(8, Math.min(at.left, innerWidth - el.offsetWidth - 8))}px`
-    el.style.top = `${Math.max(8, Math.min(at.top, innerHeight - el.offsetHeight - 8))}px`
+    el.style.top = `${Math.max(8, Math.min(top, innerHeight - h - 8))}px`
   }, [at])
   useEffect(() => {
-    const down = (e: PointerEvent) => { if (!ref.current?.contains(e.target as Node)) onClose() }
+    const outside = (e: Event) => { if (!ref.current?.contains(e.target as Node)) onClose() }
     const key = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('pointerdown', down)
+    document.addEventListener('pointerdown', outside)
     document.addEventListener('keydown', key)
+    // It is placed once, so close it when the Canvas scrolls or zooms under it.
+    document.addEventListener('wheel', outside, { passive: true })
+    window.addEventListener('resize', onClose)
     return () => {
-      document.removeEventListener('pointerdown', down)
+      document.removeEventListener('pointerdown', outside)
       document.removeEventListener('keydown', key)
+      document.removeEventListener('wheel', outside)
+      window.removeEventListener('resize', onClose)
     }
   }, [onClose])
-  // React bubbles through the portal: stop the pill's drag.
+  // React bubbles through the portal: stop the pill's drag and its context menu.
   return createPortal(
-    <div ref={ref} className={styles.menu} onPointerDown={e => e.stopPropagation()}>
+    <div ref={ref} className={styles.menu} onPointerDown={e => e.stopPropagation()} onContextMenu={e => e.stopPropagation()}>
       <div className={styles.menuTitle}>{title}</div>
       {children}
     </div>,
@@ -99,6 +112,8 @@ function ListMenu({ at, title, value, options, onPick, onClose }: {
   useEffect(() => { ref.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus() }, [])
 
   function onKeyDown(e: React.KeyboardEvent) {
+    // Keep Ctrl+Z and friends from undoing under the open list, as the native select did.
+    if (e.ctrlKey || e.metaKey) e.stopPropagation()
     const items = [...ref.current!.querySelectorAll<HTMLElement>('[role="option"]')]
     const i = items.indexOf(document.activeElement as HTMLElement)
     const moves: Record<string, number> = { ArrowDown: Math.min(i + 1, items.length - 1), ArrowUp: Math.max(i - 1, 0), Home: 0, End: items.length - 1 }
@@ -119,6 +134,8 @@ function ListMenu({ at, title, value, options, onPick, onClose }: {
       className={cx(styles.item, o.missing && styles.warn)}
       title={o.missing && MISSING}
       style={o.font ? { fontFamily: o.font } : undefined}
+      // Focus follows the pointer, so only one row is ever lit.
+      onPointerEnter={e => e.currentTarget.focus({ preventScroll: true })}
       onClick={() => onPick(o.value)}
     >
       {o.label}
@@ -157,10 +174,7 @@ function Dropdown({ value, options, onChange, back, onBobPicks, title }: {
     </>
   )
 
-  function open() {
-    const r = btn.current!.getBoundingClientRect()
-    setAt({ left: r.left, top: r.bottom + 4 })
-  }
+  const open = () => setAt(under(btn.current!))
   function close() {
     setAt(null)
     btn.current?.focus({ preventScroll: true })
@@ -172,6 +186,7 @@ function Dropdown({ value, options, onChange, back, onBobPicks, title }: {
         ref={btn}
         className={cx(styles.select, current.missing && styles.warn)}
         title={current.missing && MISSING}
+        aria-label={`${title}: ${current.label}`}
         aria-haspopup="listbox"
         aria-expanded={!!at}
         // While open, keep the menu's outside listener from closing it before this click toggles it.
@@ -201,7 +216,13 @@ function Dropdown({ value, options, onChange, back, onBobPicks, title }: {
   )
 }
 
-function ColorMenu({ at, value, onChange, onClose }: { at: At; value: string; onChange: (v: string) => void; onClose: () => void }) {
+function ColorMenu({ at, value, onChange, onBobPicks, onClose }: {
+  at: At
+  value: string
+  onChange: (v: string) => void
+  onBobPicks: () => void
+  onClose: () => void
+}) {
   return (
     <Popover at={at} title="Colors" onClose={onClose}>
       <div className={styles.swatches}>
@@ -224,12 +245,14 @@ function ColorMenu({ at, value, onChange, onClose }: { at: At; value: string; on
         />
         <span className={styles.hex}>{value.toUpperCase()}</span>
       </div>
+      <div className={styles.split} aria-hidden />
+      <button className={styles.item} onClick={() => { onClose(); onBobPicks() }}>💡 Bob picks</button>
     </Popover>
   )
 }
 
 // The chip is the chosen color itself, so its name or hex sits on it.
-function ColorField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function ColorField({ value, onChange, onBobPicks, title }: { value: string; onChange: (v: string) => void; onBobPicks: () => void; title: string }) {
   const [at, setAt] = useState<At | null>(null)
   const name = COLOR_PRESETS.find(c => c.hex === value.toUpperCase())?.name
   return (
@@ -237,16 +260,15 @@ function ColorField({ value, onChange }: { value: string; onChange: (v: string) 
       <button
         className={cx(styles.color, whiteTextOn(value) && styles.onDark)}
         style={{ background: value }}
+        aria-label={`${title}: ${name ?? value.toUpperCase()}`}
+        aria-expanded={!!at}
         // While open, keep the menu's outside listener from closing it before this click toggles it.
         onPointerDown={e => { if (at) e.nativeEvent.stopImmediatePropagation() }}
-        onClick={e => {
-          const r = e.currentTarget.getBoundingClientRect()
-          setAt(at ? null : { left: r.left, top: r.bottom + 4 })
-        }}
+        onClick={e => setAt(at ? null : under(e.currentTarget))}
       >
         {name ?? <span className={styles.hex}>{value.toUpperCase()}</span>}
       </button>
-      {at && <ColorMenu at={at} value={value} onChange={onChange} onClose={() => setAt(null)} />}
+      {at && <ColorMenu at={at} value={value} onChange={onChange} onBobPicks={onBobPicks} onClose={() => setAt(null)} />}
     </>
   )
 }
@@ -259,7 +281,7 @@ function ValueField({ p, t, onBobPicks }: { p: Project; t: Trait; onBobPicks: ()
     case 'text':
       return <LongText value={t.value} placeholder={type.hint} onChange={set} />
     case 'color':
-      return <ColorField value={t.value} onChange={set} />
+      return <ColorField value={t.value} onChange={set} title={title} onBobPicks={onBobPicks} />
     case 'choice':
       return <Dropdown value={t.value} onChange={set} title={title} back={type.default} onBobPicks={onBobPicks}
         options={type.choices!.map(c => ({ value: c, label: c, font: t.type === 'font' ? c : undefined }))} />

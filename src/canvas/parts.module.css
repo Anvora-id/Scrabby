@@ -257,7 +257,7 @@
 
 .text:focus,
 .big:focus,
-.select:focus-visible {
+.select:focus {
   outline: none;
   box-shadow: var(--focus);
 }
