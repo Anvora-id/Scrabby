@@ -469,3 +469,16 @@
 .bulb:hover {
   background: var(--c4);
 }
+
+/* Short marker on Trait pill inside an Instance */
+
+.marker {
+  --ink: #1F1A33;
+  padding: 1px 7px;
+  background: var(--surface);
+  border: 2px solid var(--c3);
+  border-radius: var(--r-pill);
+  color: var(--ink);
+  font-size: var(--fs-xs);
+  font-weight: var(--w-bold);
+}

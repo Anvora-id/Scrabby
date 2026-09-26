@@ -246,3 +246,35 @@
   font-size: var(--fs-xs);
   font-weight: var(--w-bold);
 }
+
+/* Edit pill (Instance header) */
+
+.editPill {
+  --ink: #1F1A33;
+  padding: 3px 11px;
+  background: var(--c4);
+  border: 2px solid var(--c3);
+  border-radius: var(--r-pill);
+  box-shadow: 0 2px 0 var(--c3);
+  color: var(--ink);
+  font: inherit;
+  font-weight: var(--w-heavy);
+  cursor: pointer;
+}
+
+.editPill:hover {
+  background: var(--surface);
+}
+
+/* Changed / added-only markers (Instance parts) */
+
+.marker {
+  --ink: #1F1A33;
+  padding: 1px 7px;
+  background: var(--surface);
+  border: 2px solid var(--c3);
+  border-radius: var(--r-pill);
+  color: var(--ink);
+  font-size: var(--fs-xs);
+  font-weight: var(--w-bold);
+}

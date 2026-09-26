@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { ICONS } from '../icons.ts'
 import type { Pos, Project } from '../model/types.ts'
-import { getProject, getUi, updateProject, useProject } from '../store.ts'
+import { getProject, getUi, setEditing, updateProject, useProject, useUi } from '../store.ts'
 import { getDrag, peekPending, setDrag, takePending, useDrag } from '../canvas/drag.ts'
 import type { Pending } from '../canvas/drag.ts'
 import { targetAt } from '../canvas/target.ts'
@@ -41,16 +41,25 @@ function measure(world: HTMLElement): DragRects {
 
 export default function Canvas() {
   const p = useProject()
+  const ui = useUi()
   const drag = useDrag()
   const viewportRef = useRef<HTMLDivElement>(null)
   const worldRef = useRef<HTMLDivElement>(null)
   const lineRef = useRef<HTMLDivElement>(null)
   const view = useRef({ x: 0, y: 0, z: 1 })
+  const savedView = useRef<{ x: number; y: number; z: number } | null>(null)
   const rects = useRef<DragRects | null>(null)
   const pan = useRef<{ x: number; y: number } | null>(null)
   const avatar = useRef<HTMLElement | null>(null)
   const grab = useRef({ x: 0, y: 0 })
   const projectId = useRef(p.id)
+  const prevEditing = useRef<string | null>(null)
+
+  // editing is the def id; the def exists only if the Custom Block still exists
+  const defId = ui.editing
+  const def = defId ? p.defs[defId] : undefined
+  const editingId = def ? defId : null
+  const defBlockId = editingId ? def!.blockId : null
 
   function apply() {
     const vp = viewportRef.current, world = worldRef.current
@@ -89,9 +98,21 @@ export default function Canvas() {
       projectId.current = p.id
       view.current = { x: 0, y: 0, z: 1 }
     }
+    // Entering edit view: save current view, reset to {0,0,1}
+    if (editingId && !prevEditing.current) {
+      savedView.current = { ...view.current }
+      view.current = { x: 0, y: 0, z: 1 }
+    }
+    // Leaving edit view: restore saved view
+    if (!editingId && prevEditing.current) {
+      if (savedView.current) {
+        view.current = savedView.current
+        savedView.current = null
+      }
+    }
+    prevEditing.current = editingId
     apply()
   })
-  // issue 07: entering the edit view remembers the Canvas view and starts at {0, 0, 1}; leaving restores it.
 
   useEffect(() => {
     const vp = viewportRef.current!
@@ -244,6 +265,9 @@ export default function Canvas() {
   }, [drag])
 
   const canvas = p.blocks.canvas
+  // Instances count for the EditBar
+  const instanceCount = editingId ? Object.values(p.blocks).filter(b => b.inst === editingId).length : 0
+  const defName = defBlockId ? (p.blocks[defBlockId]?.name ?? '') : ''
   return (
     <div
       ref={viewportRef}
@@ -256,20 +280,34 @@ export default function Canvas() {
       onAuxClick={e => { if (e.button === 1) e.preventDefault() }}
     >
       <div ref={worldRef} className={styles.world}>
-        {/* issue 08: MarksContext.Provider (§10.3). issue 07: the edit view shows only the definition, at left 40, top 70. */}
-        {canvas.children.map((id, i) => (
-          <div key={id} className={styles.placed} style={at(p.blocks[id]?.pos, i)}>
-            <BlockView p={p} id={id} />
-            {/* issue 15: <DemoButton/> under a Site Block that has no children */}
+        {/* issue 08: MarksContext.Provider (§10.3) */}
+        {editingId && defBlockId ? (
+          <div className={styles.placed} style={{ left: 40, top: 70 }}>
+            <BlockView p={p} id={defBlockId} />
           </div>
-        ))}
-        {canvas.traits.map((id, i) => (
-          <div key={id} className={styles.placed} style={at(p.traits[id]?.pos, canvas.children.length + i)}>
-            <TraitPill p={p} id={id} />
-          </div>
-        ))}
+        ) : (
+          <>
+            {canvas.children.map((id, i) => (
+              <div key={id} className={styles.placed} style={at(p.blocks[id]?.pos, i)}>
+                <BlockView p={p} id={id} />
+                {/* issue 15: <DemoButton/> under a Site Block that has no children */}
+              </div>
+            ))}
+            {canvas.traits.map((id, i) => (
+              <div key={id} className={styles.placed} style={at(p.traits[id]?.pos, canvas.children.length + i)}>
+                <TraitPill p={p} id={id} />
+              </div>
+            ))}
+          </>
+        )}
       </div>
-      {/* issue 07: EditBar. issue 08: <Stepper> and <Popover>. */}
+      {editingId && (
+        <div className={styles.editBar}>
+          Editing Custom Block "{defName}". Changes reach all {instanceCount} Instance{instanceCount === 1 ? '' : 's'}, except parts an Instance changed itself.
+          <button className={styles.editBarDone} onClick={() => setEditing(null)}>Done</button>
+        </div>
+      )}
+      {/* issue 08: <Stepper> and <Popover> (not in the edit view). */}
       <div className={styles.zoom}>
         <button className={styles.zoomButton} title="Zoom in" onClick={() => zoomCenter(view.current.z * 1.25)}>
           <ICONS.zoom_in size={18} />

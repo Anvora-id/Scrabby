@@ -3,7 +3,8 @@ import type { CSSProperties, ReactNode } from 'react'
 import { ICONS } from '../icons.ts'
 import { BLOCK_TYPES, TRAIT_TYPES } from '../model/catalogue.ts'
 import type { CustomBlockDef, Layout, Project } from '../model/types.ts'
-import { updateProject } from '../store.ts'
+import { hasOverride } from '../model/project.ts'
+import { setEditing, updateProject } from '../store.ts'
 import { cx } from './cx.ts'
 import { dragSource, useDrag } from './drag.ts'
 import { insertInto, isTraitItem, repairLayout } from './tree.ts'
@@ -106,7 +107,15 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
               {b.inst ? p.blocks[def?.blockId ?? '']?.name : b.defines ? 'Custom Block' : type.label}
             </span>
             <TextField className={styles.name} value={b.name} onChange={v => updateProject(d => { d.blocks[id].name = v })} />
-            {/* issue 07: Edit pill on an Instance, then the marker */}
+            {b.inst && (
+              <button
+                className={o.editPill}
+                title="Edit this Custom Block"
+                onClick={() => setEditing(b.inst!)}
+              >Edit</button>
+            )}
+            {inInst && b.from && hasOverride(b) && <span className={o.marker}>✎ changed here</span>}
+            {inInst && !b.from && <span className={o.marker}>+ only here</span>}
           </>
         )}
         {p.blocks.canvas.children.includes(id) && b.type !== 'site' && !checkpoint && <span className={o.badge}>not built</span>}

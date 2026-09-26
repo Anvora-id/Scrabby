@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { ICONS } from '../icons.ts'
 import { COLOR_PRESETS, TRAIT_TYPES } from '../model/catalogue.ts'
 import type { Project, Trait } from '../model/types.ts'
+import { hasOverride } from '../model/project.ts'
 import { updateProject } from '../store.ts'
 import { cx } from './cx.ts'
 import { dragSource, useDrag } from './drag.ts'
@@ -178,8 +179,7 @@ function ValueField({ p, t, onBobPicks }: { p: Project; t: Trait; onBobPicks: ()
   }
 }
 
-// inInst is for issue 07's short marker.
-export default function TraitPill({ p, id }: { p: Project; id: string; inInst?: boolean }) {
+export default function TraitPill({ p, id, inInst = false }: { p: Project; id: string; inInst?: boolean }) {
   const drag = useDrag()
   const hintRef = useRef<HTMLInputElement>(null)
   const t = p.traits[id]
@@ -246,7 +246,9 @@ export default function TraitPill({ p, id }: { p: Project; id: string; inInst?: 
         </button>
       )}
       {(t.note || t.noteOn) && !t.bobPicks && <TraitNote id={id} note={t.note} noteOn={t.noteOn} />}
-      {/* issue 07: short marker. issue 08: <Mark id> */}
+      {inInst && t.from && hasOverride(t) && <span className={styles.marker} title="✎ changed here">✎</span>}
+      {inInst && !t.from && <span className={styles.marker} title="+ only here">+</span>}
+      {/* issue 08: <Mark id> */}
     </span>
   )
 }
