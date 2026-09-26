@@ -14,5 +14,6 @@
   | Build card | Full figure, 118px tall, hopping on the Build stage ([Build button and Build card](#build-button-and-build-card)) |
   | Speech bubbles | Full figure, 74px tall, beside the bubble ([Speech bubble](#speech-bubble)) |
   | Greeting | The logo, Bob 160px tall, at the top of the greeting card ([Screen layout](#screen-layout)) |
+  | Empty Library and Checkpoints | Head, 48px, above the empty line, as in the empty chat ([Library](#library), [Checkpoints](#checkpoints)) |
 
 - **Logo** = Bob's full figure + the **wordmark** "Scrabby" in Nunito 900, letter-spacing −.01em, gap 8px, figure bottom-aligned with the text's baseline. The logo is for the app, video, deck and cover. The favicon is `bob-head.svg`.
