@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isEmptyProject, placeBubble } from './onboarding.ts'
+import { isEmptyProject, keepClearOf, placeBubble } from './onboarding.ts'
 import { emptyProject, addBlock } from './model/project.ts'
 import { demoProject } from './fixtures/fixtures.ts'
 
@@ -75,5 +75,20 @@ describe('placeBubble', () => {
 
   it('ignores Blocks when it sits inside the target', () => {
     expect(placeBubble(box(300, 150, W, H), 280, 100, W, H, [box(300, 150, W, H)]).side).toBe('inside')
+  })
+})
+
+describe('keepClearOf', () => {
+  const box = (left: number, top: number, right: number, bottom: number) => ({ left, top, right, bottom })
+  const canvas = box(310, 150, 1366, 768)
+  const blocks = [box(320, 100, 700, 400), box(320, 800, 700, 900)]
+
+  it('cuts Blocks to the Canvas, adds the bars above it for a target in the Canvas panel, and makes room for Bob', () => {
+    expect(keepClearOf(box(0, 150, 300, 700), canvas, blocks, 1366, 64))
+      .toEqual([box(320, 150, 700, 464), box(0, 0, 1366, 214)])
+  })
+
+  it('leaves the bars alone for a target above the Canvas', () => {
+    expect(keepClearOf(box(0, 56, 1366, 90), canvas, blocks, 1366, 64)).toEqual([box(320, 150, 700, 464)])
   })
 })
