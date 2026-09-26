@@ -181,7 +181,8 @@ function syncName(before: Project, p: Project): void {
   const top = topOf(p)
   if (!top) return
   const was = topOf(before)
-  // A Project saved before the names were joined keeps its renamed Site's name.
+  // ponytail: a Project saved before the names were joined takes its renamed Site's name on the first edit;
+  // Undo of that edit brings the old mismatch back. Only old local saves have it.
   if (p.name === before.name && was && was.name !== before.name) p.name = was.name
   top.name = p.name
 }

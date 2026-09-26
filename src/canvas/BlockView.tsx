@@ -3,8 +3,8 @@ import type { CSSProperties, ReactNode } from 'react'
 import { ICONS } from '../icons.ts'
 import { BLOCK_TYPES, TRAIT_TYPES } from '../model/catalogue.ts'
 import type { CustomBlockDef, Layout, Project } from '../model/types.ts'
-import { hasOverride, NEW_NAME } from '../model/project.ts'
-import { getProject, setEditing, updateProject } from '../store.ts'
+import { hasOverride } from '../model/project.ts'
+import { fillBlankName, setEditing, updateProject } from '../store.ts'
 import { checkpointTitle } from '../checkpoints.ts'
 import { cx } from './cx.ts'
 import { dragSource, useDrag } from './drag.ts'
@@ -48,6 +48,7 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
   const custom = b.inst ?? b.defines
   const def = custom ? p.defs[custom] : undefined
   const checkpoint = b.type === 'checkpoint'
+  const site = b.type === 'site'
   const folded = !checkpoint && (b.folded ?? depth >= 4)
   const target = drag?.target?.id === id ? drag.target : null
   const blockDrop = !!target && !isTraitItem(drag!.item)
@@ -65,19 +66,19 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
       data-bid={id}
       className={cx(
         styles.block,
-        checkpoint ? styles.checkpoint : b.type === 'site' ? styles.site : b.locked ? styles.lockedPage : custom ? 'cat-my' : `cat-${type.category}`,
+        checkpoint ? styles.checkpoint : site ? styles.site : b.locked ? styles.lockedPage : custom ? 'cat-my' : `cat-${type.category}`,
         b.inst && styles.inst,
         b.defines && styles.def,
         target && styles.over,
         liftedBlock === id && styles.lifted,
-        p.blocks.canvas.children.includes(id) && b.type !== 'site' && !checkpoint && styles.loose,
+        p.blocks.canvas.children.includes(id) && !site && !checkpoint && styles.loose,
       )}
       style={def && customColor(def.color)}
       onPointerDown={b.defines ? undefined : dragSource({ kind: 'block', id })}
       onContextMenu={e => openMenu(e, id)}
     >
       <div className={cx(styles.header, !drag && styles.pressable)} data-tip={`b:${id}`}
-        onBlur={b.type === 'site' ? () => { if (!getProject().name.trim()) updateProject(d => { d.name = NEW_NAME }) } : undefined}>
+        onBlur={site ? e => { if (e.target instanceof HTMLInputElement) fillBlankName(e.target) } : undefined}>
         {!checkpoint && (
           <button className={o.fold} title={folded ? 'Open this Block' : 'Fold this Block'}
             onClick={() => updateProject(d => { d.blocks[id].folded = !folded })}>
@@ -104,7 +105,7 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
             </span>
             {/* The Site's name is the Project name (applyChange copies it onto the Site) */}
             <TextField className={styles.name} value={b.name} onChange={v => updateProject(d => {
-              if (b.type === 'site') d.name = v
+              if (site) d.name = v
               else d.blocks[id].name = v
             })} />
             {b.inst && (
@@ -118,7 +119,7 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
             {inInst && !b.from && <span className={o.marker}>+ only here</span>}
           </>
         )}
-        {p.blocks.canvas.children.includes(id) && b.type !== 'site' && !checkpoint && <span className={o.badge}>not built</span>}
+        {p.blocks.canvas.children.includes(id) && !site && !checkpoint && <span className={o.badge}>not built</span>}
         <Mark id={id} />
       </div>
       {(b.note || b.noteOn) && <BlockNote id={id} note={b.note} noteOn={b.noteOn} />}
@@ -149,7 +150,7 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
                   l={blockDrop ? insertInto(repairLayout(b), GHOST, target!.slot) : repairLayout(b)}
                   p={p} depth={depth + 1} inInst={childInst} ghost={ghost}
                 />
-              ) : b.type === 'site' ? (
+              ) : site ? (
                 <div className={styles.emptyHint}>
                   Drag a Page into your Site to start.
                 </div>
