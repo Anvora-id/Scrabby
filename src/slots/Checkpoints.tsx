@@ -46,6 +46,7 @@ export default function Checkpoints() {
       await loadCheckpoint(c.number, mode)
     } catch (e) {
       console.error('Loading the Checkpoint failed', e)
+      return
     }
     setReload(r => r + 1)
     if (mode === 'edit') setPlanTab('canvas')
