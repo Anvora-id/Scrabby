@@ -12,6 +12,8 @@ The product's Bob runs on IBM Bob's inference endpoint (`AGENT_BASE_URL`).
 3. `pnpm dev` — app on http://localhost:5173, preview shell on http://localhost:5174.
 4. `pnpm test` — run the test suite.
 
+If a call to Bob fails (network error, 403, 429, 5xx), that run carries on with a fallback model and the Bob badge reads `running on Gemini`; the next run tries Bob again. Set `FALLBACK_API_KEY` (a Gemini key) to turn this on; the other `FALLBACK_*` variables in `.env.example` change the endpoint, model and badge name. Without `FALLBACK_API_KEY`, a failed call ends the run as before.
+
 ## Before you push
 
 Run `git config core.hooksPath .githooks` once per clone. Every `git push` then runs `pnpm check`, which looks for keys in the files and the git history, checks the AGENTS.md safety rules and the TDD §1 config, and runs typecheck, tests and both builds. GitHub runs the same check on every pull request into `main`.
@@ -22,7 +24,7 @@ Two Vercel Hobby projects are deployed from this repo:
 
 | Project | Build command | Output | Environment variables |
 |---|---|---|---|
-| `scrabby` (the app) | `pnpm build` | `dist` | `AGENT_API_KEY` (Sensitive), `AGENT_BASE_URL`, `AGENT_MODEL`, `AGENT_AUTH_SCHEME`, `AGENT_LABEL`, optional `AGENT_HEADERS`; `VITE_PREVIEW_ORIGIN` = the preview project URL |
+| `scrabby` (the app) | `pnpm build` | `dist` | `AGENT_API_KEY` (Sensitive), `AGENT_BASE_URL`, `AGENT_MODEL`, `AGENT_AUTH_SCHEME`, `AGENT_LABEL`, optional `AGENT_HEADERS`; optional `FALLBACK_API_KEY` (Sensitive) and the other `FALLBACK_*`; `VITE_PREVIEW_ORIGIN` = the preview project URL |
 | `scrabby-preview` | `pnpm build:preview` | `dist-preview` | `VITE_APP_ORIGIN` = the app project URL |
 
 Live app: https://scrabby-two.vercel.app. Domains and deploy warnings: [`docs/deploy.md`](docs/deploy.md).

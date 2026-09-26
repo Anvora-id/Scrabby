@@ -128,7 +128,7 @@ export default defineConfig({
 
 | Project | Settings | Environment variables |
 |---|---|---|
-| `scrabby` (the app, the submitted URL) | Framework Vite. Build `pnpm build`. Output `dist`. | `AGENT_API_KEY` (Sensitive), `AGENT_BASE_URL`, `AGENT_MODEL`, `AGENT_AUTH_SCHEME`, `AGENT_LABEL`, optional `AGENT_HEADERS`; `VITE_PREVIEW_ORIGIN` = the preview project's URL |
+| `scrabby` (the app, the submitted URL) | Framework Vite. Build `pnpm build`. Output `dist`. | `AGENT_API_KEY` (Sensitive), `AGENT_BASE_URL`, `AGENT_MODEL`, `AGENT_AUTH_SCHEME`, `AGENT_LABEL`, optional `AGENT_HEADERS`; optional `FALLBACK_API_KEY` (Sensitive) and the other `FALLBACK_*`; `VITE_PREVIEW_ORIGIN` = the preview project's URL |
 | `scrabby-preview` | Framework Other. Build `pnpm build:preview`. Output `dist-preview`. | `VITE_APP_ORIGIN` = the app project's URL. No `AGENT_*` variables, so its copy of `/api/agent` never reaches a model. |
 
 **vercel.json** (root, applies to both projects):
@@ -148,10 +148,16 @@ export default defineConfig({
 | `AGENT_HEADERS` | `{}` | Optional JSON object of extra request headers (for example a `User-Agent` or a team-id header the endpoint asks for). |
 | `AGENT_LABEL` | `IBM Bob` | The name on the Bob badge. |
 | `AGENT_LIMITS` | on | `off` turns the usage limits off (local dev only). |
+| `FALLBACK_API_KEY` | none | Turns the fallback model on (§5.2 `withFallback`). Server only (Vercel: Sensitive). |
+| `FALLBACK_BASE_URL` | `https://generativelanguage.googleapis.com/v1beta/openai` | OpenAI-compatible base URL of the fallback. |
+| `FALLBACK_AUTH_SCHEME` | `Bearer` | Sent as `authorization: <scheme> <key>` to the fallback. |
+| `FALLBACK_MODEL` | `gemini-3.8-flash` | The fallback's model id. |
+| `FALLBACK_HEADERS` | `{}` | Optional JSON object of extra request headers for the fallback. |
+| `FALLBACK_LABEL` | `Gemini` | The name on the Bob badge while the fallback runs. |
 | `VITE_PREVIEW_ORIGIN` | `${location.protocol}//${location.hostname}:5174` | App build: where the Preview lives. |
 | `VITE_APP_ORIGIN` | `${location.protocol}//${location.hostname}:5173` | Preview build: the only origin the shell takes files from. |
 
-Fallback model, if Bob access or Bobcoins run out: `AGENT_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai`, `AGENT_AUTH_SCHEME=Bearer`, `AGENT_API_KEY=<Gemini key>`, `AGENT_MODEL=gemini-3.8-flash`, `AGENT_LABEL=Gemini`. Redeploy after any variable change.
+Fallback model: with `FALLBACK_API_KEY` set (a Gemini key), a run whose Bob call fails switches to the fallback for the rest of that run (§5.2 `withFallback`); Bob stays first for every new run. Redeploy after any variable change.
 
 **`.env.example`** lists every `AGENT_*` name with an empty value and a one-line comment each. `.gitignore`: `.env`, `.env.*`, `!.env.example`, `node_modules/`, `dist/`, `dist-preview/`, `tmp/`, `.vercel/`, `.DS_Store`, `Thumbs.db`, `.vscode/`, `.idea/`. `.bobignore`: `.env`, `.env.*`, `!.env.example`.
 
@@ -380,13 +386,14 @@ export type AgentEvent =
   | { type: 'block'; id: string }                      // a data-block id first written by a tool call
   | { type: 'files'; files: Files; summary?: string }  // the files when the run ends
   | { type: 'error'; reason: 'time' | 'turns' | 'unreachable' | 'broken' }
+  | { type: 'model'; label: string }                   // the run switched to the fallback model
 ```
 
-A stream is: `start`, then any `text`/`block`, then exactly one `files` or `error`. Or just one `limit`.
+A stream is: `start`, then any `text`/`block` (and at most one `model`), then exactly one `files` or `error`. Or just one `limit`.
 
 ### 5.2 Server (api/agent.ts)
 
-Constants: `MAX_ROUNDS = 40`, `MAX_MS = 240_000`. Exports: `MAX_ROUNDS`, `MAX_MS`, types `ChatMsg`, `ToolCall`, `ModelReply`, `Model`, functions `runLoop`, `bobModel`, `createLimits`, `agentHandler`, and `export default { fetch: agentHandler(bobModel) }` (Vercel's web handler shape; the dev plugin calls `default.fetch`).
+Constants: `MAX_ROUNDS = 40`, `MAX_MS = 240_000`. Exports: `MAX_ROUNDS`, `MAX_MS`, types `ChatMsg`, `ToolCall`, `ModelReply`, `Model`, type `ModelConfig`, functions `runLoop`, `primaryConfig`, `fallbackConfig`, `openAiModel`, `withFallback`, `bobModel`, `createLimits`, `agentHandler`, and `export default { fetch: agentHandler(bobModel) }` (Vercel's web handler shape; the dev plugin calls `default.fetch`).
 
 ```ts
 export type ToolCall = { id: string; type: 'function'; function: { name: string; arguments: string } }
@@ -461,11 +468,17 @@ LEVELS:
    7. `stop.throwIfAborted()`.
 3. catch: if `signal?.aborted` → return silently (the client left). reason = Broken ? `broken` : `timeout.aborted` ? `time` : `unreachable`. Log `[agent] the model call failed:` + message when unreachable. Yield `{ type:'error', reason }`.
 
-**bobModel(): Model** (reads env on every call):
-- POST `${AGENT_BASE_URL}/chat/completions` (strip one trailing `/` from the base), headers `content-type: application/json`, `authorization: ${AGENT_AUTH_SCHEME} ${AGENT_API_KEY}`, plus `JSON.parse(AGENT_HEADERS || '{}')`; body `{ model: AGENT_MODEL, messages, tools: TOOLS, tool_choice: 'auto' }`; `signal`.
+**ModelConfig** = `{ baseUrl, apiKey, authScheme, model, headers }` (all strings; `headers` is JSON). `primaryConfig()` reads the `AGENT_*` variables, `fallbackConfig()` the `FALLBACK_*` ones (`null` when `FALLBACK_API_KEY` is unset), each with its §1 default.
+
+**openAiModel(cfg): Model**:
+- POST `${cfg.baseUrl}/chat/completions` (strip one trailing `/` from the base), headers `content-type: application/json`, `authorization: ${cfg.authScheme} ${cfg.apiKey}`, plus `JSON.parse(cfg.headers)`; body `{ model: cfg.model, messages, tools: TOOLS, tool_choice: 'auto' }`; `signal`.
 - Not `ok` → throw `Error(\`model answered ${status}: ${first 300 chars of the body}\`)` (→ unreachable).
 - `choice = json.choices?.[0]`. No choice → `{ content: null, tool_calls: [], finish: null }` (→ broken). `content` = `message.content` when it is a string; when it is an array, join the `text` of its parts; else null. `tool_calls = message.tool_calls ?? []`. `finish = choice.finish_reason ?? null`.
 - Never log the key or the headers.
+
+**withFallback(primary: Model, fallback: Model | null, label: string, onSwitch: (label: string) => void): Model**: calls `primary` until a call throws. If the throw is not an abort (`signal.aborted` false) and `fallback` is set: `console.error('[agent] Bob failed, switching to <label>:', message)`, call `onSwitch(label)` once, retry the same call on `fallback`, and use `fallback` for every later call of this run. Without a fallback, rethrow (→ `unreachable`). A `broken`, `turns` or `time` result never switches.
+
+**bobModel(onSwitch = () => {}): Model** (reads env on every call, so one per request): `withFallback(openAiModel(primaryConfig()), fallbackConfig() && openAiModel(fallbackConfig()), FALLBACK_LABEL || 'Gemini', onSwitch)`.
 
 **createLimits()** returns `take(kind: 'build' | 'assistant', browser: string, now: number): string | null` (null = allowed, and counted):
 - Caps: per browser per rolling hour: build 10, assistant 40. For everyone per UTC day (`new Date(now).toISOString().slice(0, 10)`): build 40, assistant 150. Day counts reset when the date changes.
@@ -473,18 +486,18 @@ LEVELS:
 - Hour: timestamps for `${kind}:${browser}` newer than `now - 3_600_000`. At the cap → m = `Math.max(1, Math.ceil((oldest + 3_600_000 - now) / 60_000))`; build → `` `You've used this hour's 10 Builds. Try again in ${m} minute${m === 1 ? '' : 's'}.` ``; assistant → `` `You've asked Bob 40 questions this hour. Try again in ${m} minute${m === 1 ? '' : 's'}.` ``
 - Else record `now` for the browser and add 1 to the day count; return null. A failed Build still counts (it was counted when it started).
 
-**agentHandler(model: () => Model, limits = createLimits())** returns `(request: Request) => Promise<Response>`:
+**agentHandler(model: (onSwitch: (label: string) => void) => Model, limits = createLimits())** returns `(request: Request) => Promise<Response>`:
 - `GET` → `Response.json({ model: process.env.AGENT_LABEL || 'IBM Bob' })`.
 - Not `POST` → 405 `POST an AgentRequest`. Body not JSON → 400 `The body is not JSON`. `kind` not `build`/`assistant` → 400 `kind must be build or assistant`.
 - Unless `process.env.AGENT_LIMITS === 'off'`: browser = header `x-scrabby-browser` (first 64 chars) or `anon`; `message = limits.take(kind, browser, Date.now())`; if set → `Response.json({ message }, { status: 429 })`.
-- Else stream SSE: a `ReadableStream` whose `pull` sends `data: ${JSON.stringify(event)}\n\n` for `{ type:'start' }` first, then every `runLoop(req, model(), { signal: request.signal })` event, and closes when it ends; `cancel` calls `events.return()`. Headers `content-type: text/event-stream`, `cache-control: no-cache`.
+- Else stream SSE: a `ReadableStream` whose `pull` sends `data: ${JSON.stringify(event)}\n\n` for `{ type:'start' }` first, then every `runLoop(req, model(onSwitch), { signal: request.signal })` event, and closes when it ends; `onSwitch(label)` enqueues `{ type:'model', label }` right away (through the controller kept from `start`), before the next event; `cancel` calls `events.return()`. Headers `content-type: text/event-stream`, `cache-control: no-cache`.
 
 ### 5.3 Client (src/agent.ts)
 
 - `browserId()`: `localStorage['scrabby.browser']`, created with `crypto.randomUUID()` on first use; if storage throws, one id per page load.
-- `runAgent(req)`: `fetch('/api/agent', { method:'POST', headers: { 'content-type':'application/json', 'x-scrabby-browser': browserId() }, body: JSON.stringify(req) })`. A throw → yield `unreachable`, return. Status 429 → `message` from the JSON body (fallback `Scrabby has reached today's limit for everyone. Please try again tomorrow.`), yield `{ type:'limit', message }`, return. Else `yield* readAgentStream(res)`.
+- `runAgent(req)`: `fetch('/api/agent', { method:'POST', headers: { 'content-type':'application/json', 'x-scrabby-browser': browserId() }, body: JSON.stringify(req) })`. A throw → yield `unreachable`, return. Status 429 → `message` from the JSON body (fallback `Scrabby has reached today's limit for everyone. Please try again tomorrow.`), yield `{ type:'limit', message }`, return. Else yield every `readAgentStream(res)` event; on `start` set the label store back to the GET value, on `model` set it to `label` (so every BobBadge shows the fallback for the rest of that run).
 - `readAgentStream(res)`: if `res.ok && res.body`: read with `res.body.pipeThrough(new TextDecoderStream()).getReader()` in a `read()` loop (not `for await`: Safari cannot iterate a stream). Buffer text; split on `\n\n`; keep the last piece as the buffer; each message is JSON after stripping `^data: `; yield it; return after a `files`, `error` or `limit` event. A throw falls through. `finally` cancels the reader (ignore errors). After the loop (stream ended early, or not ok): yield `{ type:'error', reason:'unreachable' }`.
-- `useAgentLabel(): string | null`: a store filled once by `fetch('/api/agent')` (GET) → `model`; null until it arrives or if it fails.
+- `useAgentLabel(): string | null`: a store filled once by `fetch('/api/agent')` (GET) → `model`; null until it arrives or if it fails. `runAgent` changes it during a run (above). `agentLabel()` reads it outside React.
 
 ### 5.4 scripts/build-demo.ts
 
