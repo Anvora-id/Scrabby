@@ -1,6 +1,6 @@
 # 14: Checkpoints tab
 
-Status: ready-for-agent
+Status: done
 Blocked by: 13
 Wave: 3
 
@@ -28,11 +28,17 @@ Modify: `src/slots/Checkpoints.module.css`.
 
 ## Steps
 
-- [ ] `checkpoints.ts` exactly as TDD §12. Include the Assistant parts now (`hasPending` for the warning's last line, `dropPending('Code went back to Checkpoint N')` on load), imported from `src/assistant.ts`. The test for the pending line is in issue 20.
-- [ ] `Checkpoints.tsx` per TDD §12, including the Block chip focus (`useCheckpointFocus`) and "See its code".
-- [ ] Tests: the `checkpoints.test.ts` row of TDD §20.
+- [x] `checkpoints.ts` exactly as TDD §12. Include the Assistant parts now (`hasPending` for the warning's last line, `dropPending('Code went back to Checkpoint N')` on load), imported from `src/assistant.ts`. The test for the pending line is in issue 20.
+- [x] `Checkpoints.tsx` per TDD §12, including the Block chip focus (`useCheckpointFocus`) and "See its code".
+- [x] Tests: the `checkpoints.test.ts` row of TDD §20.
 
 ## Done when
 
 - `pnpm typecheck` and `pnpm test` pass.
 - In the browser (dev select → built site): two entries; Checkpoint 2 is "you are here"; hand-edit the code and it reads "you are here + hand edits"; Go back to Checkpoint 1 adds "Checkpoint 3 · saved for you" first; Edit its Blocks on Checkpoint 2 brings "Opening hours" back into Home on the Canvas; a Block chip in the code opens this tab at its Build with the Block flashing; "See its code" jumps to its line.
+
+## Answer
+
+- `src/checkpoints.ts` exports `sameFiles`, `holding`, `needsSave`, `unbuilt`, `applyLoad`, `loadCheckpoint`, `warning`, `gist`, `fromTag`, `buildOf` and `LoadMode`; it already uses `hasPending`/`dropPending` from `src/assistant.ts`.
+- `unbuilt` also takes unlocked children of the Checkpoint Block (new Pages), so a load never drops them.
+- Edit its Blocks deletes `canvas.layout`, so the next repair rebuilds it from `children` and the top keeps its index.
