@@ -3,7 +3,7 @@
 Young developers learn to code in Scratch, but what they make stays inside Scratch. AI tools can now build real websites, but only if you can describe what you want in words, and kids find it hard to put their ideas into a clear prompt.
 Scrabby lets them plan the way they already know from Scratch. They snap their idea together as Blocks and Traits on a Canvas, and it feels like a game. Bob turns the plan into a real website they can click through. Then they open the real code, change it, and ask Bob what it does.
 
-The product's Bob runs on IBM Bob's inference endpoint (`AGENT_BASE_URL`).
+The product's Bob runs on IBM Bob's inference endpoint (`AGENT_BASE_URL`) with the model `premium` (`AGENT_MODEL`).
 
 ## Run locally
 
