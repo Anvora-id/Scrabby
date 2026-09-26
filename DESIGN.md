@@ -338,7 +338,7 @@ Bob talking: the show-around, the one-time tip, the limit message and the blocke
     - Only with unbuilt Blocks on the Canvas: "Blocks you have not built yet become loose ideas."
     - Only with an Assistant change not yet accepted: "The Assistant's unaccepted changes will be dropped."
     - Buttons: **Cancel** (Text), **Go back** or **Edit its Blocks** (Primary).
-  - **The unaccepted-changes warning** (ticket 08), when Build is pressed while an Assistant change is not yet accepted. Title "Build now?", body "The Assistant has changes you haven't accepted. Building drops them." Buttons: **Cancel** (Text), **Build anyway** (Primary).
+  - **The Build warning**, every time Build is pressed and a Build can run. Title "Build now?", body "Bob builds your site from the plan and takes you to the Build step." Buttons: **Cancel** (Text), **Build** (Primary). When an Assistant change is not yet accepted (ticket 08), the body adds "The Assistant has changes you haven't accepted. Building drops them." and the Primary button reads **Build anyway**.
 - **Custom Block color menu** (Stretch, PRD §6): title "Custom Block color" (weight 900), a row of 26px round preset swatches (2.5px white border, 1.5px `#0003` ring; the chosen one gets a 2.5px `--ink` ring), then "Any color" with a 44×26px color input.
 - **Custom Block edit bar** (Stretch, PRD §6): across the top of the Canvas. `--edit-bar` fill, a 3px bottom edge of `#0000001a`, `--ink` weight 800 `--fs-md`, padding 8px 14px. Text: "Editing Custom Block "X". Changes reach all N Instances, except parts an Instance changed itself." A **Done** button on the right: `--surface`, no border, radius `--r-btn`, a 3px `#0000001f` bottom edge, padding 6px 16px, weight 900.
 
