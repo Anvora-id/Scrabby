@@ -1,12 +1,12 @@
 # 17: Deploy and done walk
 
 Status: ready-for-agent
-Blocked by: 01–16
+Blocked by: 01–16, 18
 Lane: both (a human runs the walk; Bob fixes what fails)
 
 ## What to build
 
-Nothing new. The live URL passes the walk below and PRD §7's checklist. Anything that fails is fixed here; a large failure becomes a new issue `18-…`.
+Nothing new. The live URL passes the walk below and PRD §7's checklist. Anything that fails is fixed here; a large failure becomes a new issue with the next free number (`19-…`).
 
 ## Read
 
@@ -16,7 +16,7 @@ Nothing new. The live URL passes the walk below and PRD §7's checklist. Anythin
 ## Steps
 
 - [ ] Both Vercel projects deploy from `main`; the app's `VITE_PREVIEW_ORIGIN` and the preview's `VITE_APP_ORIGIN` point at each other; `AGENT_*` set on the app only (`AGENT_API_KEY` Sensitive); `AGENT_LIMITS` not set in production.
-- [ ] `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm build:preview` pass on `main`.
+- [ ] `pnpm check` passes on `main` (typecheck, test, both builds and the deploy checks of issue 18), and so does the `check` workflow on GitHub.
 - [ ] Run the walk in Chrome on the live URL, then steps 1, 7, 8 and 15 again in Firefox. Record each step's result under `## Answer`.
 
 ## The walk
