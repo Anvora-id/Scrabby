@@ -7,7 +7,10 @@ import styles from './App.module.css'
 
 export default function App() {
   // Behind the greeting or a warning, nothing can be reached: Tab stays in the card.
-  const blocked = greetingStore.use() || askStore.use() !== null
+  // Both hooks run every render (no ||): React needs the same hooks each time.
+  const greeting = greetingStore.use()
+  const ask = askStore.use()
+  const blocked = greeting || ask !== null
   return (
     <>
       <div className={styles.app} inert={blocked}>
