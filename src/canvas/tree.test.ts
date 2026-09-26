@@ -81,6 +81,23 @@ describe('tree', () => {
     expect(p.blocks[heroId].pos).toBeUndefined()
   })
 
+  it('a chip dragged out of a folded Block lands folded', () => {
+    const p = demo()
+    const home = bid(p, 'Home')
+    p.blocks[home].folded = true
+    const heroId = p.blocks[home].children.find(id => p.blocks[id]?.type === 'hero')!
+    dropItem(p, { kind: 'block', id: heroId }, { id: 'canvas', pos: { x: 0, y: 0 } })
+    expect(p.blocks[heroId].folded).toBe(true)
+  })
+
+  it('an open Block stays open when moved', () => {
+    const p = demo()
+    const home = bid(p, 'Home')
+    const heroId = p.blocks[home].children.find(id => p.blocks[id]?.type === 'hero')!
+    dropItem(p, { kind: 'block', id: heroId }, { id: 'canvas', pos: { x: 0, y: 0 } })
+    expect(p.blocks[heroId].folded).toBeUndefined()
+  })
+
   it('Traits at an index', () => {
     const p = demo()
     const home = bid(p, 'Home')

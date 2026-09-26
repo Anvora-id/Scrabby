@@ -7,7 +7,7 @@ import { hasOverride } from '../model/project.ts'
 import { setEditing, updateProject } from '../store.ts'
 import { cx } from './cx.ts'
 import { dragSource, useDrag } from './drag.ts'
-import { insertInto, isTraitItem, repairLayout } from './tree.ts'
+import { insertInto, isFolded, isTraitItem, repairLayout } from './tree.ts'
 import TraitPill, { TextField } from './TraitPill.tsx'
 import { BlockNote, openMenu } from './Overlays.tsx'
 import { Mark } from './Warnings.tsx'
@@ -47,7 +47,7 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
   const custom = b.inst ?? b.defines
   const def = custom ? p.defs[custom] : undefined
   const checkpoint = b.type === 'checkpoint'
-  const folded = !checkpoint && (b.folded ?? depth >= 4)
+  const folded = isFolded(b, depth)
   const target = drag?.target?.id === id ? drag.target : null
   const blockDrop = !!target && !isTraitItem(drag!.item)
   const liftedBlock = drag?.item.kind === 'block' ? drag.item.id : null
