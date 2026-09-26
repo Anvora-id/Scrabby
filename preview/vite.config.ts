@@ -6,6 +6,8 @@ const here = (p: string) => fileURLToPath(new URL(p, import.meta.url))
 // The Preview origin (TDD §13). sw.js keeps a fixed name so the shell can register it.
 export default defineConfig({
   root: here('.'),
+  // The root .env (VITE_APP_ORIGIN) also serves local Preview builds.
+  envDir: here('..'),
   server: { port: 5174, strictPort: true },
   build: {
     outDir: here('../dist-preview'),

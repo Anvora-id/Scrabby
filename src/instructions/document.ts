@@ -75,17 +75,17 @@ export function instructionDocument(p: Project): InstructionResult {
 
   function blockLines(b: Block, popups: string[], ids: boolean): string[] {
     labels.add(blockLabel(b))
-    if (b.inst) usedDefs.add(b.inst)
-    const defName = b.inst ? p.blocks[p.defs[b.inst]?.blockId]?.name : undefined
+    const def = b.inst ? p.defs[b.inst] : undefined
+    if (def) usedDefs.add(b.inst!)
     return [
-      `- ${blockLabel(b)} "${b.name}"${b.inst ? ` (Instance of "${defName}")` : ''}${ids ? ` #${b.id}` : ''}`,
+      `- ${blockLabel(b)} "${b.name}"${def ? ` (Instance of "${p.blocks[def.blockId]?.name}")` : ''}${ids ? ` #${b.id}` : ''}`,
       ...indent(inside(b, popups, ids)),
     ]
   }
 
   const body: string[] = []
   if (top.type === 'checkpoint')
-    body.push(section('## Already built', pages.filter(b => b.locked).map(b => `- Built page "${b.name}" (${b.file}) #${b.id}`)))
+    body.push(section('## Already built', pages.filter(b => b.locked).map(b => heading('-', b))))
   body.push(section(heading('##', top), [...noteLine(top), ...top.traits.flatMap(t => traitLines(t, []))]))
   for (const page of pages) {
     if (page.locked && !page.traits.length && !page.children.length && !page.note.trim()) continue
@@ -94,12 +94,12 @@ export function instructionDocument(p: Project): InstructionResult {
   }
   if (usedDefs.size) {
     const allPopups = pages.flatMap(b => popupsIn(p, b))
-    body.push(section('## Custom Blocks', [...usedDefs].flatMap(d => blockLines(p.blocks[p.defs[d].blockId], allPopups, false))))
+    body.push(section('## Custom Blocks', [...usedDefs].flatMap(d => p.blocks[p.defs[d].blockId] ? blockLines(p.blocks[p.defs[d].blockId], allPopups, false) : [])))
   }
   if (p.assets.length) {
     body.push(section('## Library', p.assets.map(a => `- assets/${a.file}: ${a.kind}`
       + (a.width && a.height ? `, ${a.width}×${a.height} px` : '')
-      + (a.seconds !== undefined ? `, ${Math.round(a.seconds)} s` : '')
+      + (a.seconds ? `, ${Math.round(a.seconds)} s` : '')
       + (usedAssets.has(a.id) ? ', used by a Trait' : ''))))
   }
 

@@ -235,6 +235,17 @@ describe('tree', () => {
     expect(labels).not.toContain('plays a sound')
   })
 
+  it('onClickOptions offers a nested Popup', () => {
+    const p = demo()
+    const order = Object.values(p.blocks).find(b => b.name === 'Order' && b.type === 'popup')!
+    const inner = addBlock(p, 'popup', 'Thanks')
+    order.children.push(inner)
+    const btn = Object.values(p.blocks).find(b => b.name === 'Order' && b.type === 'button')!
+    const labels = onClickOptions(p, btn.traits.find(t => p.traits[t]?.type === 'onclick')!).map(o => o.label)
+    expect(labels).toContain('open popup › Order')
+    expect(labels).toContain('open popup › Thanks')
+  })
+
   it('loose Pages never listed in onClickOptions', () => {
     const p = demo()
     const loosePage = addBlock(p, 'page', 'Loose')

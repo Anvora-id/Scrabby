@@ -2,7 +2,8 @@
 if (window.parent !== window) {
   const tell = msg => parent.postMessage(msg, '*')
 
-  addEventListener('load', () => tell({ preview: 'page', path: location.pathname }))
+  // At once, not on load: a later `page` would clear errors thrown while the page loads.
+  tell({ preview: 'page', path: location.pathname })
   addEventListener('error', e => tell({ preview: 'error', message: e.message, file: e.filename }))
   addEventListener('unhandledrejection', e => tell({ preview: 'error', message: String(e.reason?.message ?? e.reason) }))
 

@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { Readable } from 'node:stream'
 import { defineConfig, createServer, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -51,4 +52,6 @@ function agentApi(): Plugin {
 export default defineConfig({
   plugins: [react(), previewServer(), agentApi()],
   server: { port: 5173, strictPort: true },
+  // Agent worktrees in hidden folders hold copies of the tests.
+  test: { exclude: ['**/node_modules/**', '.*/**'] },
 })

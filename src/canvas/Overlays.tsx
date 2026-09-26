@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ICONS } from '../icons.ts'
 import type { Project } from '../model/types.ts'
 import { updateProject } from '../store.ts'
 import { setEditing } from '../store.ts'
-import { getDrag } from './drag.ts'
+import { getDrag, peekPending } from './drag.ts'
 import { menuItems } from './menu.ts'
 import { tipFor } from './tooltip.ts'
 import { cx } from './cx.ts'
@@ -112,6 +112,8 @@ export function Tooltip({ p }: { p: Project }) {
   const [tip, setTip] = useState<TipState | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pending = useRef<TipState | null>(null)
+  const box = useRef<HTMLDivElement>(null)
+  const busy = () => !!getDrag() || !!peekPending() || isMenuOpen()
 
   useEffect(() => {
     const clear = () => {
@@ -121,7 +123,7 @@ export function Tooltip({ p }: { p: Project }) {
     }
 
     const onOver = (e: PointerEvent) => {
-      if (getDrag()) return
+      if (busy()) return
       const el = (e.target as Element).closest<HTMLElement>('[data-tip]')
       const key = el?.dataset.tip ?? ''
       const currentKey = pending.current?.key ?? tip?.key ?? ''
@@ -133,9 +135,7 @@ export function Tooltip({ p }: { p: Project }) {
       const rect = el!.getBoundingClientRect()
       pending.current = { key, rect }
       timer.current = setTimeout(() => {
-        if (!getDrag() && !isMenuOpen()) {
-          setTip(pending.current)
-        }
+        if (!busy()) setTip(pending.current)
         pending.current = null
         timer.current = null
       }, 500)
@@ -144,18 +144,26 @@ export function Tooltip({ p }: { p: Project }) {
     const hide = () => clear()
 
     window.addEventListener('pointerover', onOver)
-    window.addEventListener('pointerdown', hide)
-    window.addEventListener('contextmenu', hide)
-    window.addEventListener('wheel', hide)
-    window.addEventListener('keydown', hide, true)
+    // Capture: a handler that stops the event must not keep the tooltip up.
+    const hides = ['pointerdown', 'contextmenu', 'wheel', 'keydown'] as const
+    hides.forEach(t => window.addEventListener(t, hide, true))
 
     return () => {
       window.removeEventListener('pointerover', onOver)
-      window.removeEventListener('pointerdown', hide)
-      window.removeEventListener('contextmenu', hide)
-      window.removeEventListener('wheel', hide)
-      window.removeEventListener('keydown', hide, true)
+      hides.forEach(t => window.removeEventListener(t, hide, true))
     }
+  }, [tip])
+
+  // Place it from its real size: 8px below the item (else above), 8px inside the window on every side.
+  useLayoutEffect(() => {
+    const el = box.current
+    if (!el || !tip) return
+    const r = tip.rect
+    const w = el.offsetWidth
+    const h = el.offsetHeight
+    const top = r.bottom + 8 + h <= innerHeight - 8 ? r.bottom + 8 : r.top - 8 - h
+    el.style.left = Math.max(8, Math.min(r.left, innerWidth - 8 - w)) + 'px'
+    el.style.top = Math.max(8, Math.min(top, innerHeight - 8 - h)) + 'px'
   }, [tip])
 
   if (!tip) return null
@@ -163,17 +171,11 @@ export function Tooltip({ p }: { p: Project }) {
   if (!data) return null
 
   const Icon = ICONS[data.icon]
-  const r = tip.rect
-  const h = 100 // rough height estimate for placement
-  const below = r.bottom + 8 + h <= innerHeight
-  const rawLeft = r.left
-  const left = Math.min(Math.max(8, rawLeft), innerWidth - 268)
-  const top = below ? r.bottom + 8 : r.top - 8 - h
 
   return createPortal(
     <div
+      ref={box}
       className={cx(styles.tip, data.cat ? `cat-${data.cat}` : styles.tipMuted)}
-      style={{ left, top }}
       role="tooltip"
     >
       <div className={styles.tipTitle}>
@@ -230,6 +232,7 @@ export function TraitNote({ id, note, noteOn }: { id: string; note: string; note
     <span className={styles.traitNoteWrap}>
       <textarea
         className={cx(parts.big, styles.traitNoteBig)}
+        placeholder="note for Bob"
         value={note}
         autoFocus
         onChange={e => set(e.target.value)}

@@ -32,7 +32,7 @@ async function measure(file: File, kind: AssetKind): Promise<{ width: number; he
   }
 }
 
-async function upload(files: File[]): Promise<string[]> {
+async function upload(files: File[], onSaved: () => void): Promise<string[]> {
   const problems: string[] = []
   for (const file of files) {
     const kind = uploadKind(file)
@@ -46,6 +46,7 @@ async function upload(files: File[]): Promise<string[]> {
     updateProject(d => { id = addAsset(d, file.name, { kind, mime: file.type, bytes: file.size, ...size }) })
     try {
       await putAsset({ projectId: getProject().id, id, blob: file })
+      onSaved()
     } catch (e) {
       console.error('Saving an Asset failed', e)
       updateProject(d => removeAsset(d, id))
@@ -64,6 +65,8 @@ export default function Library() {
   const [renaming, setRenaming] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const [renameErr, setRenameErr] = useState<string | null>(null)
+  // Bumped after a Blob is stored: the Asset appears in the Project before its Blob does.
+  const [saved, setSaved] = useState(0)
 
   // Reload only when Assets come or go, not on every Project edit.
   const projectId = project.id
@@ -81,16 +84,16 @@ export default function Library() {
       }
       setUrls(next)
     }).catch(e => console.error('Loading the Library failed', e))
-    navigator.storage?.estimate?.().then(({ usage = 0, quota = 0 }) => {
-      if (live) setStorage(`${formatBytes(usage)} of ${formatBytes(quota)} browser storage used`)
+    navigator.storage?.estimate?.().then(({ usage = 0, quota }) => {
+      if (live && quota) setStorage(`${formatBytes(usage)} of ${formatBytes(quota)} browser storage used`)
     }).catch(() => {})
     return () => { live = false; made.forEach(u => URL.revokeObjectURL(u)) }
-  }, [projectId, ids])
+  }, [projectId, ids, saved])
 
   function pick(e: React.ChangeEvent<HTMLInputElement>) {
     const files = [...(e.target.files ?? [])]
     e.target.value = ''
-    upload(files).then(setProblems)
+    upload(files, () => setSaved(n => n + 1)).then(setProblems)
   }
 
   function startRename(a: Asset) {

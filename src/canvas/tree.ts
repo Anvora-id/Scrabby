@@ -1,5 +1,6 @@
 import { ON_CLICK_CHOICES, PLAYS_A_SOUND, acceptsBlock } from '../model/catalogue.ts'
 import { addBlock, addTrait, makeInstance } from '../model/project.ts'
+import { popupsIn } from '../instructions/warnings.ts'
 import type { Block, Layout, Pos, Project } from '../model/types.ts'
 import type { BlockType, TraitType } from '../model/types.ts'
 
@@ -284,18 +285,11 @@ export function onClickOptions(p: Project, traitId: string): Option[] {
     }
   }
 
-  // Popups inside this Trait's own Page
+  // Popups inside this Trait's own Page, nested ones included
   if (ownPage) {
-    function findPopups(blockId: string): void {
-      const b = p.blocks[blockId]
-      if (!b) return
-      if (blockId !== ownPage && b.type === 'popup') {
-        options.push({ value: `popup:${blockId}`, label: `open popup › ${b.name}` })
-        return
-      }
-      for (const cid of b.children) findPopups(cid)
+    for (const id of popupsIn(p, p.blocks[ownPage])) {
+      options.push({ value: `popup:${id}`, label: `open popup › ${p.blocks[id].name}` })
     }
-    findPopups(ownPage)
   }
 
   // ON_CLICK_CHOICES items except "plays a sound"

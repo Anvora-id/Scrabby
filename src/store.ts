@@ -75,7 +75,8 @@ export function redo(): void {
 }
 
 export async function startStore(): Promise<void> {
-  try { await navigator.storage?.persist?.() } catch { /* ignore */ }
+  // Not awaited: the browser may wait on a permission prompt; a refusal changes nothing here.
+  navigator.storage?.persist?.().catch(() => {})
   let saved: Project | undefined
   try {
     saved = await loadLatestProject()

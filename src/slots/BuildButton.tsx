@@ -38,7 +38,7 @@ export default function BuildButton() {
   }
 
   async function build() {
-    const limit = await runBuild()
+    const limit = await runBuild().catch(e => console.error('The Build failed to run', e))
     if (limit) setBubble(limit)
   }
 

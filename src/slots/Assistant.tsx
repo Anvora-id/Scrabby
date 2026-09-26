@@ -115,6 +115,12 @@ export default function Assistant() {
   )
 }
 
+// A proposal can have no file left to review (every file already matches).
+function review(time: number, pr: Proposal): void {
+  const first = openFiles(pr)[0]
+  if (first) startReview(time, first)
+}
+
 function DiffCard({ time, proposal, files, replying }: { time: number; proposal: Proposal; files: Files; replying: boolean }) {
   const state = cardState(proposal, files)
   const count = `${proposal.accepted} of ${proposal.total} changes accepted`
@@ -131,13 +137,13 @@ function DiffCard({ time, proposal, files, replying }: { time: number; proposal:
               Accept all
             </button>
             <button type="button" className={styles.ghost} onClick={() => rejectAll(time)}>Reject all</button>
-            <button type="button" className={styles.ghost} onClick={() => startReview(time, openFiles(proposal)[0])}>Review</button>
+            <button type="button" className={styles.ghost} onClick={() => review(time, proposal)}>Review</button>
           </>
         )}
         {state === 'reviewing' && (
           <>
             <span className={styles.status}>{count}</span>
-            <button type="button" className={styles.ghost} onClick={() => startReview(time, openFiles(proposal)[0])}>Review</button>
+            <button type="button" className={styles.ghost} onClick={() => review(time, proposal)}>Review</button>
           </>
         )}
         {state === 'partial' && <span className={styles.status}>{count}</span>}

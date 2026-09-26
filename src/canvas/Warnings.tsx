@@ -57,7 +57,7 @@ export function Popover({ p, id, ws, x, y, onShow, onClose }: {
         <div key={i} className={styles.item}>
           <span className={styles.char}>{badgeOf([w])}</span>
           <div className={styles.words}>
-            {w.where && <button className={styles.where} title="Show it on the Canvas" onClick={() => onShow(id)}>{w.where}</button>}
+            {w.where && <button className={styles.where} title="Show it on the Canvas" onClick={() => { onShow(id); onClose() }}>{w.where}</button>}
             <div className={styles.text}>{w.text}</div>
             <div className={styles.todo}>{w.todo}</div>
             {w.def && <div className={styles.todo}>Comes from the Custom Block "{p.blocks[p.defs[w.def]?.blockId]?.name}"</div>}

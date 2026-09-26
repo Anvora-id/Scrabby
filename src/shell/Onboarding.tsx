@@ -92,7 +92,8 @@ function Tour() {
 
 function Tip() {
   const id = tipStore.use()
-  if (!id) return null
+  const tour = tourStore.use()
+  if (!id || tour) return null
   return (
     <SpeechBubble target={`[data-bid="${id}"]`} text="Right-click a Block or Trait for more.">
       <button className={styles.primary} autoFocus onClick={closeTip}>Got it</button>

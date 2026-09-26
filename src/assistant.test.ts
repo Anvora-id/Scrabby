@@ -124,6 +124,30 @@ describe('ask', () => {
     await first
     expect(hasPending(getProject())).toBe(false)
   })
+
+  it('a reply dropped before start leaves the question and Stopped.', async () => {
+    let open!: () => void
+    gate = new Promise(r => { open = r })
+    script = [{ type: 'start' }, { type: 'text', text: 'Late' }]
+    const turn = ask('Hi')
+    dropPending()
+    open()
+    await turn
+    expect(getProject().chat.map(m => [m.role, m.text])).toEqual([['user', 'Hi'], ['bob', 'Stopped.']])
+    expect(hasPending(getProject())).toBe(false)
+  })
+
+  it('after a drop no proposal is added and the code is unchanged', async () => {
+    let open!: () => void
+    gate = new Promise(r => { open = r })
+    script = [{ type: 'files', files: { ...SITE, 'style.css': 'h1 { color: blue; }' }, summary: 'Blue.' }]
+    const turn = ask('Make it blue')
+    dropPending()
+    open()
+    await turn
+    expect(bob().proposal).toBeUndefined()
+    expect(getProject().files).toEqual(SITE)
+  })
 })
 
 describe('the diff card', () => {

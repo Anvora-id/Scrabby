@@ -39,7 +39,6 @@ function LayoutView({ l, p, depth, inInst, ghost }: { l: Layout; p: Project; dep
   )
 }
 
-// inInst is for issue 07's header marker; children get inInst || b.inst.
 export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Project; id: string; depth?: number; inInst?: boolean }) {
   const drag = useDrag()
   const b = p.blocks[id]
@@ -161,7 +160,7 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
                   <img src="/bob.svg" alt="" />
                   Drag a Page into your Site to start.
                 </div>
-              ) : b.locked && <span className={styles.dropHint}>drop Blocks or Traits here</span>}
+              ) : b.locked && b.type === 'page' && <span className={styles.dropHint}>drop Blocks or Traits here</span>}
             </div>
           )}
         </>

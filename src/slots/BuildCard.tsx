@@ -93,7 +93,7 @@ export default function BuildCard() {
 
   async function tryAgain() {
     setLimit(undefined)
-    setLimit(await runBuild())
+    setLimit(await runBuild().catch(e => { console.error('The Build failed to run', e); return undefined }))
   }
 
   return (

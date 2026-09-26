@@ -17,7 +17,7 @@ export default function Checkpoints() {
   const focus = useCheckpointFocus()
   const [cps, setCps] = useState<Checkpoint[] | null>(null)
   const [reload, setReload] = useState(0)
-  const [open, setOpen] = useState<number[]>([])
+  const [open, setOpen] = useState<number | null>(null)
   const [picked, setPicked] = useState<Picked | null>(null)
   const [ask, setAsk] = useState<{ c: Checkpoint; mode: LoadMode } | null>(null)
   const flashRow = useRef<HTMLSpanElement>(null)
@@ -31,10 +31,8 @@ export default function Checkpoints() {
   useEffect(() => {
     if (!focus || !cps) return
     const c = buildOf(focus, getProject(), cps)
-    if (c) {
-      setOpen(o => [...o, c.number])
-      setPicked({ n: c.number, id: focus, flash: true })
-    }
+    setOpen(c ? c.number : null)
+    if (c) setPicked({ n: c.number, id: focus, flash: true })
     clearCheckpointFocus()
   }, [focus, cps])
 
@@ -88,7 +86,7 @@ export default function Checkpoints() {
       {[...cps].reverse().map(c => {
         const here = p.checkpoint === c.number
         const tag = fromTag(c)
-        const isOpen = open.includes(c.number)
+        const isOpen = open === c.number
         return (
           <article key={c.number} className={cx(styles.entry, here && styles.here)}>
             <div className={styles.title}>
@@ -107,7 +105,7 @@ export default function Checkpoints() {
                   <button
                     className={styles.link}
                     aria-expanded={isOpen}
-                    onClick={() => setOpen(o => (isOpen ? o.filter(x => x !== c.number) : [...o, c.number]))}
+                    onClick={() => setOpen(isOpen ? null : c.number)}
                   >
                     {isOpen ? 'Hide its Blocks' : 'Show its Blocks'}
                   </button>
