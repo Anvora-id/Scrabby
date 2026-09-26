@@ -13,7 +13,7 @@ Vercel team `anvora2`, repo `Anvora-id/Scrabby`, both projects deploy `main`.
 
 | Variable | Project | Environments | Value |
 |---|---|---|---|
-| `AGENT_API_KEY` (Sensitive), `AGENT_BASE_URL`, `AGENT_AUTH_SCHEME`, `AGENT_MODEL`, `AGENT_LABEL`, optional `AGENT_HEADERS` | `scrabby` | Production, Preview | TDD §1 |
+| `AGENT_API_KEY` (Sensitive), `AGENT_BASE_URL`, `AGENT_AUTH_SCHEME`, `AGENT_MODEL`, `AGENT_LABEL`, optional `AGENT_HEADERS` and `AGENT_REASONING_EFFORT` | `scrabby` | Production, Preview | TDD §1 |
 | `VITE_PREVIEW_ORIGIN` | `scrabby` | Production | `https://scrabby-preview.vercel.app` |
 | `VITE_APP_ORIGIN` | `scrabby-preview` | Production | `https://scrabby-two.vercel.app` |
 | `AGENT_LIMITS` | none | none | Local `.env` only (`off` switches the usage limits off). Never set it on Vercel. |

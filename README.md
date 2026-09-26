@@ -24,7 +24,7 @@ Two Vercel Hobby projects are deployed from this repo:
 
 | Project | Build command | Output | Environment variables |
 |---|---|---|---|
-| `scrabby` (the app) | `pnpm build` | `dist` | `AGENT_API_KEY` (Sensitive), `AGENT_BASE_URL`, `AGENT_MODEL`, `AGENT_AUTH_SCHEME`, `AGENT_LABEL`, optional `AGENT_HEADERS`; optional `FALLBACK_API_KEY` (Sensitive) and the other `FALLBACK_*`; `VITE_PREVIEW_ORIGIN` = the preview project URL |
+| `scrabby` (the app) | `pnpm build` | `dist` | `AGENT_API_KEY` (Sensitive), `AGENT_BASE_URL`, `AGENT_MODEL`, `AGENT_AUTH_SCHEME`, `AGENT_LABEL`, optional `AGENT_HEADERS` and `AGENT_REASONING_EFFORT`; optional `FALLBACK_API_KEY` (Sensitive) and the other `FALLBACK_*`; `VITE_PREVIEW_ORIGIN` = the preview project URL |
 | `scrabby-preview` | `pnpm build:preview` | `dist-preview` | `VITE_APP_ORIGIN` = the app project URL |
 
 Live app: https://scrabby-two.vercel.app. Domains and deploy warnings: [`docs/deploy.md`](docs/deploy.md).
