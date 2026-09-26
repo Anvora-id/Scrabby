@@ -155,15 +155,20 @@ export function Tooltip({ p }: { p: Project }) {
   }, [tip])
 
   // Place it from its real size: 8px below the item (else above), 8px inside the window on every side.
+  // The arrow points at the item's first 20px, or its middle when it is narrower.
   useLayoutEffect(() => {
     const el = box.current
     if (!el || !tip) return
     const r = tip.rect
     const w = el.offsetWidth
     const h = el.offsetHeight
-    const top = r.bottom + 8 + h <= innerHeight - 8 ? r.bottom + 8 : r.top - 8 - h
-    el.style.left = Math.max(8, Math.min(r.left, innerWidth - 8 - w)) + 'px'
+    const below = r.bottom + 8 + h <= innerHeight - 8
+    const left = Math.max(8, Math.min(r.left, innerWidth - 8 - w))
+    const top = below ? r.bottom + 8 : r.top - 8 - h
+    el.style.left = left + 'px'
     el.style.top = Math.max(8, Math.min(top, innerHeight - 8 - h)) + 'px'
+    el.style.setProperty('--arrow', Math.max(12, Math.min(r.left + Math.min(r.width / 2, 20) - left, w - 12)) + 'px')
+    el.toggleAttribute('data-above', !below)
   }, [tip])
 
   if (!tip) return null
@@ -175,7 +180,7 @@ export function Tooltip({ p }: { p: Project }) {
   return createPortal(
     <div
       ref={box}
-      className={cx(styles.tip, data.cat ? `cat-${data.cat}` : styles.tipMuted)}
+      className={cx(styles.tip, data.cat && `cat-${data.cat}`)}
       role="tooltip"
     >
       <div className={styles.tipTitle}>
