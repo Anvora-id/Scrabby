@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { ICONS } from '../icons.ts'
 import { COLOR_PRESETS, TRAIT_TYPES } from '../model/catalogue.ts'
@@ -12,6 +13,7 @@ import type { Option } from './tree.ts'
 import { openMenu, TraitNote } from './Overlays.tsx'
 import { Mark } from './Warnings.tsx'
 import { bobPicksControl, setBobPicks } from './bobPicks.ts'
+import { whiteTextOn } from './contrast.ts'
 import styles from './parts.module.css'
 
 const BOB_PICKS = '\u0000bob'
@@ -54,50 +56,17 @@ function LongText({ value, onChange, placeholder }: { value: string; onChange: (
   )
 }
 
-function Dropdown({ value, options, onChange, back, onBobPicks }: { value: string; options: Option[]; onChange: (v: string) => void; back: string; onBobPicks?: () => void }) {
-  const [typing, setTyping] = useState(false)
-  const current = options.find(o => o.value === value)
-  if (typing || !current) return (
-    <>
-      <TextField value={value} placeholder="type your own" autoFocus={typing} onChange={onChange} />
-      <button className={styles.small} title="Pick from the list" onClick={() => { setTyping(false); onChange(back) }}>▾</button>
-    </>
-  )
-  return (
-    <select
-      className={cx(styles.select, current.missing && styles.warn)}
-      title={current.missing && MISSING}
-      value={value}
-      onChange={e => {
-        if (e.target.value === CUSTOM) {
-          setTyping(true)
-          onChange('')
-        } else if (e.target.value === BOB_PICKS) {
-          onBobPicks?.()
-        } else onChange(e.target.value)
-      }}
-    >
-      {options.map(o => (
-        <option
-          key={o.value}
-          value={o.value}
-          className={cx(o.missing && styles.warn)}
-          title={o.missing && MISSING}
-          style={o.font ? { fontFamily: o.font } : undefined}
-        >
-          {o.label}
-        </option>
-      ))}
-      <option value={BOB_PICKS}>💡 Bob picks</option>
-      <option value={CUSTOM}>custom…</option>
-    </select>
-  )
-}
-
 type At = { left: number; top: number }
 
-function ColorMenu({ at, value, onChange, onClose }: { at: At; value: string; onChange: (v: string) => void; onClose: () => void }) {
+// The context menu look, shared by the dropdown lists and the color menu.
+function Popover({ at, title, onClose, children }: { at: At; title: string; onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    // Keep it inside the window; offsetWidth ignores the pop-in scale.
+    const el = ref.current!
+    el.style.left = `${Math.max(8, Math.min(at.left, innerWidth - el.offsetWidth - 8))}px`
+    el.style.top = `${Math.max(8, Math.min(at.top, innerHeight - el.offsetHeight - 8))}px`
+  }, [at])
   useEffect(() => {
     const down = (e: PointerEvent) => { if (!ref.current?.contains(e.target as Node)) onClose() }
     const key = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -108,9 +77,133 @@ function ColorMenu({ at, value, onChange, onClose }: { at: At; value: string; on
       document.removeEventListener('keydown', key)
     }
   }, [onClose])
+  // React bubbles through the portal: stop the pill's drag.
   return createPortal(
-    <div ref={ref} className={styles.colorMenu} style={at} onPointerDown={e => e.stopPropagation()}>
-      <div className={styles.colorTitle}>Colors</div>
+    <div ref={ref} className={styles.menu} onPointerDown={e => e.stopPropagation()}>
+      <div className={styles.menuTitle}>{title}</div>
+      {children}
+    </div>,
+    document.body,
+  )
+}
+
+function ListMenu({ at, title, value, options, onPick, onClose }: {
+  at: At
+  title: string
+  value: string
+  options: Option[]
+  onPick: (v: string) => void
+  onClose: () => void
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => { ref.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus() }, [])
+
+  function onKeyDown(e: React.KeyboardEvent) {
+    const items = [...ref.current!.querySelectorAll<HTMLElement>('[role="option"]')]
+    const i = items.indexOf(document.activeElement as HTMLElement)
+    const moves: Record<string, number> = { ArrowDown: Math.min(i + 1, items.length - 1), ArrowUp: Math.max(i - 1, 0), Home: 0, End: items.length - 1 }
+    if (e.key in moves) {
+      e.preventDefault()
+      items[moves[e.key]].focus()
+    } else if (e.key === 'Tab') {
+      e.preventDefault()
+      onClose()
+    }
+  }
+
+  const item = (o: Option) => (
+    <button
+      key={o.value}
+      role="option"
+      aria-selected={o.value === value}
+      className={cx(styles.item, o.missing && styles.warn)}
+      title={o.missing && MISSING}
+      style={o.font ? { fontFamily: o.font } : undefined}
+      onClick={() => onPick(o.value)}
+    >
+      {o.label}
+      {o.value === value && <ICONS.check weight="bold" size={14} />}
+    </button>
+  )
+
+  return (
+    <Popover at={at} title={title} onClose={onClose}>
+      <div ref={ref} role="listbox" aria-label={title} onKeyDown={onKeyDown}>
+        {options.map(item)}
+        <div className={styles.split} aria-hidden />
+        {item({ value: BOB_PICKS, label: '💡 Bob picks' })}
+        {item({ value: CUSTOM, label: 'custom…' })}
+      </div>
+    </Popover>
+  )
+}
+
+function Dropdown({ value, options, onChange, back, onBobPicks, title }: {
+  value: string
+  options: Option[]
+  onChange: (v: string) => void
+  back: string
+  onBobPicks?: () => void
+  title: string
+}) {
+  const [typing, setTyping] = useState(false)
+  const [at, setAt] = useState<At | null>(null)
+  const btn = useRef<HTMLButtonElement>(null)
+  const current = options.find(o => o.value === value)
+  if (typing || !current) return (
+    <>
+      <TextField value={value} placeholder="type your own" autoFocus={typing} onChange={onChange} />
+      <button className={styles.small} title="Pick from the list" onClick={() => { setTyping(false); onChange(back) }}>▾</button>
+    </>
+  )
+
+  function open() {
+    const r = btn.current!.getBoundingClientRect()
+    setAt({ left: r.left, top: r.bottom + 4 })
+  }
+  function close() {
+    setAt(null)
+    btn.current?.focus({ preventScroll: true })
+  }
+
+  return (
+    <>
+      <button
+        ref={btn}
+        className={cx(styles.select, current.missing && styles.warn)}
+        title={current.missing && MISSING}
+        aria-haspopup="listbox"
+        aria-expanded={!!at}
+        // While open, keep the menu's outside listener from closing it before this click toggles it.
+        onPointerDown={e => { if (at) e.nativeEvent.stopImmediatePropagation() }}
+        onClick={() => { if (at) setAt(null); else open() }}
+        onKeyDown={e => {
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault()
+            open()
+          }
+        }}
+      >
+        {current.label}
+      </button>
+      {at && (
+        <ListMenu at={at} title={title} value={value} options={options} onClose={close} onPick={v => {
+          close()
+          if (v === CUSTOM) {
+            setTyping(true)
+            onChange('')
+          } else if (v === BOB_PICKS) {
+            onBobPicks?.()
+          } else onChange(v)
+        }} />
+      )}
+    </>
+  )
+}
+
+function ColorMenu({ at, value, onChange, onClose }: { at: At; value: string; onChange: (v: string) => void; onClose: () => void }) {
+  return (
+    <Popover at={at} title="Colors" onClose={onClose}>
       <div className={styles.swatches}>
         {COLOR_PRESETS.map(c => (
           <button
@@ -129,27 +222,29 @@ function ColorMenu({ at, value, onChange, onClose }: { at: At; value: string; on
           value={/^#[0-9a-f]{6}$/i.test(value) ? value.toLowerCase() : '#000000'}
           onChange={e => onChange(e.target.value.toUpperCase())}
         />
+        <span className={styles.hex}>{value.toUpperCase()}</span>
       </div>
-    </div>,
-    document.body,
+    </Popover>
   )
 }
 
+// The chip is the chosen color itself, so its name or hex sits on it.
 function ColorField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [at, setAt] = useState<At | null>(null)
+  const name = COLOR_PRESETS.find(c => c.hex === value.toUpperCase())?.name
   return (
     <>
       <button
-        className={styles.color}
+        className={cx(styles.color, whiteTextOn(value) && styles.onDark)}
+        style={{ background: value }}
         // While open, keep the menu's outside listener from closing it before this click toggles it.
         onPointerDown={e => { if (at) e.nativeEvent.stopImmediatePropagation() }}
         onClick={e => {
           const r = e.currentTarget.getBoundingClientRect()
-          setAt(at ? null : { left: Math.min(r.left, innerWidth - 230), top: Math.min(r.bottom + 4, innerHeight - 150) })
+          setAt(at ? null : { left: r.left, top: r.bottom + 4 })
         }}
       >
-        <span className={styles.swatch} style={{ background: value }} />
-        {COLOR_PRESETS.find(c => c.hex === value.toUpperCase())?.name ?? value}
+        {name ?? <span className={styles.hex}>{value.toUpperCase()}</span>}
       </button>
       {at && <ColorMenu at={at} value={value} onChange={onChange} onClose={() => setAt(null)} />}
     </>
@@ -159,23 +254,24 @@ function ColorField({ value, onChange }: { value: string; onChange: (v: string) 
 function ValueField({ p, t, onBobPicks }: { p: Project; t: Trait; onBobPicks: () => void }) {
   const type = TRAIT_TYPES[t.type]
   const set = (v: string) => updateProject(d => { d.traits[t.id].value = v })
+  const title = type.label[0].toUpperCase() + type.label.slice(1)
   switch (type.valueKind) {
     case 'text':
       return <LongText value={t.value} placeholder={type.hint} onChange={set} />
     case 'color':
       return <ColorField value={t.value} onChange={set} />
     case 'choice':
-      return <Dropdown value={t.value} onChange={set} back={type.default} onBobPicks={onBobPicks}
+      return <Dropdown value={t.value} onChange={set} title={title} back={type.default} onBobPicks={onBobPicks}
         options={type.choices!.map(c => ({ value: c, label: c, font: t.type === 'font' ? c : undefined }))} />
     case 'action':
-      return <Dropdown value={t.value} onChange={set} back={type.default} onBobPicks={onBobPicks} options={onClickOptions(p, t.id)} />
+      return <Dropdown value={t.value} onChange={set} title={title} back={type.default} onBobPicks={onBobPicks} options={onClickOptions(p, t.id)} />
     case 'asset': {
       const options: Option[] = [
         { value: '', label: 'pick from Library' },
         ...p.assets.filter(a => a.kind === t.type).map(a => ({ value: a.id, label: a.file })),
       ]
       if (/^a\d+$/.test(t.value) && !options.some(o => o.value === t.value)) options.push({ value: t.value, label: 'missing file', missing: true })
-      return <Dropdown value={t.value} onChange={set} back="" onBobPicks={onBobPicks} options={options} />
+      return <Dropdown value={t.value} onChange={set} title={title} back="" onBobPicks={onBobPicks} options={options} />
     }
   }
 }
