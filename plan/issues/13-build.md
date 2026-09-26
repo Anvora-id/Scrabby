@@ -11,7 +11,7 @@ Lane: B
 ## Read
 
 - TDD §11 (all), the Build rows of §18 and its "Look details".
-- DESIGN.md: Build button and Build card, Speech bubble (Limit message, Blocked Build), Bob badge.
+- DESIGN.md: Brand and Bob, Motion, Build button and Build card, Speech bubble (Limit message, Blocked Build), Bob badge.
 - PRD §4 ("A Build consumes its Blocks"), §10 (Build failure).
 
 ## Files

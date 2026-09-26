@@ -18,7 +18,7 @@ Done = issue 17's walk passes on the live URL, and the PRD §7 checklist passes.
 |---|---|---|
 | `AGENTS.md` | Rules for Bob: what to read, how to finish a task, safety, the data-block rule | Bob, every task (auto-loaded) |
 | `TDD.md` | The build spec: every module, name, string and number. §18 lists where DESIGN.md is overridden | Bob, only the sections an issue names |
-| `DESIGN.md` | The look (copied word for word from the planning repo) | Bob, only the sections an issue names |
+| `DESIGN.md` | The look: Grape, Bob blue, Nunito, chunky toy pieces and the Bob mascot (redone 2026-09-26, D-Q14 to D-Q27) | Bob, only the sections an issue names |
 | `PRD.md` | What and why, demo script, guardrails, submission | Humans; Bob only when an issue says so |
 | `CONTEXT.md` | Vocabulary | Bob, when naming things |
 | `skills/` | The four Skills and `instruction-header.md` the product's Bob reads | Copied as-is; the server and the Download read them |

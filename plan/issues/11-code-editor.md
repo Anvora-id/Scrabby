@@ -11,7 +11,7 @@ The dark code editor in Try & tweak: one tab per file, hand edits saved as the P
 ## Read
 
 - TDD §14 (all), the Code editor rows of §18.
-- DESIGN.md: Code editor.
+- DESIGN.md: Brand and Bob, Motion, Code editor.
 
 ## Files
 

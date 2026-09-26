@@ -11,7 +11,7 @@ The Library tab (upload images and videos, rename, delete, storage use) that the
 ## Read
 
 - TDD §16 (all), §4 "Library" (the model functions already exist), the Library row of §18 and its "Look details".
-- DESIGN.md: Library.
+- DESIGN.md: Brand and Bob, Motion, Library.
 - PRD §5 **Download** bullet.
 
 ## Files

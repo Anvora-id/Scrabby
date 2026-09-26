@@ -1,67 +1,79 @@
 :root {
   /* text */
-  --text: #575E75;         /* body text on chrome and white */
-  --ink: #2F3446;          /* text on pastel Blocks and Traits */
-  --hint: #8A8FA3;         /* hints under headings */
-  --muted: #9A9FB0;        /* "empty" labels */
-  --placeholder: #B3B7C4;  /* placeholders: italic, normal weight, so a hint never looks typed */
-  /* surfaces (Scratch 3's own values) */
+  --ink: #1F1A33;          /* strong text: Blocks, Traits, headings, labels */
+  --text: #4A4560;         /* body text on chrome and white */
+  --hint: #8A849E;         /* hints under headings, captions */
+  --muted: #9A94AD;        /* "empty" labels, rejected states */
+  --placeholder: #B5B0C4;  /* placeholders: italic, weight 600, so a hint never looks typed */
+  /* surfaces */
   --surface: #FFFFFF;      /* panels, menus, text fields, the selected tab */
-  --ws: #F9F9F9;           /* Canvas and palette (Scratch's workspace and flyout) */
-  --ws-dot: #DDDDDD;       /* Canvas dot grid: 2px dots every 27px at 100%, moving and scaling with pan and zoom */
-  --ui2: #E5F0FF;          /* page background behind panels; help box (Scratch ui-primary) */
-  --ui3: #D9E3F2;          /* unselected tabs; step circles not reached yet (Scratch ui-tertiary) */
-  --line: #00000026;       /* every 1px border of panels, tabs, buttons and fields (Scratch: black at 15%) */
-  --accent: #4C97FF;       /* menu bar, selected tab text: Scratch 3's blue, 2019–2023 (D-Q13) */
-  --accent-strong: #3373CC;  /* fill of buttons with small white labels, focus ring (Scratch's darker blue) */
-  --cat-active: #E9EEF2;   /* selected category in the category column */
-  --cat-hover: #4C97FF;    /* hovered category label (blue in both Scratch eras) */
-  --bar: #FBFCFD;          /* panel title bars, Bob's composer */
-  --bar2: #F4F5F8;         /* the Preview's address bar, a diff card's file row */
-  /* Build: Scratch's green flag */
-  --go: #45993D;           /* Build button fill; ticks, spinner and Accept outlines. White text on it only at 19px bold or larger */
-  --go-dark: #389438;      /* the Build button's 2px bottom edge */
-  --flag: #4CBF56;         /* the flag icon's green where it sits on white or on the dark code editor */
-  /* alerts: Scratch shows errors in orange, not red */
-  --alert: #FF8C1A;        /* borders and top bars of errors and warnings; the ring of a Warning mark */
-  --alert-dark: #DB6E00;   /* "!" icons and marks */
-  --alert-bg: #FFF0DF;     /* fill of error bars, warning boxes, and a dropdown whose target is gone */
-  --flash: #FFF200;        /* ring on a Block jumped to from a Block chip (Scratch's running-script glow) */
+  --soft: #F6F4FA;         /* palette, address bar, composer, panel sub-bars */
+  --page: #F1EDFF;         /* page background behind panels (the Grape tint) */
+  --ws: #FFFBF2;           /* Canvas paper */
+  --ws-dot: #D4CCE4;       /* Canvas dots: 1.6px radius every 24px at 100%, moving and scaling with pan and zoom */
+  --idle: #E7E3F0;         /* unselected tabs, step circles not reached yet, spinner tracks, switch tracks */
+  --line: #1F1A331F;       /* 2px borders of panels, tabs, buttons and fields; also their bottom edge */
+  --line-soft: #1F1A3314;  /* dividers inside a panel */
+  /* brand: Grape means Scrabby and the user (D-Q15) */
+  --brand: #6B4EFF;        /* menu bar, primary buttons, the user's chat bubbles, current step, selected tab, focus */
+  --brand-dark: #4B31D1;   /* bottom edge of brand-filled things */
+  --brand-tint: #F1EDFF;   /* current step fill, menu hover */
+  /* Bob blue means Bob, and only Bob (D-Q16) */
+  --bob: #315DFB;          /* the mascot's own blue: Bob's title, badge, bubbles' borders, Bob's spinner */
+  --bob-dark: #1F3FC4;     /* bottom edge of Bob-filled things */
+  --bob-tint: #EAF0FF;     /* Bob's chat bubbles, Bob's title bar, the Build stage */
+  /* Build green */
+  --go: #1CA24A;           /* Build button fill; ticks, "built" and Accept outlines. White text on it only at 19px weight 900 or larger */
+  --go-dark: #137A36;      /* the Build button's bottom edge */
+  --flag: #4CD97A;         /* green marks on the dark code editor */
+  /* problems: soft tomato, never orange (orange is a Block category) (D-Q21) */
+  --alert: #FF5A4E;        /* borders and top bars of errors and warnings */
+  --alert-dark: #D93A2F;   /* "!" marks and icons */
+  --alert-bg: #FFECEA;     /* fill of error bars, warning boxes, a dropdown whose target is gone */
+  --flash: #FFE14D;        /* ring on something jumped to, and on the page parts a Build changed */
   /* drag and drop */
-  --drop: #3388FF;         /* drop-indicator line */
-  --drop-over: #8ABBFF;    /* outline on the Block that will take a drop (Scratch's drop highlight) */
-  --drop-gap: #00000033;   /* grey placeholder where the dragged item will land (Scratch's insertion marker, black at 20%) */
-  --trash: #FAEBEB;        /* palette background while a drag would delete */
-  /* states */
-  --note-bg: #FEF49C;  --note-border: #BCA903;  --note-x: #8A7A00;    /* Notes (Scratch's comment colors) */
-  --edit-bar: #E3A0B1;     /* bar across the Custom Block edit view (stretch) */
-  --def-ring: #F5D6DE;     /* 5px ring around a Custom Block definition (stretch) */
-  /* type */
-  --font: "Helvetica Neue", Helvetica, Arial, sans-serif;   /* Scratch's stack */
-  --font-mono: ui-monospace, monospace;
-  --fs: 12px;              /* base; the menu bar, Block headers, pills, tabs and buttons are this size in bold */
-  --fs-xs: 10px;           /* markers: ✎ changed, + only here, not built */
-  --fs-sm: 11px;           /* hints, folded chips; category labels use 10.4px */
-  --fs-md: 13px;           /* context menu, edit bar */
-  --fs-lg: 14px;           /* section headings */
-  --fs-xl: 20px;           /* product name in the menu bar */
+  --drop: #6B4EFF;         /* drop-indicator line */
+  --drop-over: #A896FF;    /* outline on the Block that will take a drop */
+  --drop-gap: #1F1A3326;   /* placeholder where the dragged item will land */
+  --trash: #FFECEA;        /* palette background while a drag would delete */
+  /* paper */
+  --note-bg: #FFE872;  --note-edge: #E5C63A;  --note-text: #5A4A00;   /* Notes */
+  --edit-bar: #FA9EB5;     /* bar across the Custom Block edit view (stretch) */
+  --def-ring: #FDD8E1;     /* 5px ring around a Custom Block definition (stretch) */
+  /* type (D-Q17) */
+  --font: "Nunito", "Arial Rounded MT Bold", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --w-body: 600;  --w-bold: 800;  --w-heavy: 900;   /* Nunito weights; nothing lighter than 600 */
+  --fs: 13px;              /* base: body text, buttons, pills */
+  --fs-xs: 10.5px;         /* markers and badges: ✎ changed, + only here, not built, tab counts */
+  --fs-sm: 12px;           /* hints, folded chips, captions */
+  --fs-md: 14px;           /* Block headers, step buttons, tabs, context menu, speech bubbles */
+  --fs-lg: 16px;           /* section and panel headings */
+  --fs-xl: 21px;           /* Build card title */
+  --fs-logo: 24px;         /* the wordmark */
   /* shape */
-  --r-panel: 8px;  --r-inside: 6px;  --r-btn: 4px;  --r-tab: 16px;  --r-pill: 999px;  --r-note: 4px;
-  --gap: 8px;              /* between panels and between child Blocks */
-  --gap-pill: 4px;         /* between Trait pills */
-  --menubar-h: 48px;
-  --focus: 0 0 0 4px color-mix(in srgb, var(--accent-strong) 35%, transparent);  /* focus ring on fields and buttons (Scratch) */
-  --shadow-menu: 0 4px 12px #0003;        /* context menus */
-  --shadow-drag: drop-shadow(0 6px 10px #0004);  /* the dragged copy, with opacity .95 */
+  --r-block: 16px;  --r-panel: 16px;  --r-inside: 11px;  --r-btn: 12px;  --r-tab: 14px;  --r-card: 22px;  --r-pill: 999px;
+  --edge: 4px;             /* a Block's bottom edge */
+  --edge-btn: 3px;         /* buttons, palette Blocks, panels */
+  --gap: 10px;             /* between panels and between child Blocks */
+  --gap-pill: 6px;         /* between Trait stickers */
+  --menubar-h: 56px;  --stepbar-h: 58px;
+  --focus: 0 0 0 4px color-mix(in srgb, var(--brand) 35%, transparent);  /* keyboard focus ring */
+  --shadow-menu: 0 10px 28px #1F1A3329, 0 3px 0 var(--line);             /* context menus, tooltips */
+  --shadow-drag: drop-shadow(0 12px 14px #1F1A3340);                      /* the dragged copy */
+  /* motion (D-Q19): see Motion */
+  --spring: cubic-bezier(.34, 1.56, .64, 1);   /* overshoots a little, then settles */
+  --ease: cubic-bezier(.3, .7, .4, 1);          /* plain ease-out */
+  --t-press: 80ms;  --t-quick: 150ms;  --t-pop: 320ms;  --t-settle: 450ms;
 }
 
-/* Category colors. c1 frame and pill fill, c2 dropdown fill, c3 border, c4 inside of a Block (never white). */
-.cat-site     { --c1: #FABCA8; --c2: #F2A288; --c3: #D88164; --c4: #FFF0EB; }  /* Site Block */
-.cat-pages    { --c1: #FAE7A8; --c2: #F2D988; --c3: #D8BD64; --c4: #FFFAEB; }  /* Page Block */
-.cat-ui       { --c1: #A8CAFA; --c2: #88B4F2; --c3: #6494D8; --c4: #EBF3FF; }  /* Navbar Hero Section Card grid Card Form Popup Footer */
-.cat-prim     { --c1: #A8EFFA; --c2: #88E4F2; --c3: #64C9D8; --c4: #EBFCFF; }  /* Textbox Frame Button Panel */
-.cat-design   { --c1: #C6A8FA; --c2: #AF88F2; --c3: #8F64D8; --c4: #F2EBFF; }  /* color font vibe size position */
-.cat-behavior { --c1: #FAD1A8; --c2: #F2BD88; --c3: #D89E64; --c4: #FFF5EB; }  /* on click, purpose, fake data */
-.cat-content  { --c1: #FAA8F4; --c2: #F288E9; --c3: #D864CF; --c4: #FFEBFD; }  /* text image sound video */
-.cat-bob      { --c1: #A8FAAF; --c2: #88F291; --c3: #64D86E; --c4: #EBFFEC; }  /* tell Bob, let Bob pick */
-.cat-my       { --c1: #FAA8BC; --c2: #F288A2; --c3: #D86481; --c4: #FFEBF0; }  /* Custom Blocks and Instances */
+/* Category colors. c1 frame and sticker fill, c2 dropdown fill, c3 border and bottom edge, c4 inside of a Block (never white). */
+.cat-site     { --c1: #FB8B6F; --c2: #FA6742; --c3: #C34322; --c4: #FFE1D9; }  /* Site Block */
+.cat-pages    { --c1: #FCD66E; --c2: #FBCA41; --c3: #C49921; --c4: #FFF5D9; }  /* Page Block */
+.cat-ui       { --c1: #71ACF9; --c2: #4592F7; --c3: #2668C0; --c4: #D9EAFF; }  /* Navbar Hero Section Card grid Card Form Popup Footer */
+.cat-prim     { --c1: #7BDFEF; --c2: #53D6EA; --c3: #369FB0; --c4: #D9FAFF; }  /* Textbox Frame Button Panel */
+.cat-design   { --c1: #A474F6; --c2: #945CF5; --c3: #5F2ABB; --c4: #E7D9FF; }  /* color font vibe size position */
+.cat-behavior { --c1: #FCB06E; --c2: #FB9841; --c3: #C46D21; --c4: #FFEBD9; }  /* on click, purpose, fake data */
+.cat-content  { --c1: #F278CD; --c2: #EE4FBE; --c3: #B4318D; --c4: #FFD9F4; }  /* text image sound video */
+.cat-bob      { --c1: #87E393; --c2: #62DA72; --c3: #489D54; --c4: #D9FFDE; }  /* tell Bob, let Bob pick */
+.cat-my       { --c1: #F87294; --c2: #F54772; --c3: #BD284D; --c4: #FFD9E3; }  /* Custom Blocks and Instances */

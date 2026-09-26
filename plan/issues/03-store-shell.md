@@ -11,7 +11,7 @@ The app frame and state: menu bar, step bar and the three Steps with empty named
 ## Read
 
 - TDD §6, §7, §19; §17 only the `replaceProject` bullet and `dev.ts`.
-- DESIGN.md: Shell, Screen layout, Buttons (Menu bar row).
+- DESIGN.md: Brand and Bob, Motion, Shell, Screen layout, Buttons (Menu bar row).
 
 ## Files
 

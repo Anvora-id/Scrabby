@@ -11,7 +11,7 @@ The Assistant panel in Try & tweak: the user chats with Bob about the code at a 
 ## Read
 
 - TDD §15 (all), §14 (the CodeEditor Review bullet and MergeReview), §11 (BuildButton press), §12 (`loadCheckpoint`, `warning`).
-- DESIGN.md: Assistant, Bob badge, Code editor (Bob's suggested changes).
+- DESIGN.md: Brand and Bob, Motion, Assistant, Bob badge, Code editor (Bob's suggested changes).
 - PRD §5 (Assistant).
 
 ## Files

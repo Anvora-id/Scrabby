@@ -11,7 +11,7 @@ The Checkpoints tab in Plan: every Build, newest first, with its gist and tags; 
 ## Read
 
 - TDD §12 (all), the Checkpoints rows of §18 and its "Look details".
-- DESIGN.md: Checkpoints, Menus (Modal, The Checkpoint warning).
+- DESIGN.md: Brand and Bob, Motion, Checkpoints, Menus (Modal, The Checkpoint warning).
 - PRD §4 (Checkpoints tab).
 
 ## Files

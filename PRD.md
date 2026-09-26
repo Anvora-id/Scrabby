@@ -371,7 +371,7 @@ Owner: the developer who moves over at hour 34 (§1). Submit at Sun 13:00 UTC (2
   > We built Scrabby with IBM Bob 2.0: we planned in documents, and Bob's Agent mode, subagents and parallel tasks built the product from them. A version for young coders will come through schools and parents.
 - Tags: IBM Bob, Generative AI, AI Agents, Education, Web Development, Developer Onboarding, Block-based Programming, Vercel.
 - Cover image (16:9, drawn by DESIGN.md): the Canvas with Maya's bake sale plan on the left, the finished site in the Preview on the right, and a green "▶ Build" arrow between them. Across the top: "Scrabby" and "Your idea shouldn't need perfect words." No Scratch logo or Cat, and no photo of a child.
-- Logo: our own, still to be designed. Never the Scratch logo or Cat.
+- Logo: Bob, the builder robot mascot (`assets/Scrabby_2.svg`), plus the "Scrabby" wordmark (DESIGN.md Brand and Bob). Never the Scratch logo or Cat.
 
 **The package:** Limits come from the submission form's own checks (re-checked 2026-09-24). Re-read the rules at kickoff, since lablab may change them; the Hackathon Guide is presented at 15:35 UTC on kickoff day.
 

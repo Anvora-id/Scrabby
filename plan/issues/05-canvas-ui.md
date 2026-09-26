@@ -11,7 +11,7 @@ The Plan Canvas the user works on: the palette with its category column, Blocks 
 ## Read
 
 - TDD §8.4, §9.1, §9.2, §9.6, and the Palette, Canvas, Block, Trait, Dragging rows of §18 "Look details".
-- DESIGN.md: Canvas, Palette, Block (Anatomy, States: Open, Folded, Loose idea, Drop target, Being dragged, Site Block, Checkpoint Block, Locked Page, Header buttons), Trait (Pill, Value fields, Dropdown sources, Color menu).
+- DESIGN.md: Brand and Bob, Motion, Canvas, Palette, Block (Anatomy, States: Open, Folded, Loose idea, Drop target, Being dragged, Site Block, Checkpoint Block, Locked Page, Header buttons), Trait (Sticker, Straight, Value fields, Dropdown sources, Color menu).
 
 ## Files
 

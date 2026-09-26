@@ -11,7 +11,7 @@ Custom Blocks on screen (ADR 0003): My Blocks in the palette (make one, place In
 ## Read
 
 - TDD §9.4, §9.1 (Instance and definition bits), §8.4 (Render in the edit view, Reset view, EditBar), and the §18 rows "Block header" and "Block, Instance".
-- DESIGN.md: Block (Instance state, Custom Block definition state, Markers), Palette (My Blocks), Menus (Custom Block edit bar). Ignore the toggle strip, the Color button and the color menu (TDD §18).
+- DESIGN.md: Brand and Bob, Motion, Block (Instance state, Custom Block definition state, Markers), Palette (My Blocks), Menus (Custom Block edit bar). Ignore the toggle strip, the Color button and the color menu (TDD §18).
 
 ## Files
 

@@ -11,7 +11,7 @@ The live, clickable Prototype in Try & tweak. It runs on its own origin (a secon
 ## Read
 
 - TDD §13 (all), the Preview rows of §18.
-- DESIGN.md: Preview (ignore `srcdoc`: TDD §18).
+- DESIGN.md: Brand and Bob, Motion, Preview (ignore `srcdoc`: TDD §18).
 
 ## Files
 

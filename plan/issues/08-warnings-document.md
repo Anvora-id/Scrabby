@@ -11,7 +11,7 @@ The plan checks and their marks on the Canvas ("!" Bob skips it, "?" worth a loo
 ## Read
 
 - TDD §10 (all), Appendix A, and the Warnings row of §18 plus its "Look details".
-- DESIGN.md: Warnings (ignore one-click fixes and the Edit button: TDD §18).
+- DESIGN.md: Brand and Bob, Motion, Warnings (ignore one-click fixes and the Edit button: TDD §18).
 - `skills/instruction-header.md` (it is imported as text).
 
 ## Files
