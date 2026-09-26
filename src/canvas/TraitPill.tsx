@@ -8,6 +8,8 @@ import { cx } from './cx.ts'
 import { dragSource, useDrag } from './drag.ts'
 import { onClickOptions } from './tree.ts'
 import type { Option } from './tree.ts'
+import { openMenu, TraitNote } from './Overlays.tsx'
+import { bobPicksControl, setBobPicks } from './bobPicks.ts'
 import styles from './parts.module.css'
 
 const BOB_PICKS = '\u0000bob'
@@ -50,7 +52,7 @@ function LongText({ value, onChange, placeholder }: { value: string; onChange: (
   )
 }
 
-function Dropdown({ value, options, onChange, back }: { value: string; options: Option[]; onChange: (v: string) => void; back: string }) {
+function Dropdown({ value, options, onChange, back, onBobPicks }: { value: string; options: Option[]; onChange: (v: string) => void; back: string; onBobPicks?: () => void }) {
   const [typing, setTyping] = useState(false)
   const current = options.find(o => o.value === value)
   if (typing || !current) return (
@@ -68,7 +70,9 @@ function Dropdown({ value, options, onChange, back }: { value: string; options: 
         if (e.target.value === CUSTOM) {
           setTyping(true)
           onChange('')
-        } else if (e.target.value !== BOB_PICKS) onChange(e.target.value) // issue 06: hand the value to Bob
+        } else if (e.target.value === BOB_PICKS) {
+          onBobPicks?.()
+        } else onChange(e.target.value)
       }}
     >
       {options.map(o => (
@@ -150,7 +154,7 @@ function ColorField({ value, onChange }: { value: string; onChange: (v: string) 
   )
 }
 
-function ValueField({ p, t }: { p: Project; t: Trait }) {
+function ValueField({ p, t, onBobPicks }: { p: Project; t: Trait; onBobPicks: () => void }) {
   const type = TRAIT_TYPES[t.type]
   const set = (v: string) => updateProject(d => { d.traits[t.id].value = v })
   switch (type.valueKind) {
@@ -159,17 +163,17 @@ function ValueField({ p, t }: { p: Project; t: Trait }) {
     case 'color':
       return <ColorField value={t.value} onChange={set} />
     case 'choice':
-      return <Dropdown value={t.value} onChange={set} back={type.default}
+      return <Dropdown value={t.value} onChange={set} back={type.default} onBobPicks={onBobPicks}
         options={type.choices!.map(c => ({ value: c, label: c, font: t.type === 'font' ? c : undefined }))} />
     case 'action':
-      return <Dropdown value={t.value} onChange={set} back={type.default} options={onClickOptions(p, t.id)} />
+      return <Dropdown value={t.value} onChange={set} back={type.default} onBobPicks={onBobPicks} options={onClickOptions(p, t.id)} />
     case 'asset': {
       const options: Option[] = [
         { value: '', label: 'pick from Library' },
         ...p.assets.filter(a => a.kind === t.type).map(a => ({ value: a.id, label: a.file })),
       ]
       if (/^a\d+$/.test(t.value) && !options.some(o => o.value === t.value)) options.push({ value: t.value, label: 'missing file', missing: true })
-      return <Dropdown value={t.value} onChange={set} back="" options={options} />
+      return <Dropdown value={t.value} onChange={set} back="" onBobPicks={onBobPicks} options={options} />
     }
   }
 }
@@ -177,10 +181,22 @@ function ValueField({ p, t }: { p: Project; t: Trait }) {
 // inInst is for issue 07's short marker.
 export default function TraitPill({ p, id }: { p: Project; id: string; inInst?: boolean }) {
   const drag = useDrag()
+  const hintRef = useRef<HTMLInputElement>(null)
   const t = p.traits[id]
   if (!t) return null
   const type = TRAIT_TYPES[t.type]
   const Icon = ICONS[type.icon]
+  const control = bobPicksControl(t.type, t.value)
+
+  function handToBob() {
+    updateProject(p => { setBobPicks(p, id, true) }, null)
+    // focus the hint field after React re-renders
+    requestAnimationFrame(() => hintRef.current?.focus({ preventScroll: true }))
+  }
+
+  const hintLen = t.note.length
+  const hintSize = Math.min(30, Math.max(14, hintLen + 1))
+
   return (
     <span
       className={cx(
@@ -192,13 +208,45 @@ export default function TraitPill({ p, id }: { p: Project; id: string; inInst?: 
       data-tid={id}
       data-tip={`t:${id}`}
       onPointerDown={dragSource({ kind: 'trait', id })}
-      // issue 06: onContextMenu = openMenu(e, id)
+      onContextMenu={e => openMenu(e, id)}
     >
       <Icon weight="fill" size={16} />
       {type.label}
-      {/* issue 06: the Bob picks chip instead of the value when bobPicks */}
-      <ValueField p={p} t={t} />
-      {/* issue 06: bulb button, Trait Note. issue 07: short marker. issue 08: <Mark id> */}
+      {t.bobPicks ? (
+        <span className={cx(styles.bobChip, 'cat-bob')}>
+          <ICONS.t_bobpicks weight="fill" size={14} />
+          Bob picks
+          <button
+            className={styles.bobChipX}
+            title="Pick it myself"
+            onClick={() => updateProject(p => { setBobPicks(p, id, false) }, null)}
+          >×</button>
+        </span>
+      ) : (
+        <ValueField p={p} t={t} onBobPicks={handToBob} />
+      )}
+      {t.bobPicks && (
+        <input
+          ref={hintRef}
+          className={styles.bobHint}
+          placeholder="hint, like something warm"
+          value={t.note}
+          size={hintSize}
+          onChange={e => updateProject(p => { p.traits[id].note = e.target.value }, null)}
+          onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
+        />
+      )}
+      {!t.bobPicks && control === 'bulb' && (
+        <button
+          className={cx(styles.bulb, 'cat-bob')}
+          title="Let Bob pick this value"
+          onClick={handToBob}
+        >
+          <ICONS.t_bobpicks weight="fill" size={14} />
+        </button>
+      )}
+      {(t.note || t.noteOn) && !t.bobPicks && <TraitNote id={id} note={t.note} noteOn={t.noteOn} />}
+      {/* issue 07: short marker. issue 08: <Mark id> */}
     </span>
   )
 }

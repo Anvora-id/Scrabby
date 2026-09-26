@@ -8,6 +8,7 @@ import { cx } from './cx.ts'
 import { dragSource, useDrag } from './drag.ts'
 import { insertInto, isTraitItem, repairLayout } from './tree.ts'
 import TraitPill, { TextField } from './TraitPill.tsx'
+import { BlockNote, openMenu } from './Overlays.tsx'
 import styles from './parts.module.css'
 import o from './Overlays.module.css'
 
@@ -77,7 +78,7 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
       )}
       style={def && customColor(def.color)}
       onPointerDown={b.defines ? undefined : dragSource({ kind: 'block', id })}
-      // issue 06: onContextMenu = openMenu(e, id)
+      onContextMenu={e => openMenu(e, id)}
     >
       <div className={cx(styles.header, !drag && styles.pressable)} data-tip={`b:${id}`}>
         {!checkpoint && (
@@ -111,7 +112,7 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
         {p.blocks.canvas.children.includes(id) && b.type !== 'site' && !checkpoint && <span className={o.badge}>not built</span>}
         {/* issue 08: <Mark id> */}
       </div>
-      {/* issue 06: BlockNote when note || noteOn */}
+      {(b.note || b.noteOn) && <BlockNote id={id} note={b.note} noteOn={b.noteOn} />}
       {folded ? (
         <div className={o.chips}>
           {b.traits.map(t => {

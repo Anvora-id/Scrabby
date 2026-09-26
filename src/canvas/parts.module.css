@@ -392,3 +392,80 @@
   border: 2px solid var(--line);
   border-radius: 8px;
 }
+
+/* Bob picks chip */
+
+.bobChip {
+  --ink: #1F1A33;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 4px 3px 9px;
+  background: var(--c1);
+  border: 2px solid #fff;
+  border-radius: var(--r-pill);
+  box-shadow: 0 0 0 1.5px var(--c3);
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.bobChipX {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: #0000001a;
+  border: none;
+  border-radius: 50%;
+  color: var(--ink);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* Bob picks hint (Trait Note when bobPicks is on) */
+
+.bobHint {
+  padding: 3px 10px;
+  background: var(--surface);
+  border: none;
+  border-radius: var(--r-pill);
+  box-shadow: inset 0 2px 0 #0000000f;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+}
+
+.bobHint::placeholder {
+  color: var(--placeholder);
+  font-style: italic;
+  font-weight: var(--w-body);
+}
+
+.bobHint:focus {
+  outline: none;
+  box-shadow: var(--focus);
+}
+
+/* Bulb button */
+
+.bulb {
+  --ink: #1F1A33;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: var(--surface);
+  border: 2px solid var(--c3);
+  border-radius: 50%;
+  box-shadow: 0 2px 0 var(--c3);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.bulb:hover {
+  background: var(--c4);
+}

@@ -61,6 +61,179 @@
   height: 18px;
 }
 
+/* Context menu */
+
+.ctxMenu {
+  position: fixed;
+  z-index: 40;
+  min-width: 210px;
+  padding: 6px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-menu);
+  color: var(--ink);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  animation: ctxPop var(--t-quick) ease;
+}
+
+@keyframes ctxPop {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.ctxItem {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  border-radius: 9px;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ctxItem:hover,
+.ctxItem:focus {
+  background: var(--brand-tint);
+  color: var(--brand);
+  outline: none;
+}
+
+/* Tooltip */
+
+.tip {
+  position: fixed;
+  z-index: 40;
+  max-width: 260px;
+  padding: 9px 12px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-left: 5px solid var(--c3);
+  border-radius: 14px;
+  box-shadow: var(--shadow-menu);
+  pointer-events: none;
+  animation: tipFade var(--t-quick) ease;
+}
+
+.tipMuted {
+  border-left-color: var(--muted);
+}
+
+@keyframes tipFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.tipTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 900;
+  color: var(--ink);
+}
+
+.tipText {
+  font-size: var(--fs);
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.tipLoose {
+  font-size: var(--fs-sm);
+  font-style: italic;
+  color: var(--hint);
+}
+
+/* Block sticky note */
+
+.sticky {
+  --ink: #1F1A33;
+  position: relative;
+  width: 190px;
+  padding: 14px 12px 10px;
+  background: var(--note-bg);
+  border-radius: 2px 2px 10px 2px;
+  box-shadow: 0 4px 8px #0000001f;
+  transform: rotate(-1.6deg);
+}
+
+.stickyClose {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--note-text);
+  font-size: 14px;
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.stickyArea {
+  display: block;
+  width: 100%;
+  min-height: 60px;
+  padding: 0;
+  background: none;
+  border: none;
+  resize: vertical;
+  color: var(--note-text);
+  font: inherit;
+  font-size: var(--fs);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.stickyArea::placeholder {
+  color: var(--note-text);
+  font-style: italic;
+  opacity: 0.5;
+}
+
+.stickyArea:focus {
+  outline: none;
+}
+
+/* Trait note */
+
+.traitNoteWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.traitNoteInput {
+  padding: 3px 9px;
+  background: var(--note-bg);
+  border: 1.5px solid var(--note-edge);
+  border-radius: var(--r-pill);
+  color: var(--note-text);
+  font: inherit;
+  font-weight: 700;
+}
+
+.traitNoteInput::placeholder {
+  font-style: italic;
+  font-weight: 400;
+  opacity: 0.6;
+}
+
+.traitNoteInput:focus {
+  outline: none;
+  box-shadow: var(--focus);
+}
+
+.traitNoteBig {
+  border-radius: 12px;
+}
+
 /* Loose badge */
 
 .badge {

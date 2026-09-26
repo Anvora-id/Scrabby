@@ -11,6 +11,7 @@ import { canDrop, canTrash, dropItem, isTraitItem, removeItem, repairLayout } fr
 import type { Drop } from '../canvas/tree.ts'
 import BlockView from '../canvas/BlockView.tsx'
 import TraitPill from '../canvas/TraitPill.tsx'
+import { ContextMenu, Tooltip } from '../canvas/Overlays.tsx'
 import styles from '../canvas/Canvas.module.css'
 import parts from '../canvas/parts.module.css'
 
@@ -281,7 +282,8 @@ export default function Canvas() {
         </button>
       </div>
       <div ref={lineRef} className={styles.dropLine} />
-      {/* issue 06: <ContextMenu/>, <Tooltip/> */}
+      <ContextMenu p={p} />
+      <Tooltip p={p} />
     </div>
   )
 }
