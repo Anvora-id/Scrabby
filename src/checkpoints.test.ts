@@ -170,4 +170,9 @@ describe('warning', () => {
     })
     expect(warning(p, [cp1, cp2], cp1, 'edit').lines[0]).toBe('This remakes the website from scratch. Your code is cleared and the Blocks of Checkpoint 1 come back so you can change them.')
   })
+
+  it('warns that a pending Assistant proposal will be dropped', () => {
+    p.chat = [{ role: 'bob', text: 'Done.', time: 1, proposal: { summary: 'Blue title.', files: { 'style.css': { base: p.files['style.css'], proposed: 'h1 { color: blue; }' } }, total: 1, accepted: 0, decided: 0 } }]
+    expect(warning(p, [cp1, cp2], cp1, 'goBack').lines.at(-1)).toBe("The Assistant's unaccepted changes will be dropped.")
+  })
 })

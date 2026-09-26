@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AgentEvent, AgentRequest } from './agent.ts'
+import type { Checkpoint } from './model/types.ts'
 
+const fake = vi.hoisted(() => ({ checkpoints: [] as Checkpoint[] }))
 vi.mock('./db.ts', () => ({
+  listCheckpoints: vi.fn(async () => [...fake.checkpoints]),
   loadLatestProject: vi.fn().mockResolvedValue(undefined),
   saveProject: vi.fn().mockResolvedValue(undefined),
   addCheckpoint: vi.fn().mockResolvedValue(undefined),
@@ -24,6 +27,8 @@ import { addCheckpoint } from './db.ts'
 import { emptyProject } from './model/project.ts'
 import type { ChatMessage, Files, Project } from './model/types.ts'
 import { clearHistory, getProject, setProject, undo, updateProject } from './store.ts'
+import { builtSite } from './fixtures/fixtures.ts'
+import { loadCheckpoint, warning } from './checkpoints.ts'
 import { acceptAll, ask, cardState, changedBlocks, decide, dropPending, hasPending, rejectAll, setLevel } from './assistant.ts'
 
 const SITE: Files = {
@@ -172,6 +177,21 @@ describe('the diff card', () => {
   it('dropPending closes open cards and adds the line', async () => {
     await propose()
     dropPending('Code went back to Checkpoint 1')
+    expect(bob().proposal?.done).toBe(true)
+    expect(getProject().chat.at(-1)).toMatchObject({ role: 'bob', text: 'Code went back to Checkpoint 1', line: true })
+    expect(hasPending(getProject())).toBe(false)
+  })
+})
+
+describe('loading a Checkpoint', () => {
+  it('warns first, then drops the proposal with the line "Code went back to Checkpoint N"', async () => {
+    const site = builtSite()
+    fake.checkpoints = site.checkpoints
+    setProject(site.project)
+    script = [{ type: 'start' }, { type: 'files', files: { ...site.project.files, 'style.css': 'h1 { color: blue; }' }, summary: 'Blue title.' }]
+    await ask('Make it blue')
+    expect(warning(getProject(), site.checkpoints, site.checkpoints[0], 'goBack').lines).toContain("The Assistant's unaccepted changes will be dropped.")
+    await loadCheckpoint(1, 'goBack')
     expect(bob().proposal?.done).toBe(true)
     expect(getProject().chat.at(-1)).toMatchObject({ role: 'bob', text: 'Code went back to Checkpoint 1', line: true })
     expect(hasPending(getProject())).toBe(false)
