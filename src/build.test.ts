@@ -224,5 +224,20 @@ describe('guardImages', () => {
     expect(guardImages(guarded)).toBe(guarded)
     const none = { 'index.html': '<p>' }
     expect(guardImages(none)).toBe(none)
+    const compact = { 'style.css': 'body{margin:0}img,video{max-width:100%}' }
+    expect(guardImages(compact)).toBe(compact)
+  })
+  it('adds the rule when the only one is commented out, inside @media or behind another selector', () => {
+    for (const css of [
+      '/* img, video { max-width: 100% } */\nbody { margin: 0; }',
+      '@media (min-width: 600px) {\n  img, video { max-width: 100%; }\n}',
+      '.gallery img, video { max-width: 100%; }',
+    ]) expect(guardImages({ 'style.css': css })['style.css']).toMatch(/^\/\* Pictures and videos never grow wider than their box \*\//)
+  })
+  it('puts the rule after a leading @charset or @import, and a Block mark stays on its rule', () => {
+    const css = '@charset "utf-8";\n/* fonts */\n@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;900");\n@import url(https://x.test/a;b.css);\n/* block b1 */\nbody { margin: 0; }'
+    expect(guardImages({ 'style.css': css })['style.css']).toBe(
+      '@charset "utf-8";\n/* fonts */\n@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;900");\n@import url(https://x.test/a;b.css);\n\n' +
+      '/* Pictures and videos never grow wider than their box */\nimg, video { max-width: 100%; height: auto; }\n\n/* block b1 */\nbody { margin: 0; }')
   })
 })
