@@ -162,11 +162,22 @@ async function build(): Promise<void> {
   if (!begun) notStarted(FAILURE_LINES.unreachable)
 }
 
+const GUARD = '/* Pictures and videos never grow wider than their box */\nimg, video { max-width: 100%; height: auto; }'
+// Only a live rule that starts at the top level counts: not one in a comment, in @media, or behind another selector.
+// ponytail: a rule after another rule inside @media still counts; a CSS parser if that ever matters
+const GUARDED = /(?:^|[;}])\s*img\s*,\s*video\s*\{[^{}]*max-width\s*:\s*100%/
+// @charset and @import must come first, or the browser drops them (and the site's fonts with them).
+// Bob writes style.css, so the tokens never overlap: a quoted string or a (…) group is one token, and the rest can't start one.
+const LEADING = /^(?:(?:\s|\/\*[\s\S]*?\*\/)*@(?:charset|import)\b(?:"[^"]*"|'[^']*'|\([^)]*\)|[^;"'(])*;)*/
+// An unclosed comment runs to the end of the file, as it does in CSS.
+const COMMENTS = /\/\*[\s\S]*?(?:\*\/|$)/g
+
 // Pictures never break a page's layout, even when Bob forgets the code rule.
 export function guardImages(files: Files): Files {
   const css = files['style.css']
-  if (css === undefined || /img\s*,\s*video\s*\{[^}]*max-width:\s*100%/.test(css)) return files
-  return { ...files, 'style.css': '/* Pictures and videos never grow wider than their box */\nimg, video { max-width: 100%; height: auto; }\n\n' + css }
+  if (css === undefined || GUARDED.test(css.replace(COMMENTS, ''))) return files
+  const lead = css.match(LEADING)![0]
+  return { ...files, 'style.css': (lead ? lead + '\n\n' : '') + GUARD + '\n\n' + css.slice(lead.length).replace(/^\s+/, '') }
 }
 
 export function builtBlocks(p: Project, top: string): BuiltBlocks {
