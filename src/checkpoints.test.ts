@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Checkpoint, Project } from './model/types.ts'
-import { addBlock, addTrait, applyChange } from './model/project.ts'
+import { addBlock, addTrait, applyChange, emptyProject } from './model/project.ts'
 import { builtSite } from './fixtures/fixtures.ts'
 import { topBlock } from './instructions/warnings.ts'
 import { getProject, setProject } from './store.ts'
-import { applyLoad, buildOf, fromTag, gist, loadCheckpoint, warning } from './checkpoints.ts'
+import { applyLoad, buildOf, checkpointTitle, fromTag, gist, loadCheckpoint, renameCheckpoint, warning, withNames } from './checkpoints.ts'
 
 const fake = vi.hoisted(() => ({ saved: [] as Checkpoint[] }))
 vi.mock('./db.ts', () => ({
@@ -120,17 +120,19 @@ describe('gist, fromTag, buildOf', () => {
   const saved: Checkpoint = { projectId: 'x', number: 3, label: 'Before loading Checkpoint 1', from: 2, before: {}, after: {}, blocks: null, time: 0 }
 
   it('gist', () => {
-    expect(gist(cp1)).toBe('Built the site: 3 pages.')
-    expect(gist(cp2)).toBe('Added: Opening hours.')
-    expect(gist(saved)).toBe('Before loading Checkpoint 1: your code with its hand edits.')
+    expect(gist(cp1, p)).toBe('Built the site: 3 pages.')
+    expect(gist(cp2, p)).toBe('Added: Opening hours.')
+    expect(gist(saved, p)).toBe('Before loading Checkpoint 1: your code with its hand edits.')
+    expect(gist(saved, { checkpointNames: { 1: 'First try' } })).toBe('Before loading Checkpoint 1 · First try: your code with its hand edits.')
   })
 
   it('fromTag', () => {
-    expect(fromTag(cp1)).toBeNull()
-    expect(fromTag(cp2)).toBeNull()
-    expect(fromTag(saved)).toBeNull()
-    expect(fromTag({ ...cp2, number: 4, from: 1 })).toBe('from Checkpoint 1')
-    expect(fromTag({ ...cp2, number: 4, from: null })).toBe('remade from scratch')
+    expect(fromTag(cp1, p)).toBeNull()
+    expect(fromTag(cp2, p)).toBeNull()
+    expect(fromTag(saved, p)).toBeNull()
+    expect(fromTag({ ...cp2, number: 4, from: 1 }, p)).toBe('from Checkpoint 1')
+    expect(fromTag({ ...cp2, number: 4, from: 1 }, { checkpointNames: { 1: 'First try' } })).toBe('from Checkpoint 1 · First try')
+    expect(fromTag({ ...cp2, number: 4, from: null }, p)).toBe('remade from scratch')
   })
 
   it('buildOf', () => {
@@ -161,7 +163,7 @@ describe('warning', () => {
     expect(warning(p, [cp1, cp2], cp2, 'edit')).toEqual({
       title: 'Edit the Blocks of Checkpoint 2?',
       lines: [
-        "Your code goes back to how it was before Checkpoint 2's Build, and its Blocks come back so you can change them.",
+        'Your code goes back to how it was before the Build of Checkpoint 2, and its Blocks come back so you can change them.',
         'The next Build may come out different.',
         'Your current code, with your hand edits, is saved first as a new Checkpoint, so you can come back to it.',
         'Blocks you have not built yet become loose ideas.',
@@ -171,8 +173,43 @@ describe('warning', () => {
     expect(warning(p, [cp1, cp2], cp1, 'edit').lines[0]).toBe('This remakes the website from scratch. Your code is cleared and the Blocks of Checkpoint 1 come back so you can change them.')
   })
 
+  it('names the Checkpoints it mentions', () => {
+    renameCheckpoint(p, 1, 'First try')
+    renameCheckpoint(p, 2, 'Opening hours')
+    expect(warning(p, [cp1, cp2], cp1, 'goBack')).toEqual({
+      title: 'Go back to Checkpoint 1 · First try?',
+      lines: ['Your code goes back to how it was at Checkpoint 1 · First try.', 'The next Build may come out different.', 'Your current code is already saved as Checkpoint 2 · Opening hours.'],
+      confirm: 'Go back',
+    })
+  })
+
   it('warns that a pending Assistant proposal will be dropped', () => {
     p.chat = [{ role: 'bob', text: 'Done.', time: 1, proposal: { summary: 'Blue title.', files: { 'style.css': { base: p.files['style.css'], proposed: 'h1 { color: blue; }' } }, total: 1, accepted: 0, decided: 0 } }]
     expect(warning(p, [cp1, cp2], cp1, 'goBack').lines.at(-1)).toBe("The Assistant's unaccepted changes will be dropped.")
+  })
+})
+
+describe('Checkpoint names', () => {
+  it('checkpointTitle adds the name after the number', () => {
+    expect(checkpointTitle({}, 3)).toBe('Checkpoint 3')
+    expect(checkpointTitle({ checkpointNames: { 3: 'Menu page' } }, 3)).toBe('Checkpoint 3 · Menu page')
+  })
+
+  it('renameCheckpoint trims, caps at 40 characters and removes a blank name', () => {
+    const q = emptyProject()
+    renameCheckpoint(q, 2, '  Menu page ')
+    expect(q.checkpointNames).toEqual({ 2: 'Menu page' })
+    renameCheckpoint(q, 2, 'x'.repeat(50))
+    expect(q.checkpointNames![2]).toHaveLength(40)
+    renameCheckpoint(q, 2, '   ')
+    expect(q.checkpointNames).toEqual({})
+  })
+
+  it('withNames names every Checkpoint number in a saved text, once', () => {
+    const names = { checkpointNames: { 2: 'Menu page', 3: 'Like Checkpoint 2' } }
+    expect(withNames(names, 'Code went back to Checkpoint 2')).toBe('Code went back to Checkpoint 2 · Menu page')
+    expect(withNames(names, 'Before loading Checkpoint 3')).toBe('Before loading Checkpoint 3 · Like Checkpoint 2')
+    expect(withNames(names, 'Code went back to Checkpoint 12')).toBe('Code went back to Checkpoint 12')
+    expect(withNames(names, 'Open Checkpoints')).toBe('Open Checkpoints')
   })
 })

@@ -9,30 +9,20 @@ export function isEmptyProject(p: import('./model/types.ts').Project): boolean {
   return blockCount <= 2 && traitCount === 0 && p.assets.length === 0 && Object.keys(p.files).length === 0 && p.chat.length === 0
 }
 
-async function drawPlaceholderPhoto(label: string, color: string): Promise<Blob> {
-  const canvas = new OffscreenCanvas(1200, 800)
-  const ctx = canvas.getContext('2d')!
-  ctx.fillStyle = color
-  ctx.fillRect(0, 0, 1200, 800)
-  ctx.fillStyle = '#3A2A30'
-  ctx.font = 'bold 96px sans-serif'
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText(label, 600, 430)
-  return canvas.convertToBlob({ type: 'image/png' })
-}
-
 export async function replaceProject(
   project: import('./model/types.ts').Project,
   checkpoints: import('./model/types.ts').Checkpoint[] = [],
 ): Promise<void> {
+  // Fetched before anything is cleared, so a failed download leaves the saved Project as it was.
+  const photos = await Promise.all(project.assets.filter(a => DEMO_PHOTOS.includes(a.file)).map(async a => {
+    const res = await fetch('/demo/' + a.file)
+    if (!res.ok) throw new Error(`Fetching /demo/${a.file} failed: ${res.status}`)
+    return { a, blob: await res.blob() }
+  }))
   await clearAll()
-  for (const ph of DEMO_PHOTOS) {
-    const assetEntry = project.assets.find(a => a.file === ph.file)
-    if (!assetEntry) continue
-    const blob = await drawPlaceholderPhoto(ph.label, ph.color)
-    assetEntry.bytes = blob.size
-    await putAsset({ projectId: project.id, id: assetEntry.id, blob })
+  for (const { a, blob } of photos) {
+    a.bytes = blob.size
+    await putAsset({ projectId: project.id, id: a.id, blob })
   }
   for (const cp of checkpoints) {
     const { addCheckpoint } = await import('./db.ts')

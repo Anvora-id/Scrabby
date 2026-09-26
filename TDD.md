@@ -241,6 +241,7 @@ export interface Project {
   chat: ChatMessage[]
   updated: number
   checkpoint?: number   // the Checkpoint the current code came from; unset before Build 1
+  checkpointNames?: Record<number, string> // names the user gave Checkpoints, by number
 }
 export interface BuiltBlocks { top: string[]; blocks: Record<string, Block>; traits: Record<string, Trait>; defs: Record<string, CustomBlockDef> }
 export interface Checkpoint {
@@ -766,6 +767,7 @@ export interface BuildRun {
 
 **Files:** `src/checkpoints.ts`, `src/slots/Checkpoints.tsx`, `Checkpoints.module.css`. Behavior: PRD §4. Look: DESIGN.md Checkpoints, Menus.
 
+- Names: `checkpointTitle(p, n)` → `Checkpoint N · <name>` when `p.checkpointNames[n]` is set, else `Checkpoint N`; every place that names a Checkpoint uses it, so a name never goes missing anywhere. `withNames(p, text)` puts `checkpointTitle` in place of every `Checkpoint <digits>` in a saved text (a chat `line`, a code-only `label`), so those follow renames too. `renameCheckpoint(p, n, name)` (recipe, an Undo step): trim, cut to 40 characters, blank deletes the name.
 - `LoadMode = 'goBack' | 'edit'`. `sameFiles(a, b)`: same keys and texts. `holding(files, cps)`: the Checkpoint whose `after` or `before` equals `files`. `needsSave(files, cps)`: files non-empty and no `holding`.
 - `unbuilt(p)`: unbuilt items in the top, outermost only: for a Site Block its Traits and children; for a Checkpoint Block its own Traits, then walking into locked children: their Traits, and their unlocked children (not deeper).
 - `applyLoad(p, c, mode)` (recipe): `at = top.pos ?? {40,40}`; move each unbuilt item to the Canvas at `{ x: at.x + 760, y: at.y + i*70 }` with `dropItem`.
@@ -774,18 +776,20 @@ export interface BuildRun {
 - `restore(p, bb)` (private): map each id under `bb.top[0]` to itself, or to a fresh `b<next>`/`t<next>` if taken in `p`; copy Blocks (Traits, children, layout mapped) and Traits (an "on click" `page:x`/`popup:x` value is mapped too). Returns the new top id.
 - `loadCheckpoint(number, mode)`: `cps = await listCheckpoints`; find it (edit needs `blocks`); if `needsSave(p.files, cps)`: add `{ number: cps.length + 1, label: 'Before loading Checkpoint ' + number, from: p.checkpoint ?? null, before: p.files, after: p.files, blocks: null, time }`. `updateProject(d => applyLoad(d, c, mode), null)`. If `hasPending` → `dropPending('Code went back to Checkpoint ' + number)`. `flashBlocks([])`.
 - `warning(p, cps, c, mode)` → `{ title, lines, confirm }`:
+  - `Checkpoint N` below is `checkpointTitle(p, N)`, so it carries the name.
   - title: `Go back to Checkpoint N?` / `Edit the Blocks of Checkpoint N?`; confirm: `Go back` / `Edit its Blocks`.
-  - line 1: goBack `Your code goes back to how it was at Checkpoint N.`; edit with `from === null` `This remakes the website from scratch. Your code is cleared and the Blocks of Checkpoint N come back so you can change them.`; edit otherwise `Your code goes back to how it was before Checkpoint N's Build, and its Blocks come back so you can change them.`
+  - line 1: goBack `Your code goes back to how it was at Checkpoint N.`; edit with `from === null` `This remakes the website from scratch. Your code is cleared and the Blocks of Checkpoint N come back so you can change them.`; edit otherwise `Your code goes back to how it was before the Build of Checkpoint N, and its Blocks come back so you can change them.`
   - `The next Build may come out different.`
   - needsSave → `Your current code, with your hand edits, is saved first as a new Checkpoint, so you can come back to it.`; else if there is code → `Your current code is already saved as Checkpoint <holding number>.`
   - unbuilt items → `Blocks you have not built yet become loose ideas.`
   - `hasPending` → `The Assistant's unaccepted changes will be dropped.`
-- `gist(c)`: no blocks → `<label>: your code with its hand edits.`; `from === null` → `Built the site: N page(s).` (N = `.html` files in `after`); else `Added: <names>.` where names = walking from the top: an unlocked Block adds its name (not deeper); a locked one adds its name only if it has Traits or a Note, then walks its children; empty → `changes`.
-- `fromTag(c)`: none for code-only or number 1; `from === null` → `remade from scratch`; `from !== number - 1` → `from Checkpoint <from>`.
+- `gist(c, p)`: no blocks → `<withNames(p, label)>: your code with its hand edits.`; `from === null` → `Built the site: N page(s).` (N = `.html` files in `after`); else `Added: <names>.` where names = walking from the top: an unlocked Block adds its name (not deeper); a locked one adds its name only if it has Traits or a Note, then walks its children; empty → `changes`.
+- `fromTag(c, p)`: none for code-only or number 1; `from === null` → `remade from scratch`; `from !== number - 1` → `from <checkpointTitle(p, from)>`.
 - `buildOf(id, p, cps)`: `made(c)` = c has blocks and `requestBlocks(c.blocks, top)` includes id. Walk from `p.checkpoint` back through `from`; the first `made` wins; else the newest `made` in the list.
 
 **Checkpoints.tsx:** loads `listCheckpoints` on Project id, `p.checkpoint` and a reload counter. Empty list → `No Checkpoints yet. Every Build saves one here.` Entries newest first:
-- Title row: `Checkpoint N` (h3), the time (`toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })`), the from tag, `saved for you` (code-only; class `saved`), and on the current one (`p.checkpoint === number`, entry class `here`) `you are here` + (` + hand edits` when `p.files` differs from its `after`).
+- Title row: `checkpointTitle(p, N)` (h3), the time (`toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })`), the from tag, `saved for you` (code-only; class `saved`), and on the current one (`p.checkpoint === number`, entry class `here`) `you are here` + (` + hand edits` when `p.files` differs from its `after`), then at the row's end a rename button (the 14px fill `PencilSimple` icon, title `Rename`, aria-label `Rename Checkpoint N`).
+- Rename: the h3 becomes `Checkpoint N` followed by an input (autofocus, `maxLength` 40, aria-label `Name for Checkpoint N`, starting with the current name; the rename button hides meanwhile). Enter → `updateProject(d => renameCheckpoint(d, N, draft))` when the trimmed draft differs from the name; Escape or blur cancels.
 - Gist. Buttons: **Go back to this**; **Edit its Blocks** and **Show its Blocks** / **Hide its Blocks** (a link-style toggle, `aria-expanded`) only when it has blocks.
 - Open: a read-only tree `ul` of its Blocks from `blocks.top[0]`: each row icon (lock for locked, puzzle for Instances, else the type's) + name + file; class `cat-<cat>` (none → `built` for locked or site); click picks it. A picked row with code in the current files (`findBlockCode`) shows `</> See its code` (→ `seeItsCode(id)`, stops propagation).
 - From a Block chip: when `useCheckpointFocus()` is set and the list is loaded: open `buildOf(focus)`, pick that Block with `flash` (it scrolls to the center and flashes twice), clear the focus.
@@ -902,7 +906,7 @@ A website made with Scrabby. Bob built it from a plan of Blocks and Traits. The 
 **Files:** `src/onboarding.ts`, `src/shell/Onboarding.tsx`, `Onboarding.module.css`, `src/fixtures/dev.ts`. Behavior: PRD §8, §9. Look: DESIGN.md Speech bubble, Menus.
 
 - `isEmptyProject(p)`: at most 2 Blocks (canvas + Site), no Traits, no Assets, no files, no chat.
-- `replaceProject(project, checkpoints = [])`: `clearAll()`; for each Asset named in `DEMO_PHOTOS`, draw its placeholder (`OffscreenCanvas` 1200×800, fill its color, `#3A2A30` bold 96px sans-serif label centered at y 430, PNG), set `bytes`, `putAsset`; add the Checkpoints; `clearHistory()`; `setProject`; `setEditing(null)`; Canvas tab; Plan.
+- `replaceProject(project, checkpoints = [])`: first fetch every Asset named in `DEMO_PHOTOS` from `/demo/<file>` (a failed fetch throws before anything is cleared, so the saved Project stays); `clearAll()`; for each photo set `bytes` to the Blob's size, `putAsset`; add the Checkpoints; `clearHistory()`; `setProject`; `setEditing(null)`; Canvas tab; Plan.
 - `loadDemo()` = `replaceProject(demoProject())`; `newProject()` = `replaceProject(emptyProject())` (errors logged `Loading the demo failed` / `Starting a new Project failed`).
 - Ask store (`'demo' | 'new' | null`): `askDemo()` loads at once when `isEmptyProject`, else asks; `askNewProject()` always asks; `closeAsk()`.
 - **ReplaceWarning** (a fixed backdrop + modal; Escape closes): demo → title `Load the demo?`, text `This replaces your current Project, Blocks and all. Download code first to keep a copy of the website's code.`, go `Load the demo`; new → `Start a new Project?`, `Only one Project is saved, so this one will be replaced, Blocks and all. Download code first to keep a copy of the website's code.`, `Start a new Project`. Buttons: **Download code** (Secondary), **Cancel** (Text), the go button (Primary, autofocus: close, then run).
@@ -954,10 +958,10 @@ DESIGN.md's look was redone on 2026-09-26 (D-Q14 to D-Q27: Grape, Bob blue, Nuni
 
 **File:** `src/fixtures/fixtures.ts`. Test data and the demo. Build them in exactly this order so the ids match Appendix A.
 
-`DEMO_PHOTOS` (placeholders until real photos; §17 draws them): `cupcakes.png` "Cupcakes" `#F8BBD0`, `layer-cake.png` "Layer cake" `#FFE066`, `cookies.png` "Cookies" `#FFB74D`, `bake-stall.png` "Bake stall" `#A8E6CF`.
+`DEMO_PHOTOS` (real photos in `public/demo/`, credits in `public/demo/CREDITS.md`; each a 1200×800 JPEG under 250 KB; §17 fetches them): `cupcakes.jpg`, `layer-cake.jpg`, `cookies.jpg`, `bake-stall.jpg`, `lemon-drizzle.jpg`, `brownie.jpg`.
 
 **demoProject()** ("Maya's bake sale", PRD §7). `T(type, value?, extra?)` = `addTrait` then assign extra; `B(type, name, traits = [], children = [])` = `addBlock` then set traits and children (arguments are evaluated first, so inner Traits and Blocks get lower ids). Steps:
-1. `p = emptyProject()` (Site `b1`); `p.name = "Maya's bake sale"`; `p.assets` = the 4 photos as `{ id: 'a1'…'a4', file, kind:'image', mime:'image/png', bytes:0, width:1200, height:800 }`; `p.next.a = 5`.
+1. `p = emptyProject()` (Site `b1`); `p.name = "Maya's bake sale"`; `p.assets` = the 6 photos as `{ id: 'a1'…'a6', file, kind:'image', mime:'image/jpeg', bytes:0, width:1200, height:800 }`; `p.next.a = 7`.
 2. Site: name `Maya's bake sale`, traits `[T('color','#F8BBD0'), T('vibe','playful'), T('font','friendly')]`.
 3. `home = B('page','Home')`, `menu = B('page','Menu')`, `quiz = B('page','Quiz')`; Site children `[home, menu, quiz]`.
 4. Definitions (off the Canvas): `menuButton = B('button','Menu',[T('onclick','page:'+menu)])`; `quizButton = B('button','Quiz',[T('onclick','page:'+quiz)])`; `topBar = B('navbar','Top bar',[],[menuButton, quizButton])` with layout `{d:'col',k:[{d:'row',k:[menuButton, quizButton]}]}`; `bottom = B('footer','Bottom',[],[B('text', undefined)])`. `p.defs.d1 = { id:'d1', blockId: topBar, color:{h:345,s:90,l:82} }`, `d2` = bottom with `{h:15,s:90,l:82}`; set `defines`; `p.next.d = 3`.
@@ -1003,7 +1007,7 @@ It must show no Warnings, and its Build 1 document must equal Appendix A.
   const homeBody = (withHours: boolean) => `  <main>
     <section class="hero" data-block="${d.hero}">
       <h1 data-block="${ids(d.hero)[0]}">Fresh cakes every Saturday</h1>
-      <img data-block="${d.photo}" src="assets/cupcakes.png" alt="A tray of pink cupcakes">
+      <img data-block="${d.photo}" src="assets/cupcakes.jpg" alt="A tray of pink cupcakes">
       <button class="big" data-block="${d.orderButton}" data-open="order">Order</button>
     </section>${withHours ? `
     <section class="hours" data-block="${hours}">
@@ -1021,12 +1025,12 @@ It must show no Warnings, and its Build 1 document must equal Appendix A.
       </form>
     </div>
   </main>`
-  const cakes = [['Pink cupcake', '£1.50'], ['Lemon drizzle', '£2.00'], ['Chocolate slice', '£2.50'], ['Carrot cake', '£2.00'], ['Victoria sponge', '£3.00'], ['Brownie', '£1.80']]
+  const cakes = [['Pink cupcake', '£1.50', 'cupcakes'], ['Lemon drizzle', '£2.00', 'lemon-drizzle'], ['Chocolate slice', '£2.50', 'brownie'], ['Carrot cake', '£2.00', 'layer-cake'], ['Victoria sponge', '£3.00', 'layer-cake'], ['Brownie', '£1.80', 'brownie']]
   const menuBody = `  <main>
     <h1>Our cakes</h1>
     <div class="grid" data-block="${d.cakes}">
-${cakes.map(([n, price], i) => `      <article class="card" data-block="${d.card}">
-        <img src="assets/${['cupcakes', 'layer-cake', 'cookies', 'bake-stall'][i % 4]}.png" alt="${n}">
+${cakes.map(([n, price, photo]) => `      <article class="card" data-block="${d.card}">
+        <img src="assets/${photo}.jpg" alt="${n}">
         <h3>${n}</h3><p>${price}</p>
       </article>`).join('\n')}
     </div>
@@ -1040,7 +1044,10 @@ ${cakes.map(([n, price], i) => `      <article class="card" data-block="${d.card
       <button data-block="${d.answer}" id="again" hidden>Try again</button>
     </section>
   </main>`
-  const css = (withHours: boolean) => `/* block ${d.site} */
+  const css = (withHours: boolean) => `/* Pictures and videos never grow wider than their box */
+img, video { max-width: 100%; height: auto; }
+
+/* block ${d.site} */
 body { margin: 0; font-family: "Nunito", sans-serif; background: #FFF5F8; color: #3A2A30; }
 main { max-width: 960px; margin: 0 auto; padding: 24px; }
 button { font: inherit; background: #E91E63; color: white; border: 0; border-radius: 999px; padding: 10px 20px; cursor: pointer; }
@@ -1152,7 +1159,7 @@ if (quiz) {
 | `api/agent.test.ts` | With a fake `Model` returning scripted replies: a Build creates files, lights each id once, ends with files; view (list, numbered, range, missing); insert (line 1 and 0); str_replace no match / 2 matches; every write to `.builds/` refused; the four Skills in the system message; the Build user message = document, then files, then the ending; 40 rounds → turns (41 model calls); time cap (`ms: 20`) → time; a throwing model → unreachable; unknown tool or missing argument → broken; finish `length`/`content_filter` → broken; an empty reply → broken; an Assistant turn yields text per round and the summary; the last 10 messages and the context in the system message; a failed write lights nothing; summary after `Summary:`; chat starts on a user message; `agentHandler`: GET returns the label, 405, 400, `start` first; limits: the 11th Build in an hour from one browser → 429 with `Try again in 60 minutes.`, the 41st Build of the day from any browser → the everyone message, `AGENT_LIMITS=off` skips them. |
 | `src/agent.test.ts` | readAgentStream reads the server's events; joins messages split across chunks; a stream ending early or a 500 → unreachable; a 429 from runAgent (mock `fetch`) → one `limit` event. |
 | `src/build.test.ts` | Build 1: sends document and empty files, saves Checkpoint 1 (`from: null`, `.builds/build-1.md`), Site → Checkpoint Block with 3 locked pages, loose ideas stay, card `done`, flash ids, Try & tweak after 900ms and not before; a limit event → nothing changes, step stays Plan, the message is returned; a failed Build changes nothing and stays on Build; progress (working = newest lit chip, the earlier ones done; all done on done, none on failed); nothingNew; Build 3 on the built site keeps the hand edit, `from: 2`, adds a Built page for `contact.html`. |
-| `src/checkpoints.test.ts` | Go back (code, Checkpoint Block, Built page ids kept, unbuilt → loose, Library and defs unchanged); "Before loading Checkpoint 1" saved once; Edit its Blocks (code `before`, request Blocks back unlocked); Edit on Checkpoint 1 clears code and brings the Site back; fresh ids when taken; gist, fromTag, buildOf, the warning text. |
+| `src/checkpoints.test.ts` | Go back (code, Checkpoint Block, Built page ids kept, unbuilt → loose, Library and defs unchanged); "Before loading Checkpoint 1" saved once; Edit its Blocks (code `before`, request Blocks back unlocked); Edit on Checkpoint 1 clears code and brings the Site back; fresh ids when taken; gist, fromTag, buildOf, the warning text; names: `checkpointTitle`, `renameCheckpoint` (trim, 40 characters, blank deletes), `withNames` (saved texts, `Checkpoint 12` untouched), a named gist, tag and warning. |
 | `src/assistant.test.ts` | A turn sends 10 messages without lines, level, open file, Library, `.builds/`, never Blocks; streams into one Bob message; a diff card with summary (`total: 2` for a changed and a new file); a failed turn; a limit adds no messages and returns the text; Accept all (no Checkpoint; Undo takes it back; chat stays); Reject all; Out of date then Dismiss; Review decisions → `reviewing` then `partial`; dropPending with the line; a running reply is pending and one reply at a time; loading a Checkpoint drops it; changedBlocks. |
 | `src/code/code.test.ts`, `preview/serve.test.ts` | changedLines (examples + the 4 hours lines + none on menu.html + all lines without base); blockMarks; findBlockCode (HTML first, CSS comment fallback); blockInfo (from Checkpoints, Built page on Canvas, Instances `my`). Serve: helper first in head; no head; folder → index.html; CSS/JS types; Asset Blob; missing page text with helper and html type; other missing 404; other paths → undefined. |
 | `src/store.test.ts`, `src/history.test.ts`, `src/model/library.test.ts`, `src/download.test.ts`, `src/onboarding.test.ts`, `src/fixtures/fixtures.test.ts` | A no-undo change leaves Undo for the last edit. History order, redo cleared, key merging, a new step after undo, the limit. Library: addAsset names, clashes, uploadKind (types, SVG refused text, 30 MB text), rename + problems, deleteWarning texts. Zip: code at the top, Assets under `assets/`, no `.builds/`, the kit's `AGENTS.md` (Project name, plan per Build) and the 4 `.bob/skills/*/SKILL.md`. Demo shows no Warnings and has 4–6 photos; isEmptyProject; placeBubble cases (§17 numbers: `{0,100,300,700}`, 280×100 in 1366×768 → right x 314 y 350 tail 50; `{1200,680,1350,740}` → left x 906; a full-width bar → below y 104; `{300,150,W,H}` → inside y 174; `{10,740,60,766}` → right, y 660, tail 80). Fixtures: the demo tree, page files, asset ids; built site: 3 linked pages + CSS + JS, Checkpoint Block with Built pages, 2 Checkpoints whose Blocks hold every mark id (more than 20 marks), nothing unreachable. |
@@ -1215,7 +1222,7 @@ if (quiz) {
   - Textbox "Textbox" #b15
     - text (exact words to show, as written): "Fresh cakes every Saturday"
   - Frame "Frame" #b14
-    - image (show this picture): assets/cupcakes.png
+    - image (show this picture): assets/cupcakes.jpg
   - Button "Order" #b13
     - on click (when a visitor clicks this Block): open "Order" popup #b12
 - Popup "Order" #b12
@@ -1265,10 +1272,12 @@ if (quiz) {
 
 ## Library
 
-- assets/cupcakes.png: image, 1200×800 px, used by a Trait
-- assets/layer-cake.png: image, 1200×800 px
-- assets/cookies.png: image, 1200×800 px
-- assets/bake-stall.png: image, 1200×800 px
+- assets/cupcakes.jpg: image, 1200×800 px, used by a Trait
+- assets/layer-cake.jpg: image, 1200×800 px
+- assets/cookies.jpg: image, 1200×800 px
+- assets/bake-stall.jpg: image, 1200×800 px
+- assets/lemon-drizzle.jpg: image, 1200×800 px
+- assets/brownie.jpg: image, 1200×800 px
 ```
 
 (The document ends with one newline after the last Library line.)

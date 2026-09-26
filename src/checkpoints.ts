@@ -10,6 +10,26 @@ import { getProject, updateProject } from './store.ts'
 
 export type LoadMode = 'goBack' | 'edit'
 
+type Names = Pick<Project, 'checkpointNames'>
+
+// "Checkpoint 3 · Menu page": the number never changes; the name is the user's and optional.
+export function checkpointTitle(p: Names, n: number): string {
+  const name = p.checkpointNames?.[n]
+  return name ? `Checkpoint ${n} · ${name}` : `Checkpoint ${n}`
+}
+
+// Saved texts (chat lines, "Before loading Checkpoint N") keep only the number; the name is added when shown, so renames reach them.
+export function withNames(p: Names, text: string): string {
+  return text.replace(/Checkpoint (\d+)/g, (_, n: string) => checkpointTitle(p, Number(n)))
+}
+
+export function renameCheckpoint(p: Project, n: number, name: string): void {
+  const names = p.checkpointNames ??= {}
+  const typed = name.trim().slice(0, 40)
+  if (typed) names[n] = typed
+  else delete names[n]
+}
+
 export function sameFiles(a: Files, b: Files): boolean {
   const keys = Object.keys(a)
   return keys.length === Object.keys(b).length && keys.every(k => k in b && a[k] === b[k])
@@ -111,25 +131,25 @@ export async function loadCheckpoint(number: number, mode: LoadMode): Promise<vo
 }
 
 export function warning(p: Project, cps: Checkpoint[], c: Checkpoint, mode: LoadMode): { title: string; lines: string[]; confirm: string } {
-  const n = c.number
+  const t = checkpointTitle(p, c.number)
   const lines = [
-    mode === 'goBack' ? `Your code goes back to how it was at Checkpoint ${n}.`
-      : c.from === null ? `This remakes the website from scratch. Your code is cleared and the Blocks of Checkpoint ${n} come back so you can change them.`
-      : `Your code goes back to how it was before Checkpoint ${n}'s Build, and its Blocks come back so you can change them.`,
+    mode === 'goBack' ? `Your code goes back to how it was at ${t}.`
+      : c.from === null ? `This remakes the website from scratch. Your code is cleared and the Blocks of ${t} come back so you can change them.`
+      : `Your code goes back to how it was before the Build of ${t}, and its Blocks come back so you can change them.`,
     'The next Build may come out different.',
   ]
   if (needsSave(p.files, cps)) lines.push('Your current code, with your hand edits, is saved first as a new Checkpoint, so you can come back to it.')
-  else if (Object.keys(p.files).length) lines.push(`Your current code is already saved as Checkpoint ${holding(p.files, cps)!.number}.`)
+  else if (Object.keys(p.files).length) lines.push(`Your current code is already saved as ${checkpointTitle(p, holding(p.files, cps)!.number)}.`)
   if (unbuilt(p).length) lines.push('Blocks you have not built yet become loose ideas.')
   if (hasPending(p)) lines.push("The Assistant's unaccepted changes will be dropped.")
   return mode === 'goBack'
-    ? { title: `Go back to Checkpoint ${n}?`, lines, confirm: 'Go back' }
-    : { title: `Edit the Blocks of Checkpoint ${n}?`, lines, confirm: 'Edit its Blocks' }
+    ? { title: `Go back to ${t}?`, lines, confirm: 'Go back' }
+    : { title: `Edit the Blocks of ${t}?`, lines, confirm: 'Edit its Blocks' }
 }
 
-export function gist(c: Checkpoint): string {
+export function gist(c: Checkpoint, p: Names): string {
   const bb = c.blocks
-  if (!bb) return `${c.label}: your code with its hand edits.`
+  if (!bb) return `${withNames(p, c.label)}: your code with its hand edits.`
   if (c.from === null) {
     const n = Object.keys(c.after).filter(f => f.endsWith('.html')).length
     return `Built the site: ${n} page${n === 1 ? '' : 's'}.`
@@ -145,10 +165,10 @@ export function gist(c: Checkpoint): string {
   return `Added: ${names.join(', ') || 'changes'}.`
 }
 
-export function fromTag(c: Checkpoint): string | null {
+export function fromTag(c: Checkpoint, p: Names): string | null {
   if (!c.blocks || c.number === 1) return null
   if (c.from === null) return 'remade from scratch'
-  return c.from !== c.number - 1 ? `from Checkpoint ${c.from}` : null
+  return c.from !== c.number - 1 ? `from ${checkpointTitle(p, c.from)}` : null
 }
 
 export function buildOf(id: string, p: Project, cps: Checkpoint[]): Checkpoint | undefined {
