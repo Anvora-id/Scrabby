@@ -1,7 +1,7 @@
 .codeEditor {
   --ed-bg: #1E1B2E;  --ed-text: #DCD8EA;  --ed-tabs: #16131F;  --ed-tab-text: #8F89A6;  --ed-rule: #2A2640;
-  --ed-line-no: #5E587A;  --ed-changed: #26382A;  --ed-flash: #4A4420;  --ed-dot: #FFE14D;
-  --ed-tag: #7CC4FF;  --ed-attr: #C9A7FF;  --ed-string: #FFCF7A;  --ed-comment: #6E6890;
+  --ed-line-no: #5E587A;  --ed-flash: #4A4420;  --ed-dot: #FFE14D;
+  --ed-tag: #7CC4FF;  --ed-attr: #C3A6FF;  --ed-string: #FFCF7A;  --ed-comment: #6E6890;
   --ed-add: #1E4D2F;  --ed-del: #5A2A2E;
   flex: 1;
   min-height: 0;
@@ -13,11 +13,18 @@
   box-shadow: 0 3px 0 #0000002e;
 }
 
+.strip {
+  display: flex;
+  flex: none;
+  align-items: center;
+  overflow-x: auto;
+  background: var(--ed-tabs);
+}
+
 .tabs {
   display: flex;
   flex: none;
-  overflow-x: auto;
-  background: var(--ed-tabs);
+  align-self: stretch;
 }
 
 .tab {
@@ -42,6 +49,45 @@
   color: var(--ed-dot);
 }
 
+.tool {
+  flex: none;
+  border: none;
+  background: none;
+  color: var(--ed-tab-text);
+  font: 700 14px var(--font);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.tool:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.newName {
+  flex: none;
+  width: 170px;
+  margin: 0 8px;
+  padding: 3px 8px;
+  background: var(--ed-bg);
+  border: 1px solid var(--ed-rule);
+  color: var(--ed-text);
+  font: 700 12.5px var(--font);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.problem {
+  flex: none;
+  margin: 0;
+  padding: 4px 14px;
+  background: var(--ed-tabs);
+  color: var(--ed-tab-text);
+  font: 700 var(--fs-sm) var(--font);
+}
+
 .body {
   flex: 1;
   min-height: 0;
@@ -63,10 +109,6 @@
   font: 700 var(--fs-md) var(--font);
 }
 
-.changed {
-  background: var(--ed-changed);
-}
-
 .flash {
   animation: flash 1.5s;
 }
@@ -75,15 +117,65 @@
   0%, 50% { background: var(--ed-flash); }
 }
 
-.chip {
-  margin-left: 12px;
-  line-height: 1.4;
+/* the gutter left of the line numbers: change bars and Block dots */
+.marks {
+  width: 14px;
+}
+
+.marks :global(.cm-gutterElement) {
+  position: relative;
+}
+
+.bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #5FD38D;
+  opacity: 0.7;
+}
+
+.blockDot {
+  position: absolute;
+  left: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
   background: var(--c1);
-  border: 2px solid #fff;
   box-shadow: 0 0 0 1px var(--c3);
-  color: var(--ink);
-  font: 800 11px var(--font);
-  border-radius: var(--r-pill);
-  padding: 0 9px;
   cursor: pointer;
+}
+
+/* dark scrollbars in the editor, the merge view and the tab strip */
+.codeEditor :global(.cm-scroller),
+.strip {
+  scrollbar-width: thin;
+  scrollbar-color: #4A5068 var(--ed-bg);
+}
+
+.codeEditor :global(.cm-scroller)::-webkit-scrollbar,
+.strip::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.codeEditor :global(.cm-scroller)::-webkit-scrollbar-track,
+.strip::-webkit-scrollbar-track {
+  background: var(--ed-bg);
+}
+
+.codeEditor :global(.cm-scroller)::-webkit-scrollbar-thumb,
+.strip::-webkit-scrollbar-thumb {
+  background: #4A5068;
+  border-radius: 8px;
+}
+
+.codeEditor :global(.cm-scroller)::-webkit-scrollbar-thumb:hover,
+.strip::-webkit-scrollbar-thumb:hover {
+  background: #5B6278;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { blockInfo, blockMarks, changedLines, findBlockCode } from './code.ts'
+import { blockInfo, blockMarks, changedLines, findBlockCode, newFileProblem } from './code.ts'
 import { builtSite } from '../fixtures/fixtures.ts'
 
 const { project, checkpoints } = builtSite()
@@ -77,5 +77,22 @@ describe('blockInfo', () => {
   it('knows no canvas and no unknown ids', () => {
     expect(blockInfo('canvas', project, checkpoints)).toBeUndefined()
     expect(blockInfo('b999', project, checkpoints)).toBeUndefined()
+  })
+})
+
+describe('newFileProblem', () => {
+  const files = { 'index.html': '', 'styles.css': '' }
+  const bad = 'Use a name like about.html, extra.css or games.js.'
+
+  it('accepts a new html, css or js name', () => {
+    for (const n of ['about.html', 'extra.css', 'games.js', '2nd-page.html']) expect(newFileProblem(n, files)).toBeNull()
+  })
+
+  it('rejects other names', () => {
+    for (const n of ['', 'about', 'about.txt', '-a.html', 'my page.html', 'a/b.html', '.builds/x.html', 'About.html']) expect(newFileProblem(n, files)).toBe(bad)
+  })
+
+  it('rejects a taken name', () => {
+    expect(newFileProblem('index.html', files)).toBe('index.html already exists.')
   })
 })
