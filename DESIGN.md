@@ -120,6 +120,7 @@ The category colors are "Medium" strength (D-Q18): stronger than the old pastels
   | Build card | Full figure, 118px tall, hopping on the Build stage ([Build button and Build card](#build-button-and-build-card)) |
   | Speech bubbles | Full figure, 74px tall, beside the bubble ([Speech bubble](#speech-bubble)) |
   | Greeting | The logo, Bob 160px tall, at the top of the greeting card ([Screen layout](#screen-layout)) |
+  | Empty Library and Checkpoints | Head, 48px, above the empty line, as in the empty chat ([Library](#library), [Checkpoints](#checkpoints)) |
 
 - **Logo** = Bob's full figure + the **wordmark** "Scrabby" in Nunito 900, letter-spacing −.01em, gap 8px, figure bottom-aligned with the text's baseline. The logo is for the app, video, deck and cover. The favicon is `bob-head.svg`.
 
@@ -374,7 +375,8 @@ A tab beside Canvas ([Shell](#shell)). Assets are never dragged onto Blocks; the
 
 - Panel padding 16px. Heading "Library" (`--fs-lg` weight 900), hint "Images and videos for this Project. Pick one inside an image or video Trait." (`--fs-sm`, `--hint`).
 - A primary "Upload" button ([Buttons](#buttons)) that accepts image and video files.
-- A grid of 124×124px tiles, gap 12px: `--surface`, 2px `--line` border, a 3px `--line` bottom edge, radius `--r-panel`, centered, lifting 2px on hover. Each tile shows the image itself (fit inside, 84px tall, radius 8px), then the file name (`--fs-sm` weight 700, one line, ending in "…" if long). A 40px `--hint` image icon ([Icons](#icons), duotone) stands in while an image loads or if it can't be shown. A video tile shows a 40px `--hint` `video-camera` icon (duotone), then the file name.
+- A responsive grid of tiles, gap 12px: as many columns as fit, each at least 168px wide, tiles stretching to fill the row. A tile is at least 168px tall, padding 8px: `--surface`, 2px `--line` border, a 3px `--line` bottom edge, radius `--r-panel`, centered, lifting 2px on hover. Each tile shows the image itself (fit inside, the tile's full width and 124px tall, radius 8px), then the file name (`--fs-sm` weight 700, one line, ending in "…" if long). A 40px `--hint` image icon ([Icons](#icons), duotone) stands in while an image loads or if it can't be shown. A video tile shows a 40px `--hint` `video-camera` icon (duotone), then the file name.
+- **Empty:** centered in the panel, Bob's head (48px, white, 2px `--line` ring) above "Nothing here yet. Upload an image or a video." (`--hint`, `--fs-md`, weight 700), like the empty chat ([Assistant](#assistant)).
 
 ## Code editor
 
@@ -519,9 +521,9 @@ From ticket 02. Three steps, and only one is on screen at a time: **1 Plan › 2
 
 The third tab in Plan ([Shell](#shell)), after Canvas and Library (ADR 0005). Every Build saves a Checkpoint: the code, and the Blocks that made it. The list only grows. Loading a Checkpoint never changes the Library.
 
-- **Panel:** `--surface`, padding 14px, entries stacked with gap 10px, newest first. Empty: "No Checkpoints yet. Every Build saves one here." (`--hint`, italic).
+- **Panel:** `--surface`, padding 14px, entries stacked with gap 10px, newest first. Empty: centered in the panel, Bob's head (48px, white, 2px `--line` ring) above "No Checkpoints yet. Every Build saves one here." (`--hint`, `--fs-md`, weight 700), like the empty chat ([Assistant](#assistant)).
 - **Entry:** `--surface`, 2px `--line` border, a 3px `--line` bottom edge, radius `--r-panel`, padding 12px 14px, `--ink`.
-  1. **Title row** (gap 8px, baseline): "Checkpoint N" (`--fs-lg` weight 900), or "Checkpoint N · Menu page" once named, the time (`--fs`, `--hint`), then tags, then at the row's end a 24px rename button (14px pencil, `--hint`, radius 8px, `--soft` fill and `--ink` on hover). Renaming puts a field after "Checkpoint N" (`--fs-md` weight 800, `--ink`, 2px `--line` border, radius 8px, padding 1px 6px, 24ch wide, up to 40 characters): Enter saves, Escape or clicking away cancels, an empty name removes it. A Checkpoint's name shows wherever that Checkpoint is named: its tags, the "Before loading" gists, the Checkpoint warning, the chat lines, the Checkpoint Block and the Preview bar.
+  1. **Title row** (gap 8px, baseline): "Checkpoint N" (`--fs-lg` weight 900), or "Checkpoint N · Menu page" once named; right after it a 24px rename button (14px pencil, `--hint`, radius 8px, `--soft` fill and `--ink` on hover); then the time (`--fs`, `--hint`) and tags. Renaming puts a field after "Checkpoint N" (`--fs-md` weight 800, `--ink`, 2px `--line` border, radius 8px, padding 1px 6px, 24ch wide, up to 40 characters): Enter saves, Escape or clicking away cancels, an empty name removes it. A Checkpoint's name shows wherever that Checkpoint is named: its tags, the "Before loading" gists, the Checkpoint warning, the chat lines, the Checkpoint Block and the Preview bar.
   2. **Gist** (4px above, 8px below, `--fs`): "Built the site: N pages." for a first Build or a remake; "Added: Footer, Contact form." (its request Blocks' names) for a later Build; "Before loading Checkpoint N: your code with its hand edits." (with that Checkpoint's name when it has one) for a saved one.
   3. **Buttons** (ghost, [Buttons](#buttons), gap 6px): **Go back to this**, then **Edit its Blocks**. A "Before loading" Checkpoint has only Go back to this. Both open the Checkpoint warning ([Menus](#menus)).
 - **Tags:** `--fs-sm` weight 800, radius `--r-pill`, padding 1px 8px, `--soft` fill, `--ink`:

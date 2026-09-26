@@ -99,7 +99,12 @@ export default function Checkpoints() {
 
   return (
     <div className={styles.panel}>
-      {cps.length === 0 && <p className={styles.empty}>No Checkpoints yet. Every Build saves one here.</p>}
+      {cps.length === 0 && (
+        <div className={styles.empty}>
+          <img className={styles.bob} src="/bob-head.svg" alt="" />
+          No Checkpoints yet. Every Build saves one here.
+        </div>
+      )}
       {[...cps].reverse().map(c => {
         const here = p.checkpoint === c.number
         const tag = fromTag(c, p)
@@ -127,15 +132,15 @@ export default function Checkpoints() {
               ) : (
                 <h3>{checkpointTitle(p, c.number)}</h3>
               )}
-              <span className={styles.time}>{new Date(c.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-              {tag && <span className={styles.tag}>{tag}</span>}
-              {!c.blocks && <span className={cx(styles.tag, styles.saved)}>saved for you</span>}
-              {here && <span className={cx(styles.tag, styles.hereTag)}>you are here{!sameFiles(p.files, c.after) && ' + hand edits'}</span>}
               {renaming !== c.number && (
                 <button className={styles.rename} title="Rename" aria-label={`Rename Checkpoint ${c.number}`} autoFocus={refocus === c.number} onClick={() => startRename(c.number)}>
                   <PencilSimpleIcon size={14} weight="fill" />
                 </button>
               )}
+              <span className={styles.time}>{new Date(c.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              {tag && <span className={styles.tag}>{tag}</span>}
+              {!c.blocks && <span className={cx(styles.tag, styles.saved)}>saved for you</span>}
+              {here && <span className={cx(styles.tag, styles.hereTag)}>you are here{!sameFiles(p.files, c.after) && ' + hand edits'}</span>}
             </div>
             <p className={styles.gist}>{gist(c, p)}</p>
             <div className={styles.actions}>

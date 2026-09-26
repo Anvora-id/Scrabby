@@ -98,9 +98,23 @@
 }
 
 .empty {
-  margin: 0;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
   color: var(--hint);
-  font-style: italic;
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+
+.bob {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--line);
 }
 
 .entry {
@@ -169,7 +183,6 @@
 
 .rename {
   align-self: center;
-  margin-left: auto;
   display: grid;
   place-items: center;
   width: 24px;
