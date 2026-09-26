@@ -10,12 +10,13 @@ import { runAgent } from './agent.ts'
 import { flashBlocks } from './preview.ts'
 import { createStore, getProject, setStep, updateProject } from './store.ts'
 
-export type FailReason = 'time' | 'turns' | 'unreachable' | 'broken'
+export type FailReason = 'time' | 'turns' | 'unreachable' | 'broken' | 'save'
 export const FAILURE_LINES: Record<FailReason, string> = {
   time: 'Bob took too long, so this Build was stopped.',
   turns: 'Bob ran out of steps before finishing, so this Build was stopped.',
   unreachable: "Bob couldn't be reached. Check your connection and try again.",
   broken: "Bob's answer came back broken, so this Build was stopped.",
+  save: "Bob's website couldn't be saved on this computer, so this Build was stopped.",
 }
 export interface BuildRun {
   n: number; state: 'running' | 'done' | 'failed'
@@ -89,11 +90,18 @@ async function build(): Promise<string | undefined> {
     if (e.type === 'files') {
       const number = saved.length + 1
       const after = { ...e.files, ['.builds/build-' + n + '.md']: doc.document }
-      await addCheckpoint({
-        projectId: p.id, number, label: 'Checkpoint ' + number,
-        from: top.type === 'site' ? null : p.checkpoint ?? saved.at(-1)?.number ?? null,
-        before: p.files, after, blocks: builtBlocks(p, top.id), time: Date.now(),
-      }).catch(err => console.error('Saving the Checkpoint failed', err))
+      try {
+        await addCheckpoint({
+          projectId: p.id, number, label: 'Checkpoint ' + number,
+          from: top.type === 'site' ? null : p.checkpoint ?? saved.at(-1)?.number ?? null,
+          before: p.files, after, blocks: builtBlocks(p, top.id), time: Date.now(),
+        })
+      } catch (err) {
+        // Without its Checkpoint the Project must not move on, or a reload finds no Checkpoint N.
+        console.error('Saving the Checkpoint failed', err)
+        set({ state: 'failed', reason: 'save' })
+        return
+      }
       updateProject(d => consume(d, top.id, after, number), null)
       set({ state: 'done' })
       flashBlocks(run.get()!.lit)

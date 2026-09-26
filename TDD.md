@@ -722,12 +722,13 @@ Only the Site or Checkpoint Block is checked; loose ideas never. Locked Pages an
 **Files:** `src/build.ts`, `src/slots/BuildButton.tsx`, `src/slots/BuildCard.tsx`, `src/slots/Build.module.css`. Behavior: PRD §4, §10. Look: DESIGN.md Build button and Build card.
 
 ```ts
-export type FailReason = 'time' | 'turns' | 'unreachable' | 'broken'
+export type FailReason = 'time' | 'turns' | 'unreachable' | 'broken' | 'save'
 export const FAILURE_LINES: Record<FailReason, string> = {
   time: 'Bob took too long, so this Build was stopped.',
   turns: 'Bob ran out of steps before finishing, so this Build was stopped.',
   unreachable: "Bob couldn't be reached. Check your connection and try again.",
   broken: "Bob's answer came back broken, so this Build was stopped.",
+  save: "Bob's website couldn't be saved on this computer, so this Build was stopped.",
 }
 export interface BuildRun {
   n: number; state: 'running' | 'done' | 'failed'
@@ -745,7 +746,7 @@ export interface BuildRun {
   2. `begin()` (once): `run.set({ n, state:'running', chips, lit: [], loose: canvas.children.length - 1, skipped: doc.skipped })`; `setStep('build')`.
   3. For each event of `runAgent({ kind:'build', document: doc.document, files: p.files })`: `limit` → return its message (nothing changed, still on Plan); `start` → `begin()`; `block` → `begin()`, append the id to `lit`; `error` → `begin()`, set `state:'failed', reason`, return; `files` → `begin()`, then:
      - `number = saved.length + 1`; `after = { ...e.files, ['.builds/build-' + n + '.md']: doc.document }`.
-     - `addCheckpoint({ projectId, number, label: 'Checkpoint ' + number, from: top.type === 'site' ? null : p.checkpoint ?? saved.at(-1)?.number ?? null, before: p.files, after, blocks: builtBlocks(p, top.id), time: Date.now() })` (errors logged `Saving the Checkpoint failed`).
+     - `addCheckpoint({ projectId, number, label: 'Checkpoint ' + number, from: top.type === 'site' ? null : p.checkpoint ?? saved.at(-1)?.number ?? null, before: p.files, after, blocks: builtBlocks(p, top.id), time: Date.now() })`; on an error log `Saving the Checkpoint failed`, set `state:'failed', reason:'save'` and return (nothing changed).
      - `updateProject(d => consume(d, top.id, after, number), null)`; `state:'done'`; `flashBlocks(lit)` (§13); after 900ms `setStep('try')`.
 - `builtBlocks(p, top)`: `{ top: [top], blocks, traits, defs: clone of p.defs }` with clones of every Block and Trait under `top` and under every definition Block.
 - `consume(p, topId, files, checkpoint)` (exported): `pages` = the top's Page children by file. `html` = file paths ending `.html`. Order = the top's Page files that exist in `html` (in the top's order), then the other `html` files (in `files` order). Delete every Block and Trait inside the top and the top's Traits. For each file: reuse the id of the Page that had it (else `addBlock(p, 'page')` for a new id) and set `{ id, type:'page', name: old name or pageName(file), note:'', traits:[], children:[], file, locked:true }`. Replace the top with `{ id: topId, type:'checkpoint', name: top.name, note:'', traits:[], children, locked:true, pos: top.pos }`. `p.files = files`, `p.checkpoint = checkpoint`. `pageName(file)`: strip `.html`, the last path part, `-`/`_` runs → space, trim; `index` or empty → `Home`; else first letter upper-cased (`contact-us.html` → `Contact us`).

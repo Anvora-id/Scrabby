@@ -5,6 +5,7 @@ import { addBlock, addTrait } from './model/project.ts'
 import { builtSite, demoProject } from './fixtures/fixtures.ts'
 import { instructionDocument } from './instructions/document.ts'
 import { flashBlocks } from './preview.ts'
+import { addCheckpoint } from './db.ts'
 import { getProject, getUi, setProject, setStep } from './store.ts'
 import { getBuild, nothingNew, pageName, runBuild } from './build.ts'
 
@@ -97,6 +98,19 @@ describe('runBuild', () => {
     expect(getProject()).toBe(p)
     expect(fake.saved).toHaveLength(0)
     expect(getBuild()).toMatchObject({ n: 1, state: 'failed', reason: 'time', lit: [home] })
+    vi.advanceTimersByTime(2000)
+    expect(getUi().step).toBe('build')
+  })
+
+  it('a Checkpoint that fails to save changes nothing and fails the Build', async () => {
+    start(demoProject(), [], [{ type: 'start' }, { type: 'files', files: builtSite().checkpoints[0].after }])
+    const p = getProject()
+    vi.mocked(addCheckpoint).mockRejectedValueOnce(new Error('QuotaExceededError'))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    expect(await runBuild()).toBeUndefined()
+    expect(getProject()).toBe(p)
+    expect(getBuild()).toMatchObject({ n: 1, state: 'failed', reason: 'save' })
     vi.advanceTimersByTime(2000)
     expect(getUi().step).toBe('build')
   })
