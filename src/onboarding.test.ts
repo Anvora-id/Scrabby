@@ -48,4 +48,28 @@ describe('placeBubble', () => {
   it('clamps y and the tail near the bottom edge', () => {
     expect(placeBubble(box(10, 740, 60, 766), 280, 100, W, H)).toMatchObject({ side: 'right', y: 660, tail: 80 })
   })
+
+  it('slides along its side to the nearest spot clear of a Block', () => {
+    expect(placeBubble(box(0, 100, 300, 700), 280, 100, W, H, [box(320, 300, 700, 460)]))
+      .toEqual({ side: 'right', x: 314, y: 474, tail: 20 })
+  })
+
+  it('steps outward past a Block too tall to slide around', () => {
+    expect(placeBubble(box(0, 100, 300, 700), 280, 100, W, H, [box(320, 0, 700, H)]))
+      .toEqual({ side: 'right', x: 714, y: 350, tail: 50 })
+  })
+
+  it('stays put when nowhere is clear', () => {
+    expect(placeBubble(box(0, 100, 300, 700), 280, 100, W, H, [box(310, 0, W, H)]))
+      .toEqual({ side: 'right', x: 314, y: 350, tail: 50 })
+  })
+
+  it('slides sideways below a bar', () => {
+    expect(placeBubble(box(0, 56, W, 90), 280, 100, W, H, [box(500, 100, 900, 300)]))
+      .toEqual({ side: 'below', x: 206, y: 104, tail: 260 })
+  })
+
+  it('ignores Blocks when it sits inside the target', () => {
+    expect(placeBubble(box(300, 150, W, H), 280, 100, W, H, [box(300, 150, W, H)]).side).toBe('inside')
+  })
 })

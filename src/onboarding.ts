@@ -114,20 +114,44 @@ export function closeTip(): void { tipStore.set(null) }
 // ── bubble placement ──────────────────────────────────────────────────────────
 
 export interface Placement { side: 'right' | 'left' | 'below' | 'above' | 'inside'; x: number; y: number; tail: number }
+export interface Box { left: number; top: number; right: number; bottom: number }
 
 const GAP = 14
 const EDGE = 8
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi)
+const along = (c: number, from: number, size: number) => clamp(c - from, 20, size - 20)
+const nearest = (vs: number[], to: number) => vs.sort((a, b) => Math.abs(a - to) - Math.abs(b - to))[0]
+const flip = (b: Box): Box => ({ left: b.top, top: b.left, right: b.bottom, bottom: b.right })
 
-export function placeBubble(
-  r: { left: number; top: number; right: number; bottom: number },
-  w: number, h: number, W: number, H: number,
-): Placement {
+/** `avoid`: boxes a side placement keeps clear of when it can (the Blocks on the Canvas). */
+export function placeBubble(r: Box, w: number, h: number, W: number, H: number, avoid: Box[] = []): Placement {
+  const p = place(r, w, h, W, H)
+  if (p.side === 'inside') return p
+  if (p.side === 'right' || p.side === 'left') return clearOf(p, r, w, h, W, H, avoid)
+  // Below and above are right and left with x and y swapped.
+  const q = clearOf({ ...p, side: p.side === 'below' ? 'right' : 'left', x: p.y, y: p.x }, flip(r), h, w, H, W, avoid.map(flip))
+  return { ...q, side: p.side, x: q.y, y: q.x }
+}
+
+// Right or left of the target: slide up or down to the nearest free spot, else step outward
+// past what's in the way; with nowhere free, stay put.
+function clearOf(p: Placement, r: Box, w: number, h: number, W: number, H: number, avoid: Box[]): Placement {
+  const free = (x: number, y: number) => !avoid.some(b => x < b.right && x + w > b.left && y < b.bottom && y + h > b.top)
+  if (free(p.x, p.y)) return p
+  const ys = avoid.flatMap(b => [b.top - GAP - h, b.bottom + GAP]).map(v => clamp(v, EDGE, H - EDGE - h))
+  const y = nearest(ys.filter(v => free(p.x, v)), p.y)
+  if (y !== undefined) return { ...p, y, tail: along((r.top + r.bottom) / 2, y, h) }
+  const out = p.side === 'right' ? 1 : -1
+  const xs = avoid.map(b => (out > 0 ? b.right + GAP : b.left - GAP - w))
+  const x = nearest(xs.filter(v => (v - p.x) * out > 0 && v >= EDGE && v <= W - EDGE - w && free(v, p.y)), p.x)
+  return x === undefined ? p : { ...p, x }
+}
+
+function place(r: Box, w: number, h: number, W: number, H: number): Placement {
   const cx = (r.left + r.right) / 2
   const cy = (r.top + r.bottom) / 2
   const x = clamp(cx - w / 2, EDGE, W - EDGE - w)
   const y = clamp(cy - h / 2, EDGE, H - EDGE - h)
-  const along = (c: number, from: number, size: number) => clamp(c - from, 20, size - 20)
   const inside: Placement = { side: 'inside', x, y: r.top + 24, tail: 0 }
   if (r.right - r.left > W / 2 && r.bottom - r.top > H / 2) return inside
   if (r.right + GAP + w <= W - EDGE) return { side: 'right', x: r.right + GAP, y, tail: along(cy, y, h) }
