@@ -25,8 +25,11 @@ const level = createStore<Level>('simply')
 export const useLevel = () => level.use()
 export const setLevel = (l: Level) => level.set(l)
 
-const reply = createStore<{ stopped: boolean } | null>(null)
+// The running reply: what was asked, and the time of Bob's message once the server accepted it.
+type Reply = { stopped: boolean; asked: string; bob?: number }
+const reply = createStore<Reply | null>(null)
 export const useReplying = () => reply.use() !== null
+export const useReply = () => reply.use()
 
 // ── chat writes (never in the undo history) ──────────────────────────────────
 
@@ -62,20 +65,19 @@ export async function ask(text: string): Promise<string | undefined> {
     .filter(m => !m.line)
     .slice(-10)
     .map(({ role, text, time }) => ({ role, text, time }))
-  const token = { stopped: false }
+  const token: Reply = { stopped: false, asked: text }
   reply.set(token)
-  let bob: number | undefined
   let said = ''
   const start = () => {
-    if (bob !== undefined) return
+    if (token.bob !== undefined) return
     setChat(chat => {
       const time = nextTime(chat)
-      bob = time + 1
-      return [...chat, { role: 'user', text, time }, { role: 'bob', text: '', time: bob }]
+      token.bob = time + 1
+      return [...chat, { role: 'user', text, time }, { role: 'bob', text: '', time: token.bob }]
     })
   }
   const show = (t: string, proposal?: Proposal) =>
-    setMessage(bob!, m => (proposal ? { ...m, text: t, proposal } : { ...m, text: t }))
+    setMessage(token.bob!, m => (proposal ? { ...m, text: t, proposal } : { ...m, text: t }))
   try {
     for await (const e of runAgent({ kind: 'assistant', messages, context: turnContext(p), files: p.files })) {
       if (token.stopped) {
