@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { acceptAll, ask, askAgain, cardState, openFiles, rejectAll, setLevel, useLevel, useReply, type Level } from '../assistant.ts'
+import { withNames } from '../checkpoints.ts'
 import { startReview } from '../code/navigation.ts'
 import { ICONS } from '../icons.ts'
 import type { ChatMessage, Files, Proposal } from '../model/types.ts'
@@ -84,7 +85,7 @@ export default function Assistant() {
         )}
         {chat.map((m, i) =>
           m.line ? (
-            <p key={i} className={styles.line}>{m.text}</p>
+            <p key={i} className={styles.line}>{withNames(project, m.text)}</p>
           ) : m.role === 'user' ? (
             <div key={i} className={styles.user}>{m.text}</div>
           ) : (
