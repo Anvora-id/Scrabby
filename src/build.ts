@@ -28,6 +28,15 @@ const run = createStore<BuildRun | undefined>(undefined)
 export const useBuild = () => run.use()
 export const getBuild = () => run.get()
 
+// A chip lights once Bob has written its HTML; he stays on the newest one until the next lights, so the ones before it are done.
+export function progress(r: BuildRun): { done: Set<string>; working?: string } {
+  const ids = new Set(r.chips.map(c => c.id))
+  if (r.state === 'done') return { done: ids }
+  if (r.state === 'failed') return { done: new Set() }
+  const lit = [...new Set(r.lit)].filter(id => ids.has(id))
+  return { done: new Set(lit.slice(0, -1)), working: lit.at(-1) }
+}
+
 export function requestBlocks(p: Pick<Project, 'blocks'>, top: Block): Block[] {
   const out: Block[] = []
   const walk = (b: Block) => {

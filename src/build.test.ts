@@ -7,7 +7,7 @@ import { instructionDocument } from './instructions/document.ts'
 import { flashBlocks } from './preview.ts'
 import { addCheckpoint } from './db.ts'
 import { getProject, getUi, setProject, setStep } from './store.ts'
-import { getBuild, nothingNew, pageName, runBuild } from './build.ts'
+import { getBuild, nothingNew, pageName, progress, runBuild, type BuildRun } from './build.ts'
 
 const fake = vi.hoisted(() => ({ saved: [] as Checkpoint[], events: [] as AgentEvent[], requests: [] as AgentRequest[] }))
 vi.mock('./db.ts', () => ({
@@ -159,5 +159,20 @@ describe('pageName', () => {
     expect(pageName('contact-us.html')).toBe('Contact us')
     expect(pageName('index.html')).toBe('Home')
     expect(pageName('shop/big__sale.html')).toBe('Big sale')
+  })
+})
+
+describe('progress', () => {
+  const run = (state: BuildRun['state'], lit: string[]): BuildRun => ({
+    n: 1, state, lit, loose: 0, skipped: [],
+    chips: ['a', 'b', 'c'].map(id => ({ id, name: id, category: 'ui' as const })),
+  })
+  it('is on the newest lit chip, and the chips lit before it are done', () => {
+    expect(progress(run('running', []))).toEqual({ done: new Set() })
+    expect(progress(run('running', ['a', 'x', 'b', 'a']))).toEqual({ done: new Set(['a']), working: 'b' })
+  })
+  it('has every chip done on done and none on failed', () => {
+    expect(progress(run('done', ['a']))).toEqual({ done: new Set(['a', 'b', 'c']) })
+    expect(progress(run('failed', ['a', 'b']))).toEqual({ done: new Set() })
   })
 })

@@ -149,7 +149,6 @@
   font-weight: 600;
 }
 
-.check,
 .bang {
   flex: none;
   display: inline-grid;
@@ -163,11 +162,6 @@
   line-height: 1;
 }
 
-.check {
-  background: var(--go);
-  box-shadow: 0 2px 0 var(--go-dark);
-}
-
 .bang {
   background: var(--alert-dark);
 }
@@ -178,35 +172,17 @@
   font-size: 16px;
 }
 
-.spinner,
-.smallSpinner {
+.spinner {
   flex: none;
   box-sizing: border-box;
   border-radius: 50%;
   border-style: solid;
   border-color: var(--idle);
   border-top-color: var(--bob);
-  animation: spin 1s linear infinite;
-}
-
-.spinner {
   width: 26px;
   height: 26px;
   border-width: 4px;
-}
-
-.smallSpinner {
-  width: 15px;
-  height: 15px;
-  border-width: 3px;
-}
-
-.markSlot {
-  flex: none;
-  display: inline-grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
@@ -242,39 +218,70 @@
   position: absolute;
   left: 32px;
   bottom: 14px;
-  width: 236px;
-  height: 134px;
+  width: 292px;
+  height: 96px;
 }
 
-.miniBlock,
-.miniSticker {
+.lot,
+.brick,
+.sticker {
   position: absolute;
   box-sizing: border-box;
   background: var(--c1);
   transform-origin: bottom center;
 }
 
-.miniBlock {
+/* The Site Block the bricks stack inside: a header strip standing for its name, a pale body. */
+.lot {
   border: 2px solid var(--c3);
-  border-radius: 8px;
+  border-radius: 10px;
+  background: var(--c4);
   box-shadow: 0 3px 0 var(--c3);
 }
 
-.miniBlock::after {
+.lot::before {
   content: '';
   position: absolute;
-  left: 4px;
-  right: 4px;
-  bottom: 3px;
-  height: 3px;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 14px;
+  border-radius: 8px 8px 0 0;
+  background: var(--c1);
+}
+
+.lot::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 8px;
+  width: 56px;
+  height: 4px;
   border-radius: 2px;
   background: var(--c4);
 }
 
-.miniSticker {
-  border: 2.5px solid #fff;
+.brick {
+  border: 1.5px solid var(--c3);
+  border-radius: 4px;
+  box-shadow: 0 2px 0 var(--c3);
+}
+
+.brick::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--c4);
+}
+
+.sticker {
+  border: 1.5px solid #fff;
   border-radius: var(--r-pill);
-  box-shadow: 0 0 0 1.5px var(--c3);
+  box-shadow: 0 0 0 1px var(--c3);
 }
 
 .stage-failed .base > :last-child {
@@ -317,7 +324,7 @@
   100% { transform: translate(60px, 200px); }
 }
 
-/* Chips and checklist */
+/* Chips */
 
 .chips {
   display: flex;
@@ -342,12 +349,91 @@
   transition: opacity var(--t-pop) var(--spring), transform var(--t-pop) var(--spring);
 }
 
-.chip.lit {
+.chip.done {
   opacity: 1;
   transform: none;
 }
 
-.lines {
+/* The chip Bob is on: breathes, and stays dimmer than a done chip. */
+.chip.working {
+  box-shadow: 0 0 0 2px var(--bob), 0 3px 0 2px var(--bob);
+  animation: breathe 1.2s var(--ease) infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: .45; transform: scale(.96); }
+  50% { opacity: .75; transform: none; }
+}
+
+.fold {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 5px 12px;
+  border: 2px solid var(--line);
+  border-radius: var(--r-btn);
+  background: var(--surface);
+  box-shadow: 0 2px 0 var(--line);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 250ms var(--spring), box-shadow 250ms var(--spring);
+}
+
+.fold:hover {
+  border-color: var(--brand);
+}
+
+.fold:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--line);
+  transition-duration: var(--t-press);
+}
+
+.fold:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+}
+
+.fold .chip {
+  font-size: var(--fs);
+}
+
+.chevron {
+  flex: none;
+  transition: transform var(--t-quick);
+}
+
+.chevron.turned {
+  transform: rotate(-90deg);
+}
+
+.drawer {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--t-settle) var(--ease);
+}
+
+.drawer.open {
+  grid-template-rows: 1fr;
+}
+
+.drawer > div {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Room for the chips' rings and bottom edges, which the fold would clip. */
+.drawer .chips {
+  padding: 12px 3px 6px;
+}
+
+.notes {
   display: flex;
   flex-direction: column;
   margin: 0;
@@ -355,22 +441,23 @@
   list-style: none;
 }
 
-.lines li {
+.notes li,
+.failRow {
   display: flex;
   align-items: center;
   gap: 10px;
   color: var(--text);
   font-size: var(--fs-md);
-  font-weight: 700;
   line-height: 1.6;
 }
 
-.lines li.current {
-  color: var(--ink);
+.notes li {
+  font-weight: 600;
 }
 
-.lines li.skip {
-  font-weight: 600;
+.failRow {
+  margin: 0;
+  font-weight: 700;
 }
 
 .dash {
@@ -456,14 +543,19 @@ p.failLine {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .button, .button:active:not(:disabled), .primary, .primary:active, .ghost, .ghost:active {
+  .button, .button:active:not(:disabled), .primary, .primary:active, .ghost, .ghost:active, .fold, .fold:active {
     transition: none;
     transform: none;
   }
-  .bubble, .spinner, .smallSpinner, .stage .bob, .stage-failed .base > :last-child {
+  .bubble, .spinner, .stage .bob, .stage-failed .base > :last-child {
     animation: none;
   }
-  .chip {
+  .chip, .chevron, .drawer {
     transition: none;
+  }
+  .chip.working {
+    animation: none;
+    opacity: .6;
+    transform: none;
   }
 }
