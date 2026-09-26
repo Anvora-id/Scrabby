@@ -1,12 +1,17 @@
 # 12: Library and Download with the Bob kit
 
 Status: ready-for-agent
-Blocked by: 03
-Lane: B
+Blocked by: 19
+Wave: 1
 
 ## What to build
 
 The Library tab (upload images and videos, rename, delete, storage use) that the image and video Traits pick from, and **Download code**: a zip of the site that runs by double-clicking `index.html`, with a Bob kit (`AGENTS.md` and `.bob/skills/`) so the user can keep building in the IBM Bob IDE.
+
+
+## Parallel work
+
+This issue runs at the same time as others, each in its own worktree. Touch only the files listed under **Files**. Every other file you need already exists (issue 19 made stubs with the final names); import from it, never edit it. If something you need is missing, stop with `## Question`.
 
 ## Read
 
@@ -18,8 +23,8 @@ The Library tab (upload images and videos, rename, delete, storage use) that the
 ## Files
 
 Replace: `src/slots/Library.tsx`.
-Create: `src/slots/Library.module.css`, `src/download.ts`, `src/download.test.ts`.
-Modify: `src/shell/MenuBar.tsx` (enable Download code).
+Create: `src/slots/Library.module.css`, `src/download.test.ts`.
+Replace: `src/download.ts` (issue 19 stub; keep the `downloadCode` signature). MenuBar is already wired (issue 19): do not edit it.
 
 ## Steps
 

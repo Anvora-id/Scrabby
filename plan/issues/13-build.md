@@ -2,11 +2,16 @@
 
 Status: ready-for-agent
 Blocked by: 08, 09, 10, 11
-Lane: B
+Wave: 2
 
 ## What to build
 
 ▶ Build: the user presses it and the Build step shows each Block's chip lighting up as Bob writes it. A finished Build saves a Checkpoint, turns the Site Block into the locked Checkpoint Block with one Built page per `.html` file, keeps loose ideas, and opens Try & tweak after 0.9 s with the new Blocks flashing in the Preview. Later Builds send only what is new and keep hand edits. A failed Build changes nothing and says why. A usage limit shows its message and starts nothing.
+
+
+## Parallel work
+
+This issue runs at the same time as others, each in its own worktree. Touch only the files listed under **Files**. Every other file you need already exists (issue 19 made stubs with the final names); import from it, never edit it. If something you need is missing, stop with `## Question`.
 
 ## Read
 
@@ -17,14 +22,15 @@ Lane: B
 
 ## Files
 
-Create: `src/build.ts`, `src/slots/Build.module.css`, `src/build.test.ts`.
+Create: `src/slots/Build.module.css`, `src/build.test.ts`.
+Replace: `src/build.ts` (issue 19 stub; keep its exports and add the rest).
 Replace: `src/slots/BuildButton.tsx`, `src/slots/BuildCard.tsx`.
 Modify: `src/slots/Checkpoints.tsx` (export the `Warning` dialog component of TDD §12 now, with its CSS in `src/slots/Checkpoints.module.css`; the tab itself stays a placeholder until issue 14).
 
 ## Steps
 
 - [ ] `build.ts` exactly as TDD §11: `FAILURE_LINES`, `BuildRun`, the run store, `requestBlocks`, `nothingNew`, `buildProblem`, `runBuild` (with `start`/`limit` handling, all or nothing, `.builds/build-N.md`, `addCheckpoint`, `consume` with `key = null`, `flashBlocks`, 900 ms to Try & tweak), `builtBlocks`, `consume`, `pageName`.
-- [ ] BuildButton and BuildCard per TDD §11, with `<BobBadge/>` in the running title. Skip the Assistant's pending-change check for now (issue 16 adds it; leave a `// issue 16` comment where it goes).
+- [ ] BuildButton and BuildCard per TDD §11, with `<BobBadge/>` in the running title. Include the Assistant's pending-change check now, with `hasPending` and `dropPending` from `src/assistant.ts` (issue 19 stubs; issue 16 fills them).
 - [ ] Tests: the `build.test.ts` row of TDD §20 (mock `./db` and `./agent`; fake timers).
 
 ## Done when

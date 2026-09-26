@@ -1,12 +1,17 @@
 # 09: Agent route and Bob model client
 
 Status: ready-for-agent
-Blocked by: 02
-Lane: B
+Blocked by: 19
+Wave: 1
 
 ## What to build
 
 The one server function, `/api/agent`: it checks the usage limits, then runs Bob (IBM Bob's OpenAI-compatible inference endpoint) in a tool loop over an in-memory copy of the site's files, and streams events back as SSE. Plus the browser side (`runAgent`), the Bob badge, and `pnpm build-demo`, which proves a real Build end to end.
+
+
+## Parallel work
+
+This issue runs at the same time as others, each in its own worktree. Touch only the files listed under **Files**. Every other file you need already exists (issue 19 made stubs with the final names); import from it, never edit it. If something you need is missing, stop with `## Question`.
 
 ## Read
 
@@ -16,8 +21,8 @@ The one server function, `/api/agent`: it checks the usage limits, then runs Bob
 
 ## Files
 
-Replace: `api/agent.ts`.
-Create: `src/agent.ts`, `src/shell/BobBadge.tsx`, `src/shell/BobBadge.module.css`, `scripts/build-demo.ts`, `api/agent.test.ts`, `src/agent.test.ts`.
+Replace: `api/agent.ts`, `src/agent.ts` (keep issue 19's types exactly; fill the bodies and add `readAgentStream`, `browserId`), `src/shell/BobBadge.tsx`.
+Create: `src/shell/BobBadge.module.css`, `scripts/build-demo.ts`, `api/agent.test.ts`, `src/agent.test.ts`.
 
 ## Steps
 

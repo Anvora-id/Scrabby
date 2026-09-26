@@ -1,12 +1,17 @@
 # 15: Onboarding, demo and age check
 
 Status: ready-for-agent
-Blocked by: 05, 12
-Lane: A
+Blocked by: 19
+Wave: 1
 
 ## What to build
 
 The first visit: the age check ("Welcome to Scrabby", 18 or older), then an empty Project on Plan with the empty hint, the **Try the demo: Maya's bake sale** button and the show-around. **Demo** and **New Project** in the menu bar (with their warnings), **Show me around** to replay, and the one-time "Right-click a Block or Trait for more." tip.
+
+
+## Parallel work
+
+This issue runs at the same time as others, each in its own worktree. Touch only the files listed under **Files**. Every other file you need already exists (issue 19 made stubs with the final names); import from it, never edit it. If something you need is missing, stop with `## Question`.
 
 ## Read
 
@@ -17,8 +22,10 @@ The first visit: the age check ("Welcome to Scrabby", 18 or older), then an empt
 
 ## Files
 
-Modify: `src/onboarding.ts` (everything else of TDD §17), `src/slots/Canvas.tsx` (DemoButton under an empty Site; `droppedBlock` after dropping a new Block), `src/shell/MenuBar.tsx` (enable New Project, Demo, Show me around), `src/App.tsx` (mount `<Onboarding/>`).
-Create: `src/shell/Onboarding.tsx`, `src/shell/Onboarding.module.css`, `src/onboarding.test.ts`.
+Modify: `src/onboarding.ts` (fill issue 19's stubs and add everything else of TDD §17).
+Replace: `src/shell/Onboarding.tsx` (issue 19 stub; keep the default `Onboarding` and named `DemoButton` exports).
+Create: `src/shell/Onboarding.module.css`, `src/onboarding.test.ts`.
+Already wired by issue 19, do not edit: `src/App.tsx`, `src/shell/MenuBar.tsx`, `src/slots/Canvas.tsx`. `downloadCode` is issue 12's (a stub until it merges).
 
 ## Steps
 

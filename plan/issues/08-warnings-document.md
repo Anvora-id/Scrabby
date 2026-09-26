@@ -1,12 +1,17 @@
 # 08: Warnings and the instruction document
 
 Status: ready-for-agent
-Blocked by: 05
-Lane: A
+Blocked by: 19
+Wave: 1
 
 ## What to build
 
 The plan checks and their marks on the Canvas ("!" Bob skips it, "?" worth a look) with a popover and the "‹ ⚠ N to check ›" stepper; and the instruction document: the Markdown text a Build sends Bob, which users never see.
+
+
+## Parallel work
+
+This issue runs at the same time as others, each in its own worktree. Touch only the files listed under **Files**. Every other file you need already exists (issue 19 made stubs with the final names); import from it, never edit it. If something you need is missing, stop with `## Question`.
 
 ## Read
 

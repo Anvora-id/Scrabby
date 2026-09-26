@@ -1,12 +1,17 @@
 # 16: Assistant
 
 Status: ready-for-agent
-Blocked by: 13, 14
-Lane: B
+Blocked by: 09, 11
+Wave: 2
 
 ## What to build
 
 The Assistant panel in Try & tweak: the user chats with Bob about the code at a chosen explanation level; Bob's changes come back as a diff card (Accept all, Reject all, Review in the editor's merge view, Out of date → Ask again or Dismiss). Accepted changes are hand edits and flash in the Preview. Pending changes are dropped (after a warning) by ▶ Build and by loading a Checkpoint. The Preview's **Ask Bob to fix it** asks here.
+
+
+## Parallel work
+
+This issue runs at the same time as others, each in its own worktree. Touch only the files listed under **Files**. Every other file you need already exists (issue 19 made stubs with the final names); import from it, never edit it. If something you need is missing, stop with `## Question`.
 
 ## Read
 
@@ -17,16 +22,15 @@ The Assistant panel in Try & tweak: the user chats with Bob about the code at a 
 
 ## Files
 
-Create: `src/assistant.ts`, `src/assistant.test.ts`, `src/slots/Assistant.module.css`.
-Replace: `src/slots/Assistant.tsx`.
-Modify: `src/slots/CodeEditor.tsx` (review files, tabs, dots, `MergeReview` with `decide`), `src/slots/BuildButton.tsx` (the `hasPending` warning and `dropPending`), `src/checkpoints.ts` (`hasPending` warning line, `dropPending('Code went back to Checkpoint N')` on load).
+Replace: `src/assistant.ts` (issue 19 stub; keep every export and add the rest), `src/slots/Assistant.tsx`.
+Create: `src/assistant.test.ts`, `src/slots/Assistant.module.css`.
+Do not edit: CodeEditor (issue 11 wired Review), BuildButton (13), `checkpoints.ts` (14). `src/build.ts` may still be issue 19's stub while you work: use only `FAILURE_LINES`, `FailReason`, `BuildRun` and `getBuild` from it.
 
 ## Steps
 
 - [ ] `assistant.ts` exactly as TDD §15, including `previewHooks.askBobToFix`, limits handling (`limit` returns the message; callers other than the composer add it as a chat line), and `changedBlocks`.
 - [ ] `Assistant.tsx` per TDD §15 with `<BobBadge/>` in the title bar and the limit bubble over Send.
-- [ ] Fill every `// issue 16` comment left by issues 11, 13 and 14.
-- [ ] Tests: the `assistant.test.ts` row of TDD §20; add the "The Assistant's unaccepted changes will be dropped." case to `checkpoints.test.ts`.
+- [ ] Tests: the `assistant.test.ts` row of TDD §20, except the case "loading a Checkpoint warns first, then drops it", which needs issue 14: it moves to issue 20.
 
 ## Done when
 

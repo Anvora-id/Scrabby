@@ -2,11 +2,16 @@
 
 Status: ready-for-agent
 Blocked by: 13
-Lane: B
+Wave: 3
 
 ## What to build
 
 The Checkpoints tab in Plan: every Build, newest first, with its gist and tags; **Go back to this** and **Edit its Blocks** behind a warning; a read-only view of each Build's Blocks with "See its code"; and a Block chip in the code opens this tab at the Build that made that code.
+
+
+## Parallel work
+
+This issue runs at the same time as others, each in its own worktree. Touch only the files listed under **Files**. Every other file you need already exists (issue 19 made stubs with the final names); import from it, never edit it. If something you need is missing, stop with `## Question`.
 
 ## Read
 
@@ -23,7 +28,7 @@ Modify: `src/slots/Checkpoints.module.css`.
 
 ## Steps
 
-- [ ] `checkpoints.ts` exactly as TDD §12. Skip the Assistant parts (`hasPending`, `dropPending` and the warning's last line) for now; issue 16 adds them (leave `// issue 16` comments).
+- [ ] `checkpoints.ts` exactly as TDD §12. Include the Assistant parts now (`hasPending` for the warning's last line, `dropPending('Code went back to Checkpoint N')` on load), imported from `src/assistant.ts`. The test for the pending line is in issue 20.
 - [ ] `Checkpoints.tsx` per TDD §12, including the Block chip focus (`useCheckpointFocus`) and "See its code".
 - [ ] Tests: the `checkpoints.test.ts` row of TDD §20.
 

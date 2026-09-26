@@ -1,12 +1,17 @@
 # 11: Code editor
 
 Status: ready-for-agent
-Blocked by: 03
-Lane: B
+Blocked by: 19
+Wave: 1
 
 ## What to build
 
-The dark code editor in Try & tweak: one tab per file, hand edits saved as the Project's code (and undoable), changed files and lines tinted against the last Build, a Block chip on the first line of each Block's code that opens the Checkpoints tab, and "See its code" jumps. Also the merge-view component that issue 16's Review uses.
+The dark code editor in Try & tweak: one tab per file, hand edits saved as the Project's code (and undoable), changed files and lines tinted against the last Build, a Block chip on the first line of each Block's code that opens the Checkpoints tab, and "See its code" jumps. Also Review: the Assistant's proposed changes in a merge view with Accept and Reject per change.
+
+
+## Parallel work
+
+This issue runs at the same time as others, each in its own worktree. Touch only the files listed under **Files**. Every other file you need already exists (issue 19 made stubs with the final names); import from it, never edit it. If something you need is missing, stop with `## Question`.
 
 ## Read
 
@@ -23,8 +28,8 @@ Create: `src/code/code.ts`, `src/code/setup.ts`, `src/code/navigation.ts`, `src/
 
 - [ ] `code.ts` (`changedLines`, `blockMarks`, `findBlockCode`, `blockInfo`) and its tests (TDD §20).
 - [ ] `setup.ts`, `navigation.ts` (all exports of TDD §14, including the Checkpoint focus store and `startReview`).
-- [ ] `CodeEditor.tsx` per TDD §14 without the Review part (issue 16 adds it; leave a `// issue 16` comment where review files join the tabs and where `MergeReview` renders).
-- [ ] `MergeReview.tsx` complete per TDD §14 (not yet used).
+- [ ] `CodeEditor.tsx` complete per TDD §14, **including** the Review part (review files join the tabs with their dot; `MergeReview` renders for them with `decide`). Import `cardState`, `openFiles` and `decide` from `src/assistant.ts` (issue 19 stubs; issue 16 fills them, so Review has nothing to show until then).
+- [ ] `MergeReview.tsx` complete per TDD §14.
 
 ## Done when
 

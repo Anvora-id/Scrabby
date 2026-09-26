@@ -42,7 +42,23 @@ Done = issue 17's walk passes on the live URL, and the PRD §7 checklist passes.
 5. **Vercel** (after issue 01 is merged): import the repo twice as Hobby projects, `scrabby` and `scrabby-preview`, with the settings and variables in TDD §1 (`AGENT_API_KEY` as Sensitive). Put each project's URL into the other's `VITE_*` variable and redeploy both.
 6. **Bob IDE.** Use v2.0.2 or later, signed in to the hackathon instance. Open the repo folder. For each issue: start a **new** task in Agent mode and paste only: `Do plan/issues/NN-<slug>.md. Follow AGENTS.md.` A fresh task per issue keeps context small (long tasks past about 120k tokens cost far more Bobcoins).
 
-## Lanes and order
+## Waves (from issue 08 on: parallel coding agents, one worktree per issue)
+
+Bob's Bobcoins ran out after issue 07 (2026-09-26); issues 08 onward are built by coding agents in parallel. Issue 19 first creates stubs with the final export names, so every issue in a wave owns its own files and never edits another's.
+
+| Wave | Issues, all at the same time | Needs |
+|---|---|---|
+| 0 | 19 contracts (merge `main`, stubs, wiring) | 07 |
+| 1 | 08 warnings and document · 09 agent · 10 preview · 11 code editor · 12 Library and Download · 15 onboarding | wave 0 merged |
+| 2 | 13 Build · 16 Assistant | wave 1 merged |
+| 3 | 14 Checkpoints | wave 2 merged |
+| 4 | 20 integration, then 17 deploy and done walk (human + one agent) | wave 3 merged |
+
+File owners (nobody else edits these while the wave runs): 08 `src/instructions/*`, `src/canvas/marks.ts`, `Warnings.*`, Canvas/BlockView/TraitPill mark wiring · 09 `api/agent.ts`, `src/agent.ts`, `BobBadge.*`, `scripts/build-demo.ts` · 10 `preview/*`, `Preview.*` · 11 `src/code/*`, `CodeEditor.tsx` · 12 `Library.*`, `src/download.ts` · 15 `src/onboarding.ts`, `Onboarding.*` · 13 `src/build.ts`, `BuildButton`, `BuildCard`, `Build.module.css`, the `Warning` in `Checkpoints.tsx` · 16 `src/assistant.ts`, `Assistant.*` · 14 `src/checkpoints.ts`, `Checkpoints.*`.
+
+Merging: only the orchestrator merges, after the whole wave, in issue-number order, running `pnpm typecheck && pnpm test` after each merge. A red merge is fixed before the next wave starts.
+
+## Lanes and order (issues 01–07, Bob)
 
 Two developers, each driving Bob on one lane. Merge each issue to `main` as soon as its checks pass; pull before starting the next.
 
@@ -83,12 +99,14 @@ Hour 34 (Sun 01:00 UTC): one developer moves to the submission package (PRD §13
 | [12](issues/12-library-download.md) | Library and Download with the Bob kit | 03 | §4 (library), §16 | ~3 |
 | [13](issues/13-build.md) | Build | 08, 09, 10, 11 | §11 | ~4 |
 | [14](issues/14-checkpoints.md) | Checkpoints tab | 13 | §12 | ~4 |
-| [15](issues/15-onboarding.md) | Onboarding, demo and age check | 05, 12 | §17 | ~3 |
-| [16](issues/16-assistant.md) | Assistant | 13, 14 | §15, §14 | ~5 |
-| [17](issues/17-deploy-done-walk.md) | Deploy and done walk | all | §1, §20 | ~3 |
+| [15](issues/15-onboarding.md) | Onboarding, demo and age check | 19 | §17 | ~3 |
+| [16](issues/16-assistant.md) | Assistant | 09, 11 | §15, §14 | ~5 |
+| [17](issues/17-deploy-done-walk.md) | Deploy and done walk | 20 | §1, §20 | ~3 |
 | [18](issues/18-deploy-checks.md) | Deploy checks before push and PR | 01 | §1 | ~3 |
+| [19](issues/19-contracts.md) | Contracts for parallel work (wave 0) | 07 | §5.1, §7, §11, §13, §15, §17 | — |
+| [20](issues/20-integration.md) | Integration after the parallel waves | 08–16 | §20 | — |
 
-Budget = rough Bobcoins per fresh task (about 70 total of the team's 80). Re-plan if an issue costs double.
+Budget = rough Bobcoins per fresh task (issues 01–07; 08 onward aren't billed in Bobcoins, see Waves) (about 70 total of the team's 80). Re-plan if an issue costs double.
 
 ## Standing decisions (do not reopen)
 
