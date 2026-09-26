@@ -1,6 +1,6 @@
 # 12: Library and Download with the Bob kit
 
-Status: ready-for-agent
+Status: done
 Blocked by: 19
 Wave: 1
 
@@ -28,11 +28,18 @@ Replace: `src/download.ts` (issue 19 stub; keep the `downloadCode` signature). M
 
 ## Steps
 
-- [ ] `Library.tsx` per TDD §16 (upload, measure, problems, tiles, rename with `renameProblem` and confirm, delete with `deleteWarning`, storage line).
-- [ ] `download.ts`: `zipDownload(project, assets)` with the Bob kit (exact `AGENTS.md` text from TDD §16) and `downloadCode(project)`.
-- [ ] Tests: the zip cases in TDD §20 (code at the top, Assets under `assets/`, no `.builds/`, the kit files).
+- [x] `Library.tsx` per TDD §16 (upload, measure, problems, tiles, rename with `renameProblem` and confirm, delete with `deleteWarning`, storage line).
+- [x] `download.ts`: `zipDownload(project, assets)` with the Bob kit (exact `AGENTS.md` text from TDD §16) and `downloadCode(project)`.
+- [x] Tests: the zip cases in TDD §20 (code at the top, Assets under `assets/`, no `.builds/`, the kit files).
 
 ## Done when
 
 - `pnpm typecheck` and `pnpm test` pass.
 - In the browser: upload a png and an mp4 (tiles show; a reload keeps them); an SVG is refused with its message; pick the image in an image Trait; rename it; delete it (the Trait shows "missing file"). Download code on the built site gives `Mayas bake sale.zip`; unzipped, `index.html` opens with a double-click, and `AGENTS.md` plus `.bob/skills/*/SKILL.md` are inside.
+
+## Answer
+
+- `zipDownload` / `downloadCode` live in `src/download.ts`; the kit's plan lists `.builds/build-N.md` in numeric N order, each text trimmed at the end.
+- MenuBar needed no change: issue 19 already wired **Download code** to `downloadCode`.
+- Library tiles lift 2px on hover (DESIGN Library) rather than Motion's 1px; the panel pads 6px because the tab panel already pads `--gap`.
+- Undo of an upload leaves its Blob in IndexedDB (harmless; the Asset is gone from the Project).
