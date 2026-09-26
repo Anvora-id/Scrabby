@@ -11,7 +11,7 @@
   |---|---|
   | Menu bar | Full figure, 40px tall, before the wordmark ([Shell](#shell)) |
   | Assistant | Head: 28px before "Bob" in the title bar, 24px beside each of Bob's messages, 48px above the empty-chat line ([Assistant](#assistant)) |
-  | Build card | Full figure, 118px tall, hopping on the Build stage ([Build button and Build card](#build-button-and-build-card)) |
+  | Build card | Full figure, 170px tall, hopping on the Build stage ([Build button and Build card](#build-button-and-build-card)) |
   | Speech bubbles | Full figure, 74px tall, beside the bubble ([Speech bubble](#speech-bubble)) |
   | Greeting | The logo, Bob 160px tall, at the top of the greeting card ([Screen layout](#screen-layout)) |
   | Empty Library and Checkpoints | Head, 48px, above the empty line, as in the empty chat ([Library](#library), [Checkpoints](#checkpoints)) |

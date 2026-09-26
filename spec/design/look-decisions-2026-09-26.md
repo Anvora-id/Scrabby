@@ -13,7 +13,7 @@ Settled with the user on the look lab mockup (`prototypes/look-lab.html`). D-Q1 
 - **D-Q21** Problems are soft tomato `#FF5A4E`, not orange.
 - **D-Q22** No black cartoon outlines in the UI; they stay on Bob's artwork.
 - **D-Q23** Only Notes tilt (−1.6°). Everything else is straight: Blocks, Trait stickers, loose ideas, dragged items, chips, the Build stage and Bob. (Tilted stickers and a tilted loose idea were tried in the mockup and dropped.)
-- **D-Q24** The Build step shows a Build stage (Bob hopping beside a stack of Blocks that builds itself), so even when a Build can't light up each Block or Trait as it goes, you can still see that Bob is working. There is no progress bar.
+- **D-Q24** The Build step shows a Build stage (Bob hopping beside a pile of bricks that fills and clears itself in a loop), so even when a Build can't light up each Block or Trait as it goes, you can still see that Bob is working. There is no progress bar.
 - **D-Q25** The code editor stays dark, tinted toward Grape.
 - **D-Q26** The Canvas is dotted paper (`--ws` with `--ws-dot`), not graph paper or kraft paper.
 - **D-Q27** Notes have no tape: a plain sticky note with a curled corner and a soft shadow.
