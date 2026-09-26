@@ -25,7 +25,7 @@ export function emptyProject(): Project {
   return p
 }
 
-export function addBlock(p: Project, type: BlockType, name = BLOCK_TYPES[type].label): string {
+export function addBlock(p: Project, type: Exclude<BlockType, 'canvas'>, name = BLOCK_TYPES[type].label): string {
   const id = `b${p.next.b++}`
   const block: Block = { id, type, name, note: '', traits: [], children: [] }
   if (type === 'page') block.file = pageFile(p, name)

@@ -25,8 +25,7 @@ export interface BlockTypeDef {
 
 const ANY_PART: BlockType[] = ['navbar', 'hero', 'section', 'cardgrid', 'card', 'form', 'popup', 'footer', 'text', 'image', 'button', 'box']
 
-export const BLOCK_TYPES: Record<BlockType, BlockTypeDef> = {
-  canvas: { label: 'Canvas', category: 'site', icon: 'site', meaning: '', accepts: ['site', 'checkpoint', 'navbar', 'hero', 'section', 'cardgrid', 'card', 'form', 'popup', 'footer', 'text', 'image', 'button', 'box', 'page'], tooltip: '' },
+export const BLOCK_TYPES: Record<Exclude<BlockType, 'canvas'>, BlockTypeDef> = {
   site: { label: 'Site', category: 'site', icon: 'site', meaning: 'The whole website; its Traits describe every page.', accepts: ['page'], tooltip: 'Your whole website. Traits here apply to every page.' },
   page: { label: 'Page', category: 'pages', icon: 'page', meaning: 'One page of the website, in its own `.html` file.', accepts: ANY_PART, tooltip: 'One page of your website. Put it inside {where}.' },
   checkpoint: { label: 'Checkpoint', category: 'site', icon: 'checkpoint', meaning: 'The website as already built; its Traits ask for changes across the whole site, and new Pages in it are new pages.', accepts: ['page'], tooltip: 'Your website as Bob built it. Drop in Pages or Traits to ask for changes.' },
