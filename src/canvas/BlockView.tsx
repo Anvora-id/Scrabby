@@ -10,6 +10,7 @@ import { dragSource, useDrag } from './drag.ts'
 import { insertInto, isTraitItem, repairLayout } from './tree.ts'
 import TraitPill, { TextField } from './TraitPill.tsx'
 import { BlockNote, openMenu } from './Overlays.tsx'
+import { Mark } from './Warnings.tsx'
 import styles from './parts.module.css'
 import o from './Overlays.module.css'
 
@@ -119,7 +120,7 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
           </>
         )}
         {p.blocks.canvas.children.includes(id) && b.type !== 'site' && !checkpoint && <span className={o.badge}>not built</span>}
-        {/* issue 08: <Mark id> */}
+        <Mark id={id} />
       </div>
       {(b.note || b.noteOn) && <BlockNote id={id} note={b.note} noteOn={b.noteOn} />}
       {folded ? (

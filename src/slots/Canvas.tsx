@@ -1,17 +1,20 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { ICONS } from '../icons.ts'
 import type { Pos, Project } from '../model/types.ts'
-import { getProject, getUi, setEditing, updateProject, useProject, useUi } from '../store.ts'
+import { getProject, getUi, setEditing, updateProject, updateProjectWithoutUndo, useProject, useUi } from '../store.ts'
 import { getDrag, peekPending, setDrag, takePending, useDrag } from '../canvas/drag.ts'
 import type { Pending } from '../canvas/drag.ts'
 import { targetAt } from '../canvas/target.ts'
 import type { DragRects } from '../canvas/target.ts'
-import { canDrop, canTrash, dropItem, isTraitItem, removeItem, repairLayout } from '../canvas/tree.ts'
+import { canDrop, canTrash, dropItem, isTraitItem, parentMap, removeItem, repairLayout } from '../canvas/tree.ts'
 import type { Drop } from '../canvas/tree.ts'
 import BlockView from '../canvas/BlockView.tsx'
 import TraitPill from '../canvas/TraitPill.tsx'
 import { ContextMenu, Tooltip } from '../canvas/Overlays.tsx'
+import { flash, MarksContext, Popover, Stepper } from '../canvas/Warnings.tsx'
+import { marksOf, stopsOf } from '../canvas/marks.ts'
+import { warnings } from '../instructions/warnings.ts'
 import styles from '../canvas/Canvas.module.css'
 import parts from '../canvas/parts.module.css'
 import { droppedBlock } from '../onboarding.ts'
@@ -56,6 +59,14 @@ export default function Canvas() {
   const grab = useRef({ x: 0, y: 0 })
   const projectId = useRef(p.id)
   const prevEditing = useRef<string | null>(null)
+  const stepAt = useRef(-1)
+  const [busy, setBusy] = useState<string | null>(null)
+  const [pop, setPop] = useState<{ id: string; x: number; y: number } | null>(null)
+  const closePop = useCallback(() => setPop(null), [])
+
+  const ws = useMemo(() => warnings(p), [p])
+  const marks = useMemo(() => marksOf(ws), [ws])
+  const stops = useMemo(() => stopsOf(ws), [ws])
 
   // editing is the def id; the def exists only if the Custom Block still exists
   const defId = ui.editing
@@ -140,6 +151,55 @@ export default function Canvas() {
     return () => {
       vp.removeEventListener('wheel', onWheel)
       window.removeEventListener('resize', onResize)
+    }
+  }, [])
+
+  const itemEl = (id: string) => worldRef.current?.querySelector<HTMLElement>(`[data-bid="${id}"], [data-tid="${id}"]`)
+
+  function show(id: string) {
+    const vp = viewportRef.current!, el = itemEl(id)
+    if (!el) return
+    const r = el.getBoundingClientRect(), vr = vp.getBoundingClientRect(), v = view.current
+    v.x += vp.clientWidth * 0.42 - (r.left - vr.left + Math.min(r.width, 400) / 2)
+    v.y += vp.clientHeight * 0.4 - (r.top - vr.top + Math.min(r.height, 200) / 2)
+    apply()
+    flash(el)
+  }
+
+  function openPop(id: string) {
+    const el = document.querySelector(`[data-badge="${id}"]`) ?? itemEl(id)
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    setPop({ id, x: r.left, y: r.bottom + 6 })
+  }
+
+  function go(d: 1 | -1) {
+    const n = stops.length
+    if (!n) return
+    stepAt.current = stepAt.current < 0 ? (d === 1 ? 0 : n - 1) : (stepAt.current + d + n) % n
+    const id = stops[stepAt.current].target!
+    const finish = () => { show(id); openPop(id) }
+    if (itemEl(id)) return finish()
+    updateProjectWithoutUndo(q => {
+      const parents = parentMap(q)
+      for (let a = parents.get(id); a && a !== 'canvas'; a = parents.get(a)) q.blocks[a].folded = false
+    })
+    requestAnimationFrame(finish)
+  }
+
+  // The item the user is working on hides its mark until they move on (§10.3).
+  useEffect(() => {
+    const on = (e: Event) => {
+      const t = e.target instanceof Element ? e.target : null
+      if (t?.closest('[data-badge], [data-wpop]')) return
+      const el = t?.closest<HTMLElement>('[data-tid], [data-bid]')
+      setBusy(el ? el.dataset.tid ?? el.dataset.bid! : null)
+    }
+    window.addEventListener('pointerdown', on, true)
+    window.addEventListener('focusin', on, true)
+    return () => {
+      window.removeEventListener('pointerdown', on, true)
+      window.removeEventListener('focusin', on, true)
     }
   }, [])
 
@@ -231,7 +291,7 @@ export default function Canvas() {
       if (shape(dry) === shape(p)) return
       let newId = ''
       updateProject(q => { newId = dropItem(q, item, to) })
-      // issue 08: make the dropped item busy (§10.3).
+      setBusy(newId)
       if (item.kind === 'newBlock' || item.kind === 'newInstance') droppedBlock(newId)
     }
 
@@ -284,7 +344,7 @@ export default function Canvas() {
       onAuxClick={e => { if (e.button === 1) e.preventDefault() }}
     >
       <div ref={worldRef} className={styles.world}>
-        {/* issue 08: MarksContext.Provider (§10.3) */}
+        <MarksContext.Provider value={editingId ? { marks: new Map(), busy: null, open: () => {} } : { marks, busy, open: openPop }}>
         {editingId && defBlockId ? (
           <div className={styles.placed} style={{ left: 40, top: 70 }}>
             <BlockView p={p} id={defBlockId} />
@@ -304,6 +364,7 @@ export default function Canvas() {
             ))}
           </>
         )}
+        </MarksContext.Provider>
       </div>
       {editingId && (
         <div className={styles.editBar}>
@@ -311,7 +372,10 @@ export default function Canvas() {
           <button className={styles.editBarDone} onClick={() => setEditing(null)}>Done</button>
         </div>
       )}
-      {/* issue 08: <Stepper> and <Popover> (not in the edit view). */}
+      {!editingId && <Stepper count={stops.length} clean={!ws.length} onGo={go} />}
+      {!editingId && pop && marks.has(pop.id) && (
+        <Popover p={p} id={pop.id} ws={marks.get(pop.id)!} x={pop.x} y={pop.y} onShow={show} onClose={closePop} />
+      )}
       <div className={styles.zoom}>
         <button className={styles.zoomButton} title="Zoom in" onClick={() => zoomCenter(view.current.z * 1.25)}>
           <ICONS.zoom_in size={18} />
