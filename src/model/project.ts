@@ -255,7 +255,7 @@ export function unfollow(p: Project, id: string): void {
     delete b.from
     delete b.ov
     for (const tid of b.traits) unfollow(p, tid)
-    for (const cid of b.children) unfollow(p, cid)
+    for (const cid of b.children) if (!p.blocks[cid]?.inst) unfollow(p, cid) // a nested Instance keeps its links
   } else if (p.traits[id]) {
     const t = p.traits[id]
     delete t.from

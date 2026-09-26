@@ -335,7 +335,7 @@ The Canvas is the Block `canvas`. Its `children` are the Site or Checkpoint Bloc
   2. If `now.get(id) !== instId` (deleted from the Instance or dragged out): `from` = the part's `from` in `before`; outermost = `up.get(id) === instId || now.get(up.get(id)) === instId`; if `from && outermost` and not already in `inst.removed`, append `from` to `inst.removed`. If the part still exists in `after`, `unfollow(after, id)`. Continue.
   3. A Block part: if `name` changed and `id !== instId`, set `ov.name = true`; if `note` changed, set `ov.note = true`.
   4. A Trait part: if `value` changed or `!!bobPicks` changed, set `ov.value = true`; if `note` changed, set `ov.note = true`.
-- `unfollow(p, id)`: delete `from` and `ov` on the part, and recursively on its Traits and children.
+- `unfollow(p, id)`: delete `from` and `ov` on the part, and recursively on its Traits and children, skipping any child that is an Instance (it keeps following its own Custom Block).
 - `resolveInstance(p, instId)`: if the Block is an Instance with a def, `syncBlock(p, defBlock, inst, inst)`.
 - `resolveAll(p)`: `resolveInstance` for every Instance on the Canvas (definitions and Checkpoints untouched).
 - `syncBlock(p, src, dst, root)` (private): if `dst !== root` and no `ov.name`, copy `name`; if no `ov.note`, copy `note`. Then `syncList` over Traits (update: if no `ov.value`, copy `value` and `bobPicks`; if no `ov.note`, copy `note`) and over children (update: recurse `syncBlock`).

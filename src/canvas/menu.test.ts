@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { demoProject } from '../fixtures/fixtures.ts'
-import { addBlock, addTrait } from '../model/project.ts'
+import { addBlock, addTrait, resolveAll } from '../model/project.ts'
 import type { Project } from '../model/types.ts'
 import { canMakeCustom, duplicate, menuItems } from './menu.ts'
 
@@ -208,5 +208,18 @@ describe('menu', () => {
     duplicate(p, t)
     const copy = p.blocks.canvas.traits[p.blocks.canvas.traits.indexOf(t) + 1]
     expect(p.traits[copy].pos).toEqual({ x: 130, y: 130 })
+  })
+
+  it('a Page copy keeps the Instance inside it following, without doubled parts', () => {
+    const p = demo()
+    const home = Object.values(p.blocks).find(b => b.type === 'page' && b.name === 'Home')!
+    const site = p.blocks.canvas.children[0]
+    duplicate(p, home.id)
+    resolveAll(p)
+    const kids = p.blocks[site].children
+    const copy = p.blocks[kids[kids.indexOf(home.id) + 1]]
+    const o = p.blocks[home.children.find(id => p.blocks[id].inst)!]
+    const c = p.blocks[copy.children.find(id => p.blocks[id].inst)!]
+    expect([c.traits.length, c.children.length]).toEqual([o.traits.length, o.children.length])
   })
 })
