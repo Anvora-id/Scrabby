@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { FAILURE_LINES, progress, runBuild, useBuild, type BuildRun } from '../build.ts'
+import { FAILURE_LINES, progress, runBuild, useBuild, useStarting, type BuildRun } from '../build.ts'
 import { cx } from '../canvas/cx.ts'
 import { ICONS, type IconKey } from '../icons.ts'
 import { BLOCK_TYPES } from '../model/catalogue.ts'
@@ -76,6 +76,7 @@ const FOLD_AT = 12
 
 export default function BuildCard() {
   const run = useBuild()
+  const starting = useStarting()
   const p = useProject()
   const [open, setOpen] = useState(true)
   // The Blocks leave the Project when the Build ends, so remember each chip's icon while they are there.
@@ -125,7 +126,7 @@ export default function BuildCard() {
         <h2 className={styles.title}>
           {run.state === 'running' && <><span className={styles.spinner} /><span className={styles.bobTitle}>Bob is building your website</span><span className={styles.end}><BobBadge /></span></>}
           {run.state === 'done' && <><span className={styles.doneMark}>✓</span>Build {run.n} done</>}
-          {failed && <><span className={cx(styles.bang, styles.bigBang)}>!</span>Build {run.n} {run.reason === 'limit' ? 'did not start' : 'did not finish'}</>}
+          {failed && <><span className={cx(styles.bang, styles.bigBang)}>!</span>{run.n ? `Build ${run.n}` : 'Your Build'} {run.reason === 'limit' || run.reason === 'start' ? 'did not start' : 'did not finish'}</>}
         </h2>
         {run.state === 'done' && <p className={styles.sub}>Opening your website…</p>}
         {failed && <p className={styles.sub}>Nothing changed: your code and Blocks are as they were.</p>}
@@ -152,7 +153,9 @@ export default function BuildCard() {
         <div>
           {run.reason && <p className={styles.failRow}><span className={styles.bang}>!</span><span className={styles.failLine}>{run.message ?? FAILURE_LINES[run.reason]}</span></p>}
           <div className={styles.actions}>
-            <button className={styles.primary} onClick={tryAgain}>Try again</button>
+            <button className={styles.primary} disabled={starting} onClick={tryAgain}>
+              {starting && <span className={styles.buttonSpinner} />}{starting ? 'Starting…' : 'Try again'}
+            </button>
             <button className={styles.ghost} onClick={() => setStep('plan')}>← Back to the Blocks</button>
           </div>
         </div>

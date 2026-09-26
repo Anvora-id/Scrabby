@@ -172,6 +172,24 @@
   font-size: 16px;
 }
 
+/* On a pressed Build or Try again button, until Bob starts. */
+.buttonSpinner {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  border: 3px solid #ffffff59;
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.primary .buttonSpinner {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
 .spinner {
   flex: none;
   box-sizing: border-box;
@@ -509,7 +527,12 @@
   font-weight: 900;
 }
 
-.primary:active {
+.primary:disabled {
+  opacity: .6;
+  cursor: default;
+}
+
+.primary:active:not(:disabled) {
   transform: translateY(2px);
   box-shadow: 0 1px 0 var(--brand-dark);
   transition-duration: var(--t-press);
@@ -545,7 +568,7 @@
     transition: none;
     transform: none;
   }
-  .bubble, .spinner, .stage .bob, .stage-failed .base > :last-child {
+  .bubble, .spinner, .buttonSpinner, .stage .bob, .stage-failed .base > :last-child {
     animation: none;
   }
   .chip, .chevron, .drawer {

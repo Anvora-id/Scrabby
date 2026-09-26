@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { dropPending, hasPending } from '../assistant.ts'
-import { buildProblem, nothingNew, runBuild, useBuild } from '../build.ts'
+import { buildProblem, nothingNew, runBuild, useBuild, useStarting } from '../build.ts'
 import { cx } from '../canvas/cx.ts'
 import { ICONS } from '../icons.ts'
 import { getProject, setPlanTab, useProject } from '../store.ts'
@@ -10,6 +10,7 @@ import styles from './Build.module.css'
 export default function BuildButton() {
   const p = useProject()
   const running = useBuild()?.state === 'running'
+  const starting = useStarting()
   const [bubble, setBubble] = useState<ReactNode>(null)
   const [warn, setWarn] = useState(false)
   const Flag = ICONS.flag
@@ -46,12 +47,12 @@ export default function BuildButton() {
       {bubble && <span className={styles.bubble} role="status">{bubble}</span>}
       <button
         className={cx(styles.button, nothingNew(p) && styles.greyed, !!bubble && styles.target)}
-        disabled={running}
+        disabled={running || starting}
         data-tour="build"
         onClick={press}
       >
-        <Flag weight="fill" size={24} />
-        {running ? 'Building…' : 'Build'}
+        {starting ? <span className={styles.buttonSpinner} /> : <Flag weight="fill" size={24} />}
+        {starting ? 'Starting…' : running ? 'Building…' : 'Build'}
       </button>
       {warn && (
         <Warning
