@@ -42,6 +42,7 @@ Scrabby is a web IDE: users plan a website as nested Blocks and Traits on a Canv
 - Never log `AGENT_API_KEY` or request headers.
 - Never use the word "Scratch", its logo, the Scratch Cat or Scratch's icon files in the product.
 - The Preview shell accepts files only from the app origin (TDD §13). The app loads no remote scripts; the Google Fonts stylesheet is its only outside file.
+- Hosting is two Vercel projects that point at each other. Before touching Vercel settings, a `VITE_*_ORIGIN` variable, `vercel.json` or `preview/`, read `docs/deploy.md`.
 
 ## The data-block rule
 
