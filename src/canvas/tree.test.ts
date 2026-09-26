@@ -90,6 +90,16 @@ describe('tree', () => {
     expect(p.blocks[heroId].folded).toBe(true)
   })
 
+  it('Blocks folded inside a moved Page stay folded', () => {
+    const p = demo()
+    const quiz = Object.values(p.blocks).find(b => b.type === 'page' && b.name === 'Quiz')!.id
+    const bar = p.blocks[quiz].children[0]
+    const button = p.blocks[bar].children[0]
+    dropItem(p, { kind: 'block', id: quiz }, { id: 'canvas', pos: { x: 0, y: 0 } })
+    expect(p.blocks[button].folded).toBe(true)
+    expect(p.blocks[bar].folded).toBeUndefined()
+  })
+
   it('an open Block stays open when moved', () => {
     const p = demo()
     const home = bid(p, 'Home')

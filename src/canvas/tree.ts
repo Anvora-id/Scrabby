@@ -231,12 +231,18 @@ export function dropItem(p: Project, item: DragItem, at: Drop): string {
   } else {
     id = item.id
     // A Block shown folded, or as a chip in a folded parent, stays folded where it lands.
+    // So do the Blocks inside it: moving up a level must not unfold them.
     if (item.kind === 'block') {
       const parents = parentMap(p), up = parents.get(id)
       const parent = up && up !== 'canvas' ? p.blocks[up] : undefined
-      if (isFolded(p.blocks[id], depthOf(parents, id)) || (parent && isFolded(parent, depthOf(parents, up!)))) {
-        p.blocks[id].folded = true
+      if (parent && isFolded(parent, depthOf(parents, up!))) p.blocks[id].folded = true
+      const pin = (bid: string, depth: number): void => {
+        const b = p.blocks[bid]
+        if (!b) return
+        if (isFolded(b, depth)) b.folded = true
+        for (const c of b.children) pin(c, depth + 1)
       }
+      pin(id, depthOf(parents, id))
     }
     detach(p, id)
   }
