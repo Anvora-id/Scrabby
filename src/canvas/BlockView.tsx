@@ -52,17 +52,11 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
   const target = drag?.target?.id === id ? drag.target : null
   const blockDrop = !!target && !isTraitItem(drag!.item)
   const liftedBlock = drag?.item.kind === 'block' ? drag.item.id : null
-  const liftedTrait = drag?.item.kind === 'trait' ? drag.item.id : null
   const childInst = inInst || !!b.inst
   const Icon = ICONS[custom ? 'custom' : type.icon]
 
-  const ghost = (pill: boolean) => (
-    <div data-ghost className={cx(styles.ghost, pill && styles.ghostPill)} style={{ width: drag!.w, height: drag!.h }} />
-  )
-
-  // The Trait ghost goes before the pill it lands in front of, counting pills that are not lifted; '' = at the end.
-  const shown = b.traits.filter(t => t !== liftedTrait)
-  const ghostBefore = target?.tIdx === undefined ? null : shown[target.tIdx] ?? ''
+  // Only a Block opens a gap; a Trait's spot is a drop line over its row, so nothing moves under the pointer.
+  const ghost = blockDrop && <div data-ghost className={styles.ghost} style={{ width: drag!.w, height: drag!.h }} />
 
   const empty = !b.children.some(c => c !== liftedBlock) && !blockDrop
 
@@ -141,25 +135,19 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
             return <span key={c} className={o.chip} onPointerDown={dragSource({ kind: 'block', id: c })}><CIcon weight="fill" size={16} />{child.name}</span>
           })}
           {b.traits.length === 0 && b.children.length === 0 && <span className={cx(o.chip, o.none)}>empty</span>}
-          {target && <div data-ghost className={cx(styles.ghost, styles.ghostPill, o.chipGhost)} />}
+          {blockDrop && <div data-ghost className={cx(styles.ghost, styles.ghostPill, o.chipGhost)} />}
         </div>
       ) : (
         <>
-          <div className={styles.traits}>
-            {b.traits.map(t => (
-              <Fragment key={t}>
-                {t === ghostBefore && ghost(true)}
-                <TraitPill p={p} id={t} inInst={childInst} />
-              </Fragment>
-            ))}
-            {ghostBefore === '' && ghost(true)}
+          <div className={styles.traits} data-pills={id}>
+            {b.traits.map(t => <TraitPill key={t} p={p} id={t} inInst={childInst} />)}
           </div>
           {type.accepts.length > 0 && (
             <div className={cx(styles.inside, empty && !b.locked && styles.empty)}>
               {!empty ? (
                 <LayoutView
                   l={blockDrop ? insertInto(repairLayout(b), GHOST, target!.slot) : repairLayout(b)}
-                  p={p} depth={depth + 1} inInst={childInst} ghost={blockDrop && ghost(false)}
+                  p={p} depth={depth + 1} inInst={childInst} ghost={ghost}
                 />
               ) : b.type === 'site' ? (
                 <div className={styles.emptyHint}>
