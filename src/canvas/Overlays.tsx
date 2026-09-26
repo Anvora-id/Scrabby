@@ -6,6 +6,7 @@ import { updateProject } from '../store.ts'
 import { setEditing } from '../store.ts'
 import { getDrag, peekPending } from './drag.ts'
 import { menuItems } from './menu.ts'
+import type { MenuItem } from './menu.ts'
 import { tipFor } from './tooltip.ts'
 import { cx } from './cx.ts'
 import styles from './Overlays.module.css'
@@ -17,6 +18,7 @@ interface MenuState {
   id: string
   x: number
   y: number
+  items?: MenuItem[]
 }
 
 let menuState: MenuState | null = null
@@ -27,12 +29,13 @@ function setMenuState(s: MenuState | null) {
   menuListeners.forEach(l => l())
 }
 
-export function openMenu(e: React.MouseEvent, id: string): void {
+// `items` replaces the id's own items (the empty Canvas has its own menu).
+export function openMenu(e: React.MouseEvent, id: string, items?: MenuItem[]): void {
   const target = e.target as Element
   if (target.closest('input, textarea')) return
   e.preventDefault()
   e.stopPropagation()
-  setMenuState({ id, x: e.clientX, y: e.clientY })
+  setMenuState({ id, x: e.clientX, y: e.clientY, items })
 }
 
 export function isMenuOpen(): boolean {
@@ -71,11 +74,9 @@ export function ContextMenu({ p }: { p: Project }) {
 
   if (!state) return null
   const { id, x, y } = state
-  const b = p.blocks[id]
-  const t = p.traits[id]
-  if (!b && !t) return null
+  if (!state.items && !p.blocks[id] && !p.traits[id]) return null
 
-  const items = menuItems(p, id)
+  const items = state.items ?? menuItems(p, id)
   const left = Math.min(x, innerWidth - 210)
   const top = Math.min(y, innerHeight - 8 - 32 * items.length)
 
