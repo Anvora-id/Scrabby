@@ -64,7 +64,7 @@ How the site looks. The Design Traits the user placed come first; this Skill dec
 16. Under an `<h1>` or a section's `<h2>` put one short `lead` line that says what this is for.
 17. At most three text sizes in one section. Make less important text smaller and `--color-muted` (the `small` class), never bolder.
 18. Body text weight is 400; headings 600 or more. A very thin or very heavy weight only at 40px and up.
-19. Paragraphs are left-aligned and at most 65 characters wide. Center only headings and short lines.
+19. Paragraphs are left-aligned and at most 65 characters wide. Headings line up with the text under them.
 
 ## What you may add
 

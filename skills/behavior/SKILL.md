@@ -149,7 +149,7 @@ if (todoForm) {
 19. **Slideshow:** show one picture at a time and the next one every 4 seconds. Add a Pause button, and stop while the slideshow is off screen.
 20. **Countdown:** count down to the date in the request, or to a date two weeks away. Update every second. At zero, show a short message.
 21. **Search (fake):** a search field hides the Cards whose text doesn't match, as the visitor types.
-22. **Filter / sort (fake):** filter buttons hide Cards by a `data-category` attribute; sorting moves the Cards in the page by a `data-price` or `data-date` attribute.
+22. **Filter / sort (fake):** `chip` buttons in `chips`; the one on has `aria-pressed="true"`. Filters hide Cards by a `data-category` attribute; sorting moves the Cards in the page by a `data-price` or `data-date` attribute.
 23. **Appears on scroll:** the Block fades in once when it scrolls into view and never animates again. Use it only where this Trait is.
 
 ```js

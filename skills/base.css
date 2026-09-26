@@ -223,8 +223,43 @@ main > section {
 .section-head {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  align-items: flex-start;
+  gap: var(--space-2);
   margin-bottom: var(--space-4);
+}
+
+/* A section whose whole content sits on one middle line: add .centered to its .container.
+   Never center one part under a left-aligned heading. */
+.centered {
+  text-align: center;
+}
+.centered,
+.page-head .centered,
+.centered > :is(.section-head, .hero-text, .stack) {
+  align-items: center;
+}
+.centered :is(.row, .chips) {
+  justify-content: center;
+}
+/* A narrow part, such as a quiz card or a row of tiles, sits in the middle */
+.centered .lead,
+.centered > * {
+  margin-inline: auto;
+}
+.centered .button,
+.centered .badge {
+  align-self: center;
+}
+/* Words inside cards, forms and next to a picture stay left-aligned */
+.centered :is(.card, .form, .split) {
+  text-align: start;
+}
+
+/* A plain wrapper <div> in a column part, such as one quiz question, spaces its parts like its parent.
+   No specificity, so any display rule in style.css wins. */
+:where(.card, .hero-text, .stack, dialog) > :where(div) {
+  display: grid;
+  gap: inherit;
 }
 
 /* Layout helpers */
@@ -249,6 +284,14 @@ main > section {
   .split {
     grid-template-columns: 1fr 1fr;
   }
+}
+/* The picture in one column of a split: a calm 4:3, never a tall square */
+.split > img,
+.split > .placeholder {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-md);
 }
 /* Cards in a row: as many columns as fit, one column on phones */
 .grid {
@@ -310,6 +353,9 @@ main > section {
   color: var(--brand-800);
   font-size: var(--text-sm);
   font-weight: 600;
+  /* Its own width in a column or a grid */
+  align-self: flex-start;
+  justify-self: start;
 }
 
 /* Top bar: name on the left, links on the right, on one line */
@@ -401,8 +447,9 @@ main > section {
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
-  /* Keep its own width in a column; fill the width only with a rule that asks */
+  /* Keep its own width in a column or a grid; fill the width only with a rule that asks */
   align-self: flex-start;
+  justify-self: start;
   box-shadow: var(--shadow-1);
   transition: background-color 150ms ease-out, box-shadow 150ms ease-out, transform 120ms ease-out;
 }
@@ -443,7 +490,7 @@ main > section {
 /* A card with a question in it gets more room between its parts */
 .card:has(.choices) {
   gap: var(--space-3);
-  padding: var(--space-4);
+  padding: clamp(var(--space-3), 4vw, var(--space-4));
 }
 /* A picture at the top of a card reaches its edges */
 .card > img:first-child,
@@ -623,12 +670,21 @@ dialog .form {
 main > section.page-head {
   padding-block: var(--space-5) var(--space-4);
 }
-
+.page-head .container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
 /* Answers and options to pick from: tiles in a grid, not a column of buttons */
 .choices {
   display: grid;
   gap: var(--space-2);
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  /* Two per line, or three when there are three, so no answer sits alone on a line */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.choices:has(> :last-child:nth-child(3)) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .choice {
   display: flex;
@@ -663,6 +719,34 @@ main > section.page-head {
 .choice.is-wrong {
   border-color: var(--color-danger);
   background: color-mix(in srgb, var(--color-danger) 8%, var(--color-surface));
+}
+
+/* Filters, sorting and toggles: a row of small pills above what they change */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 120ms ease-out, background-color 120ms ease-out;
+}
+.chip:hover {
+  border-color: var(--brand-300);
+}
+.chip[aria-pressed="true"] {
+  border-color: var(--brand-600);
+  background: var(--brand-100);
 }
 
 /* A step in a sequence: "Question 2 of 3" and a bar that fills */
