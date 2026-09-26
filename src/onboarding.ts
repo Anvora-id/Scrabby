@@ -16,8 +16,10 @@ export async function replaceProject(
   // Fetched before anything is cleared, so a failed download leaves the saved Project as it was.
   const photos = await Promise.all(project.assets.filter(a => DEMO_PHOTOS.includes(a.file)).map(async a => {
     const res = await fetch('/demo/' + a.file)
-    if (!res.ok) throw new Error(`Fetching /demo/${a.file} failed: ${res.status}`)
-    return { a, blob: await res.blob() }
+    const blob = await res.blob()
+    // The dev server answers a missing file with the app's HTML page, so check it really is an image.
+    if (!res.ok || !blob.type.startsWith('image/')) throw new Error(`Fetching /demo/${a.file} failed: ${res.status} ${blob.type}`)
+    return { a, blob }
   }))
   await clearAll()
   for (const { a, blob } of photos) {

@@ -160,7 +160,7 @@
   max-width: 100%;
   font: inherit;
   font-size: var(--fs-md);
-  font-weight: 800;
+  font-weight: var(--w-bold);
   color: var(--ink);
   border: 2px solid var(--line);
   border-radius: 8px;

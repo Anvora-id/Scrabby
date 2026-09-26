@@ -790,7 +790,7 @@ export interface BuildRun {
 
 **Checkpoints.tsx:** loads `listCheckpoints` on Project id, `p.checkpoint` and a reload counter. Empty list → `No Checkpoints yet. Every Build saves one here.` Entries newest first:
 - Title row: `checkpointTitle(p, N)` (h3), the time (`toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })`), the from tag, `saved for you` (code-only; class `saved`), and on the current one (`p.checkpoint === number`, entry class `here`) `you are here` + (` + hand edits` when `p.files` differs from its `after`), then at the row's end a rename button (the 14px fill `PencilSimple` icon, title `Rename`, aria-label `Rename Checkpoint N`).
-- Rename: the h3 becomes `Checkpoint N` followed by an input (autofocus, `maxLength` 40, aria-label `Name for Checkpoint N`, starting with the current name; the rename button hides meanwhile). Enter → `updateProject(d => renameCheckpoint(d, N, draft))` when the trimmed draft differs from the name; Escape or blur cancels.
+- Rename: the h3 becomes `Checkpoint N` followed by an input (autofocus, `maxLength` 40, aria-label `Name for Checkpoint N`, starting with the current name; the rename button hides meanwhile). Enter → `updateProject(d => renameCheckpoint(d, N, draft))` when the trimmed draft differs from the name; Escape or blur cancels. After Enter or Escape the focus goes back to the rename button.
 - Gist. Buttons: **Go back to this**; **Edit its Blocks** and **Show its Blocks** / **Hide its Blocks** (a link-style toggle, `aria-expanded`) only when it has blocks.
 - Open: a read-only tree `ul` of its Blocks from `blocks.top[0]`: each row icon (lock for locked, puzzle for Instances, else the type's) + name + file; class `cat-<cat>` (none → `built` for locked or site); click picks it. A picked row with code in the current files (`findBlockCode`) shows `</> See its code` (→ `seeItsCode(id)`, stops propagation).
 - From a Block chip: when `useCheckpointFocus()` is set and the list is loaded: open `buildOf(focus)`, pick that Block with `flash` (it scrolls to the center and flashes twice), clear the focus.
@@ -908,7 +908,7 @@ A website made with Scrabby. Bob built it from a plan of Blocks and Traits. The 
 **Files:** `src/onboarding.ts`, `src/shell/Onboarding.tsx`, `Onboarding.module.css`, `src/fixtures/dev.ts`. Behavior: PRD §8, §9. Look: DESIGN.md Speech bubble, Menus.
 
 - `isEmptyProject(p)`: at most 2 Blocks (canvas + Site), no Traits, no Assets, no files, no chat.
-- `replaceProject(project, checkpoints = [])`: first fetch every Asset named in `DEMO_PHOTOS` from `/demo/<file>` (a failed fetch throws before anything is cleared, so the saved Project stays); `clearAll()`; for each photo set `bytes` to the Blob's size, `putAsset`; add the Checkpoints; `clearHistory()`; `setProject`; `setEditing(null)`; Canvas tab; Plan.
+- `replaceProject(project, checkpoints = [])`: first fetch every Asset named in `DEMO_PHOTOS` from `/demo/<file>` (a response that is not OK or not an image throws before anything is cleared, so the saved Project stays; the dev server answers a missing file with the app's HTML page); `clearAll()`; for each photo set `bytes` to the Blob's size, `putAsset`; add the Checkpoints; `clearHistory()`; `setProject`; `setEditing(null)`; Canvas tab; Plan.
 - `loadDemo()` = `replaceProject(demoProject())`, then `once('scrabby.tour.plan')` (marks it seen) and `startTour('plan')`, every time; `newProject()` = `replaceProject(emptyProject())` (errors logged `Loading the demo failed` / `Starting a new Project failed`; a failed demo starts no tour).
 - Ask store (`'demo' | 'new' | null`): `askDemo()` loads at once when `isEmptyProject`, else asks; `askNewProject()` always asks; `closeAsk()`.
 - **ReplaceWarning** (a fixed backdrop + modal; Escape closes): demo → title `Load the demo?`, text `This replaces your current Project, Blocks and all. Download code first to keep a copy of the website's code.`, go `Load the demo`; new → `Start a new Project?`, `Only one Project is saved, so this one will be replaced, Blocks and all. Download code first to keep a copy of the website's code.`, `Start a new Project`. Buttons: **Download code** (Secondary), **Cancel** (Text), the go button (Primary, autofocus: close, then run).
@@ -1181,7 +1181,6 @@ if (quiz) {
 - Loaded Checkpoints put loose ideas in one column, which may overlap other loose ideas.
 - Library rename and delete use the native `confirm()`.
 - The code editor reads Checkpoints once per visit to Try & tweak.
-- Demo photos are drawn placeholders.
 - A deleted Asset's Blob goes at once, so an Undo brings back a broken tile.
 - Usage limits live in the running function's memory: approximate, reset on a cold start, one map entry per browser.
 - Warnings are checked only on the Canvas, so the Custom Block edit view shows none.

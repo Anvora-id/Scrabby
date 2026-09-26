@@ -23,6 +23,7 @@ export default function Checkpoints() {
   const [ask, setAsk] = useState<{ c: Checkpoint; mode: LoadMode } | null>(null)
   const [renaming, setRenaming] = useState<number | null>(null)
   const [draft, setDraft] = useState('')
+  const [refocus, setRefocus] = useState<number | null>(null) // after Enter or Escape, keyboard focus returns to that rename button
   const flashRow = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
@@ -57,12 +58,14 @@ export default function Checkpoints() {
 
   function startRename(n: number) {
     setRenaming(n)
+    setRefocus(null)
     setDraft(p.checkpointNames?.[n] ?? '')
   }
 
-  function commitName(n: number) {
+  function endRename(n: number, save: boolean) {
     setRenaming(null)
-    if (draft.trim() !== (getProject().checkpointNames?.[n] ?? '')) updateProject(d => renameCheckpoint(d, n, draft))
+    setRefocus(n)
+    if (save && draft.trim() !== (getProject().checkpointNames?.[n] ?? '')) updateProject(d => renameCheckpoint(d, n, draft))
   }
 
   function tree(n: number, bb: BuiltBlocks, id: string): ReactNode {
@@ -115,8 +118,8 @@ export default function Checkpoints() {
                     value={draft}
                     onChange={e => setDraft(e.target.value)}
                     onKeyDown={e => {
-                      if (e.key === 'Enter') commitName(c.number)
-                      else if (e.key === 'Escape') setRenaming(null)
+                      if (e.key === 'Enter') endRename(c.number, true)
+                      else if (e.key === 'Escape') endRename(c.number, false)
                     }}
                     onBlur={() => setRenaming(null)}
                   />
@@ -129,7 +132,7 @@ export default function Checkpoints() {
               {!c.blocks && <span className={cx(styles.tag, styles.saved)}>saved for you</span>}
               {here && <span className={cx(styles.tag, styles.hereTag)}>you are here{!sameFiles(p.files, c.after) && ' + hand edits'}</span>}
               {renaming !== c.number && (
-                <button className={styles.rename} title="Rename" aria-label={`Rename Checkpoint ${c.number}`} onClick={() => startRename(c.number)}>
+                <button className={styles.rename} title="Rename" aria-label={`Rename Checkpoint ${c.number}`} autoFocus={refocus === c.number} onClick={() => startRename(c.number)}>
                   <PencilSimpleIcon size={14} weight="fill" />
                 </button>
               )}

@@ -1,9 +1,18 @@
+import { existsSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { demoProject, builtSite, DEMO_PHOTOS } from './fixtures.ts'
 
 describe('DEMO_PHOTOS', () => {
   it('has 6 entries', () => {
     expect(DEMO_PHOTOS).toEqual(['cupcakes.jpg', 'layer-cake.jpg', 'cookies.jpg', 'bake-stall.jpg', 'lemon-drizzle.jpg', 'brownie.jpg'])
+  })
+
+  it('ships every photo in public/demo with its credit', () => {
+    const credits = readFileSync(new URL('../../public/demo/CREDITS.md', import.meta.url), 'utf8')
+    for (const file of DEMO_PHOTOS) {
+      expect(existsSync(new URL('../../public/demo/' + file, import.meta.url))).toBe(true)
+      expect(credits).toContain(`| ${file} |`)
+    }
   })
 })
 
