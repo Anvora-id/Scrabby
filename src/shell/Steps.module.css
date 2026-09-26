@@ -112,8 +112,42 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 320px;
-  gap: var(--gap);
+  grid-template-columns: minmax(0, 1.2fr) 8px minmax(0, 1fr) 8px 320px;
+  /* the 8px handles plus these gaps keep panels --gap apart */
+  column-gap: calc((var(--gap) - 8px) / 2);
+}
+
+.handle {
+  display: flex;
+  justify-content: center;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.handle::after {
+  content: '';
+  width: 2px;
+  background: var(--line);
+}
+
+.handle:hover::after,
+.handle:active::after {
+  background: var(--brand);
+}
+
+.handle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+  border-radius: var(--r-pill);
+}
+
+/* the Preview iframe would swallow the pointer mid-drag */
+.dragging iframe {
+  pointer-events: none;
+}
+
+.noSelect {
+  user-select: none;
 }
 
 .tryPanel {

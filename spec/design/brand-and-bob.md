@@ -11,10 +11,6 @@
   |---|---|
   | Menu bar | Full figure, 40px tall, before the wordmark ([Shell](#shell)) |
   | Build card | Full figure, 118px tall, hopping on the Build stage ([Build button and Build card](#build-button-and-build-card)) |
-  | Assistant title bar | Head avatar, 30px ([Assistant](#assistant)) |
   | Speech bubbles | Full figure, 74px tall, beside the bubble ([Speech bubble](#speech-bubble)) |
-  | Empty Canvas | Full figure, 64px tall, above the empty hint ([Canvas](#canvas)) |
-  | Empty Preview | Full figure, 64px tall, above the empty line ([Preview](#preview)) |
-  | Empty chat | Head, 40px, above the empty line ([Assistant](#assistant)) |
 
 - **Logo** = Bob's full figure + the **wordmark** "Scrabby" in Nunito 900, letter-spacing −.01em, gap 8px, figure bottom-aligned with the text's baseline. The logo is for the app, video, deck and cover. The favicon is `bob-head.svg`.

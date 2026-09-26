@@ -157,7 +157,6 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
                 />
               ) : b.type === 'site' ? (
                 <div className={styles.emptyHint}>
-                  <img src="/bob.svg" alt="" />
                   Drag a Page into your Site to start.
                 </div>
               ) : b.locked && b.type === 'page' && <span className={styles.dropHint}>drop Blocks or Traits here</span>}

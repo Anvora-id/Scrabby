@@ -1,6 +1,6 @@
 # 23: Try & tweak polish: resizable panels, scrollbars, fewer Bobs
 
-Status: ready-for-agent
+Status: done
 Blocked by: 21, 22
 Wave: 6 (after wave 5 is merged; one agent)
 
@@ -18,12 +18,19 @@ Modify: `src/shell/Steps.tsx`, `src/shell/Steps.module.css`, `src/App.module.css
 
 ## Steps
 
-- [ ] **Resizable panels** in Try & tweak: two 8px drag handles between Preview | Code | Assistant (between the grid columns). Handle: transparent, `cursor: col-resize`, a 2px `--line` bar in its middle that turns `--accent` on hover and while dragging; `role="separator"`, `aria-orientation="vertical"`, title `Drag to resize, double-click to reset`. Dragging sets the grid columns in px with minimums Preview 320, Code 320, Assistant 260 (the rest stays with the Preview). Pointer capture on the handle; `user-select: none` on `body` while dragging; the Preview iframe gets `pointer-events: none` while dragging (else it swallows the pointer). Double-click resets to the default `minmax(0,1.2fr) minmax(0,1fr) 320px`. Remember the widths in `localStorage['scrabby.tryCols']` (inside try/catch; no storage = defaults). Left/Right arrow keys on a focused handle move it by 16px.
-- [ ] **Scrollbars** app-wide (light UI; the code editor has its own dark ones from 22): in `App.module.css` `:global(*) { scrollbar-width: thin; scrollbar-color: var(--line-strong, #C9C3DA) transparent }` plus `::-webkit-scrollbar` 8px, thumb in the same color with radius 8px, transparent track, thumb hover `--hint`. Use a token from `src/tokens.css` if one fits better; do not add colors outside it. The Preview's page scrollbars belong to the user's website and stay as they are.
-- [ ] **Fewer Bobs**: keep Bob only in the menu bar logo, the Build card and the show-around speech bubbles. Remove the head in the Assistant title bar (keep the word "Bob" and the badge), the head above the empty chat line, the figure on the empty Preview, and the figure on the empty Canvas hint (`BlockView.tsx`, the empty Site). Update DESIGN.md's "Where Bob appears" table to exactly those three places.
-- [ ] Update DESIGN.md Screen layout (the resize handles) and TDD §7 (TryStep) in the same words.
+- [x] **Resizable panels** in Try & tweak: two 8px drag handles between Preview | Code | Assistant (between the grid columns). Handle: transparent, `cursor: col-resize`, a 2px `--line` bar in its middle that turns `--accent` on hover and while dragging; `role="separator"`, `aria-orientation="vertical"`, title `Drag to resize, double-click to reset`. Dragging sets the grid columns in px with minimums Preview 320, Code 320, Assistant 260 (the rest stays with the Preview). Pointer capture on the handle; `user-select: none` on `body` while dragging; the Preview iframe gets `pointer-events: none` while dragging (else it swallows the pointer). Double-click resets to the default `minmax(0,1.2fr) minmax(0,1fr) 320px`. Remember the widths in `localStorage['scrabby.tryCols']` (inside try/catch; no storage = defaults). Left/Right arrow keys on a focused handle move it by 16px.
+- [x] **Scrollbars** app-wide (light UI; the code editor has its own dark ones from 22): in `App.module.css` `:global(*) { scrollbar-width: thin; scrollbar-color: var(--line-strong, #C9C3DA) transparent }` plus `::-webkit-scrollbar` 8px, thumb in the same color with radius 8px, transparent track, thumb hover `--hint`. Use a token from `src/tokens.css` if one fits better; do not add colors outside it. The Preview's page scrollbars belong to the user's website and stay as they are.
+- [x] **Fewer Bobs**: keep Bob only in the menu bar logo, the Build card and the show-around speech bubbles. Remove the head in the Assistant title bar (keep the word "Bob" and the badge), the head above the empty chat line, the figure on the empty Preview, and the figure on the empty Canvas hint (`BlockView.tsx`, the empty Site). Update DESIGN.md's "Where Bob appears" table to exactly those three places.
+- [x] Update DESIGN.md Screen layout (the resize handles) and TDD §7 (TryStep) in the same words.
 
 ## Done when
 
 - `pnpm check` passes.
 - In the browser: drag both handles, reload (widths kept), double-click (reset); scrollbars are thin and match; Bob shows only in the menu bar, the Build card and the tour bubbles.
+
+## Answer
+
+- Handles are grid columns 2 and 4 (`minmax(0,1.2fr) 8px minmax(0,1fr) 8px 320px`, column-gap `(--gap − 8px)/2`); resized: `minmax(0,1fr) 8px <code>px 8px <assistant>px`.
+- No `--accent` or `--line-strong` token exists: the handle bar uses `--brand`, the scrollbar thumb `--placeholder` (hover `--hint`).
+- Widths are clamped only while resizing, not on a later window shrink (`ponytail:` in Steps.tsx).
+- Also removed Bob from TDD §13/§15 (empty Preview, Assistant) and DESIGN Canvas/Preview/Assistant so the specs match.

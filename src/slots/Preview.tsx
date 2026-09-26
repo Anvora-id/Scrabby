@@ -141,7 +141,6 @@ export default function Preview() {
         <div className={styles.frame}>
           {!built ? (
             <div className={styles.empty}>
-              <img src="/bob.svg" alt="" height={64} />
               <p>Press Build to make your website.</p>
             </div>
           ) : noWorker !== null ? (
