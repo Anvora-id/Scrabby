@@ -23,6 +23,7 @@ const APPENDIX_A = `## Block types used
 - Textbox: Words: a heading, paragraph or label, whichever fits.
 - Frame: One picture. With no image Trait, a plain placeholder box labelled with the Block's name; a Library Asset only under "let Bob pick".
 - Button: Something a visitor clicks.
+- Panel: Groups what's inside; has no meaning of its own.
 
 ## Site "Maya's bake sale" #b1
 
@@ -32,69 +33,91 @@ const APPENDIX_A = `## Block types used
 
 ### Page "Home" (index.html) #b2
 
-- Navbar "Top bar 1" (Instance of "Top bar") #b17
-  - Button "Menu" #b18
+- Navbar "Top bar 1" (Instance of "Top bar") #b21
+  - position (where it sits inside its parent): stays on top when scrolling
+  - Button "Menu" #b22
     - on click (when a visitor clicks this Block): go to "Menu" page (menu.html) #b3
-  - Button "Quiz" #b19
+  - Button "Quiz" #b23
     - on click (when a visitor clicks this Block): go to "Quiz" page (quiz.html) #b4
 - Hero "Big welcome" #b16
+  - size (room it takes in its parent; "full screen" fills the window): full width
   - Textbox "Textbox" #b15
     - text (exact words to show, as written): "Fresh cakes every Saturday"
   - Frame "Frame" #b14
     - image (show this picture): assets/cupcakes.png
+    - image (show this picture): assets/bake-stall.png
+    - purpose (what this Block does by itself, no click needed): slideshow
   - Button "Order" #b13
     - on click (when a visitor clicks this Block): open "Order" popup #b12
 - Popup "Order" #b12
   - Form "Order form" #b11
+    - Note: "name, which cake, pickup time"
     - Button "Button" #b10
       - on click (when a visitor clicks this Block): submits (fake)
-- Footer "Bottom 1" (Instance of "Bottom") #b20
-  - Textbox "Textbox" #b21
+- Section "Next sale" #b20
+  - purpose (what this Block does by itself, no click needed): countdown
+  - Panel "Panel" #b19
+    - Frame "Frame" #b17
+      - image (show this picture): assets/cookies.png
+    - Textbox "Textbox" #b18
+      - text (exact words to show, as written): "Cookies are half price!"
+- Footer "Bottom 1" (Instance of "Bottom") #b24
+  - Textbox "Textbox" #b25
+    - text (exact words to show, as written): "Made by Maya, age 11"
 
 ### Page "Menu" (menu.html) #b3
 
-- Navbar "Top bar 2" (Instance of "Top bar") #b24
-  - Button "Menu" #b25
+- Navbar "Top bar 2" (Instance of "Top bar") #b28
+  - position (where it sits inside its parent): stays on top when scrolling
+  - Button "Menu" #b29
     - on click (when a visitor clicks this Block): go to "Menu" page (menu.html) #b3
-  - Button "Quiz" #b26
+  - Button "Quiz" #b30
     - on click (when a visitor clicks this Block): go to "Quiz" page (quiz.html) #b4
-- Card grid "Cakes" #b23
+- Card grid "Cakes" #b27
   - fake data (fill with made-up content as described): "6 cakes with prices"
-  - Card "Card" #b22
+  - purpose (what this Block does by itself, no click needed): filter / sort (fake)
+  - Card "Card" #b26
     - image (show this picture): you choose
-- Footer "Bottom 2" (Instance of "Bottom") #b27
-  - Textbox "Textbox" #b28
+    - on click (when a visitor clicks this Block): adds to cart (fake)
+- Footer "Bottom 2" (Instance of "Bottom") #b31
+  - Textbox "Textbox" #b32
+    - text (exact words to show, as written): "Made by Maya, age 11"
 
 ### Page "Quiz" (quiz.html) #b4
 
-- Navbar "Top bar 3" (Instance of "Top bar") #b31
-  - Button "Menu" #b32
+- Navbar "Top bar 3" (Instance of "Top bar") #b35
+  - position (where it sits inside its parent): stays on top when scrolling
+  - Button "Menu" #b36
     - on click (when a visitor clicks this Block): go to "Menu" page (menu.html) #b3
-  - Button "Quiz" #b33
+  - Button "Quiz" #b37
     - on click (when a visitor clicks this Block): go to "Quiz" page (quiz.html) #b4
-- Section "Which cupcake are you?" #b30
+- Section "Which cupcake are you?" #b34
   - The user says: "3 questions, then show which cupcake you are"
-  - Button "Button" #b29
+  - You choose: the colors
+  - Button "Button" #b33
     - on click (when a visitor clicks this Block): checks an answer
-- Footer "Bottom 3" (Instance of "Bottom") #b34
-  - Textbox "Textbox" #b35
+- Footer "Bottom 3" (Instance of "Bottom") #b38
+  - Textbox "Textbox" #b39
+    - text (exact words to show, as written): "Made by Maya, age 11"
 
 ## Custom Blocks
 
 - Navbar "Top bar"
+  - position (where it sits inside its parent): stays on top when scrolling
   - Button "Menu"
     - on click (when a visitor clicks this Block): go to "Menu" page (menu.html) #b3
   - Button "Quiz"
     - on click (when a visitor clicks this Block): go to "Quiz" page (quiz.html) #b4
 - Footer "Bottom"
   - Textbox "Textbox"
+    - text (exact words to show, as written): "Made by Maya, age 11"
 
 ## Library
 
 - assets/cupcakes.png: image, 1200×800 px, used by a Trait
 - assets/layer-cake.png: image, 1200×800 px
-- assets/cookies.png: image, 1200×800 px
-- assets/bake-stall.png: image, 1200×800 px
+- assets/cookies.png: image, 1200×800 px, used by a Trait
+- assets/bake-stall.png: image, 1200×800 px, used by a Trait
 `
 
 const find = (p: Project, name: string, type?: string) =>
@@ -156,7 +179,7 @@ describe('instructionDocument', () => {
     const click = p.blocks[find(p, 'Order', 'button')].traits[0]
     p.traits[click].value = 'popup:b999'
     const r = doc(p)
-    expect(r.document).toContain('  - Frame "Frame" #b14\n  - Button "Order" #b13\n- Popup "Order" #b12\n')
+    expect(r.document).toContain('  - Frame "Frame" #b14\n    - image (show this picture): assets/bake-stall.png\n')
     expect(r.document).not.toContain('cupcakes.png, used by a Trait')
     expect(r.skipped).toEqual([
       'Skipped: the picture for the "Frame" frame was deleted from the Library.',
@@ -173,6 +196,7 @@ describe('instructionDocument', () => {
     p.traits[color].bobPicks = true
     const d = doc(p).document
     expect(d).toContain('- Hero "Big welcome" #b16\n'
+      + '  - size (room it takes in its parent; "full screen" fills the window): full width\n'
       + '  - vibe (overall feel: wording, shapes, spacing, motion): you choose\n'
       + '    - Note: "something warm"\n'
       + '  - color (main color of this Block; decide where it shows, keep text readable): you choose\n'
@@ -192,6 +216,7 @@ describe('instructionDocument', () => {
     expect(d).toContain('### Page "Home" (index.html) #b2\n\n- Note: "Keep it short"\n- Navbar')
     expect(d).toContain('- Hero "Big welcome" #b16\n'
       + '  - Note: "The first thing people see"\n'
+      + '  - size (room it takes in its parent; "full screen" fills the window): full width\n'
       + '  - You choose: the colors\n'
       + '  - You choose: anything in this Block\n'
       + '  - Textbox')

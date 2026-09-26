@@ -18,6 +18,7 @@
 
 .placed {
   position: absolute;
+  width: max-content; /* else it shrinks to the Canvas's width and squeezes rows */
 }
 
 .avatar {
