@@ -1,0 +1,249 @@
+.root {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Address bar: a panel sub-bar */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--soft);
+  border-bottom: 2px solid var(--line-soft);
+  padding: 8px 10px;
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.ghost {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: var(--r-btn);
+  padding: 5px 11px;
+  font-family: var(--font);
+  font-size: var(--fs);
+  font-weight: var(--w-bold);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 2px 0 var(--line);
+  transition: transform 250ms var(--spring), box-shadow 250ms var(--spring);
+}
+
+.ghost:hover {
+  border-color: var(--brand);
+}
+
+.ghost:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--line);
+  transition-duration: var(--t-press);
+}
+
+.ghost:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+}
+
+.dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--brand);
+}
+
+.pill {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: var(--surface);
+  border: 2px solid var(--line-soft);
+  border-radius: var(--r-pill);
+  padding: 4px 12px;
+}
+
+/* Pause live updates switch */
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.track {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  border-radius: var(--r-pill);
+  background: var(--idle);
+}
+
+.track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 0 #0000001f;
+  transition: transform var(--t-pop) var(--spring);
+}
+
+.switch input:checked + .track {
+  background: var(--brand);
+}
+
+.switch input:checked + .track::after {
+  transform: translateX(14px);
+}
+
+.switch input:focus-visible + .track {
+  box-shadow: var(--focus);
+}
+
+.strip {
+  background: var(--note-bg);
+  border-bottom: 1.5px solid var(--note-edge);
+  padding: 5px 10px;
+  color: var(--note-text);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  padding: var(--gap);
+}
+
+.frame {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 2px solid var(--line-soft);
+  border-radius: var(--r-inside);
+  overflow: hidden;
+}
+
+.page {
+  flex: 1;
+  width: 100%;
+  border: none;
+}
+
+.empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--ws) radial-gradient(circle, var(--ws-dot) 1.6px, transparent 1.8px) 0 0 / 24px 24px;
+}
+
+.empty p {
+  margin: 0;
+  color: var(--hint);
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+
+.card {
+  margin: 16px;
+  padding: 12px 14px;
+  background: var(--alert-bg);
+  border: 2px solid var(--alert);
+  border-radius: var(--r-panel);
+  color: var(--text);
+}
+
+.card b {
+  color: var(--ink);
+  font-weight: var(--w-heavy);
+}
+
+.card p {
+  margin: 6px 0;
+}
+
+.card small {
+  font-size: var(--fs-sm);
+}
+
+/* Error bar, pinned to the bottom of the page area */
+.error {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--alert-bg);
+  border-top: 2px solid var(--alert);
+  padding: 8px 10px;
+  animation: slideUp var(--t-pop) var(--spring);
+}
+
+.error b {
+  color: var(--ink);
+  font-weight: var(--w-heavy);
+  white-space: nowrap;
+}
+
+.bang {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--alert-dark);
+  color: #fff;
+  font-weight: var(--w-heavy);
+}
+
+.message {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-sm);
+  color: var(--text);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .error { animation: none; }
+  .ghost, .ghost:active, .track::after { transition: none; transform: none; }
+  .switch input:checked + .track::after { transform: translateX(14px); }
+}
