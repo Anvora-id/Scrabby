@@ -30,8 +30,9 @@ const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n
 const at = (pos: Pos | undefined, i: number) => ({ left: pos?.x ?? 20 + i * 40, top: pos?.y ?? 20 + i * 40 })
 
 // A Block that never had a layout gets one on its first drop; repair layouts and sort keys so that alone is no change.
+// dropItem pins `folded` on Blocks shown folded, which changes nothing on screen, so folding is left out too.
 function shape(p: Project): string {
-  const blocks = Object.values(p.blocks).map(b => ({ ...b, layout: repairLayout(b) }))
+  const blocks = Object.values(p.blocks).map(b => ({ ...b, layout: repairLayout(b), folded: undefined }))
   return JSON.stringify([blocks, p.traits], (_, v: unknown) =>
     v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort()) : v)
 }
