@@ -1,0 +1,128 @@
+.steps {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Plan step ─────────────────────────────────────────── */
+
+.planStep {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tabRow {
+  display: flex;
+  align-items: flex-end;
+  padding: 0 0 0 0;
+  height: 44px;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--idle);
+  border: 2px solid var(--line);
+  border-bottom: none;
+  border-radius: var(--r-tab) var(--r-tab) 0 0;
+  padding: 0 18px;
+  height: 38px;
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  font-weight: var(--w-bold);
+  color: var(--hint);
+  cursor: pointer;
+}
+
+.tab[aria-selected='true'] {
+  background: var(--surface);
+  color: var(--brand);
+  height: 44px;
+  position: relative;
+  top: 2px;
+}
+
+.tab[aria-selected='true'] svg {
+  color: var(--brand);
+}
+
+.tab svg {
+  color: var(--muted);
+}
+
+.planPanel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  box-shadow: 0 3px 0 var(--line);
+  border-radius: 0 var(--r-panel) var(--r-panel) var(--r-panel);
+  overflow: hidden;
+  padding: var(--gap);
+  gap: var(--gap);
+}
+
+.canvasPanel {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  gap: var(--gap);
+}
+
+.paletteArea {
+  display: flex;
+  flex-direction: column;
+}
+
+.canvasArea {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+.buildButtonHolder {
+  position: absolute;
+  right: 20px;
+  bottom: 22px;
+  display: flex;
+}
+
+/* ── Build step ─────────────────────────────────────────── */
+
+.buildStep {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+}
+
+.buildHolder {
+  width: 560px;
+  max-width: 100%;
+}
+
+/* ── Try step ──────────────────────────────────────────── */
+
+.tryStep {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 320px;
+  gap: var(--gap);
+}
+
+.tryPanel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  box-shadow: 0 3px 0 var(--line);
+  border-radius: var(--r-panel);
+  overflow: hidden;
+}

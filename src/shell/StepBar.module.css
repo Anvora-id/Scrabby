@@ -1,0 +1,90 @@
+.stepBar {
+  display: flex;
+  align-items: center;
+  height: var(--stepbar-h);
+  background: var(--surface);
+  border-bottom: 2px solid var(--line-soft);
+  padding: 0 14px;
+  gap: 8px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 2px solid transparent;
+  background: none;
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  font-weight: var(--w-bold);
+  padding: 5px 14px 5px 6px;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  color: var(--hint);
+}
+
+.step[data-state='current'] {
+  background: var(--brand-tint);
+  border-color: var(--brand);
+  color: var(--ink);
+}
+
+.step[data-state='current'] .circle {
+  background: var(--brand);
+  color: #fff;
+}
+
+.step[data-state='done'] .circle {
+  background: var(--go);
+  color: #fff;
+}
+
+.step[disabled] {
+  cursor: default;
+}
+
+.circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--idle);
+  color: var(--hint);
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: inset 0 -3px 0 #0000001a;
+}
+
+/* separator › between steps */
+.stepBar .step + .step::before {
+  content: '›';
+  margin-right: 8px;
+  color: var(--idle);
+  font-weight: 900;
+}
+
+.back {
+  margin-left: auto;
+}
+
+.ghost {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: var(--r-btn);
+  padding: 5px 11px;
+  font-family: var(--font);
+  font-size: var(--fs);
+  font-weight: var(--w-bold);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 2px 0 var(--line);
+}
+
+.ghost:hover {
+  border-color: var(--brand);
+}

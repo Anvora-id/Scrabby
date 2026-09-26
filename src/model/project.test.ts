@@ -11,6 +11,7 @@ import {
   newCustomBlock,
   resolveAll,
 } from './project.ts'
+import { demoProject } from '../fixtures/fixtures.ts'
 
 describe('makeInstance', () => {
   it('copies with from links, name "Product card 1"', () => {
@@ -432,5 +433,34 @@ describe('hasOverride', () => {
     expect(hasOverride({ ov: { name: true } })).toBe(true)
     expect(hasOverride({ ov: { value: true } })).toBe(true)
     expect(hasOverride({ ov: { note: true } })).toBe(true)
+  })
+})
+
+describe("demo's Top bar", () => {
+  it('follows definition renames except the one an Instance changed', () => {
+    // Reproduce the demo's Top bar definition with two child buttons
+    const p = demoProject()
+    const def = p.defs['d1']
+    const defBlock = p.blocks[def.blockId]
+    // instances on the canvas
+    const instances = Object.values(p.blocks).filter(b => b.inst === 'd1')
+    // rename the definition's "Menu" button child
+    const menuBtnId = defBlock.children[0]
+    p.blocks[menuBtnId].name = 'Nav'
+    resolveAll(p)
+    // One instance that we manually override the Menu child name
+    const inst1 = instances[0]
+    const inst1MenuBtn = p.blocks[inst1.id].children[0]
+    p.blocks[inst1MenuBtn].ov = { name: true }
+    p.blocks[inst1MenuBtn].name = 'Custom'
+    // Re-resolve
+    p.blocks[menuBtnId].name = 'Navigation'
+    resolveAll(p)
+    // inst1's Menu button kept its override
+    expect(p.blocks[inst1MenuBtn].name).toBe('Custom')
+    // other instances follow the definition
+    const inst2 = instances[1]
+    const inst2MenuBtn = p.blocks[inst2.id].children[0]
+    expect(p.blocks[inst2MenuBtn].name).toBe('Navigation')
   })
 })

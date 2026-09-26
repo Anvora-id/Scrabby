@@ -1,0 +1,17 @@
+.slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  color: var(--muted);
+  font-size: var(--fs-md);
+  font-weight: var(--w-bold);
+  gap: 6px;
+}
+
+.issue {
+  font-size: var(--fs-sm);
+  font-weight: var(--w-body);
+  color: var(--placeholder);
+}
