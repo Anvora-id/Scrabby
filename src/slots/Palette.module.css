@@ -2,8 +2,12 @@
   display: flex;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
+  border: 2px solid var(--line-soft);
+  border-radius: var(--r-panel);
 }
 
+/* The divider sits on the list's left edge, so a folded palette has no double line. */
 .column {
   display: flex;
   flex-direction: column;
@@ -13,7 +17,6 @@
   padding: 8px 0;
   overflow-y: auto;
   background: var(--surface);
-  border-right: 2px solid var(--line-soft);
 }
 
 .toggle {
@@ -73,7 +76,7 @@
   padding: 6px 14px 60px;
   overflow: auto;
   background: var(--soft);
-  border-right: 2px solid var(--line-soft);
+  border-left: 2px solid var(--line-soft);
 }
 
 .list h4 {

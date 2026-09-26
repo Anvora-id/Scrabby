@@ -8,7 +8,7 @@
 | Press (any button with a bottom edge, and a Block's header on pointer down) | Moves down by its own bottom-edge height (2–5px, as each component states) as the edge shrinks to 1px, over `--t-press`. On release it springs back over 250ms with `--spring`. |
 | Hover (Blocks, palette items, Library tiles) | Lifts 1px (palette items 2px) and the edge grows by the same amount, over `--t-quick`. |
 | Drag start | The copy that follows the pointer scales to 1.03 over `--t-quick`, with `--shadow-drag`. |
-| Drop | The dropped item lands with a squash: `scale(1.04, .94)` for 90ms, then settles to 1 over `--t-pop` with `--spring`. Items that make room slide over `--t-pop` with `--spring`. |
+| Drop | The dropped item lands with a small, quick squash: `scale(1.02, .97)` for 40ms, then settles to 1 over `--t-quick` with `--ease`, no overshoot (190ms in all). Items that make room slide over `--t-pop` with `--spring`. |
 | Let go where nothing takes it, or Esc during a drag | A new item's copy fades out and shrinks to 90% where it was let go, over `--t-pop` with `--ease`. A moved item's copy flies back to its spot over `--t-pop` with `--spring`; the item shows again when it arrives. Reduced motion: the new item's copy only fades, and a moved item is back at once. |
 | Delete by dragging to the palette | The copy fades out and shrinks to 90% where it was let go, as above. |
 | Preview full size opens | The backdrop fades in over `--t-quick`; the panel pops from 96% to full size over `--t-pop` with `--spring`. Closing is instant. Reduced motion: no pop. |

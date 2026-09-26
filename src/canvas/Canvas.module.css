@@ -61,14 +61,14 @@ body > .avatar.back {
 
 .landed {
   transform-origin: 50% 100%;
-  animation: land calc(90ms + var(--t-pop));
+  animation: land calc(40ms + var(--t-quick));
 }
 
-/* squash for 90ms, then settle over --t-pop */
+/* a small squash held 40ms, then a plain settle over --t-quick; 21% = 40ms of 190ms, so it follows --t-quick = 150ms */
 @keyframes land {
-  0%, 22% {
-    scale: 1.04 0.94;
-    animation-timing-function: var(--spring);
+  0%, 21% {
+    scale: 1.02 0.97;
+    animation-timing-function: var(--ease);
   }
   to {
     scale: 1;
