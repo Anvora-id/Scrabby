@@ -48,6 +48,10 @@ describe('formatBytes', () => {
     expect(formatBytes(640 * 1024)).toBe('640 KB')
   })
 
+  it('formats 1 KB without a trailing .0', () => {
+    expect(formatBytes(1024)).toBe('1 KB')
+  })
+
   it('formats 1.2 MB', () => {
     expect(formatBytes(Math.round(1.2 * 1024 * 1024))).toBe('1.2 MB')
   })

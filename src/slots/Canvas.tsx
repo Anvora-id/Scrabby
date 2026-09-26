@@ -292,7 +292,7 @@ export default function Canvas() {
       let newId = ''
       updateProject(q => { newId = dropItem(q, item, to) })
       setBusy(newId)
-      if (item.kind === 'newBlock' || item.kind === 'newInstance') droppedBlock(newId)
+      if (item.kind === 'newBlock') droppedBlock(newId)
     }
 
     window.addEventListener('pointermove', onMove)

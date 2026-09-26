@@ -206,7 +206,8 @@ ${body}
   </footer>
   <script src="script.js"></script>
 </body>
-</html>`
+</html>
+`
   }
 
   const homeBody = (withHours: boolean) => `  <main>

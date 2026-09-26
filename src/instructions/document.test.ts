@@ -114,6 +114,10 @@ describe('instructionDocument', () => {
   it("equals Appendix A for the demo's Build 1", () => {
     expect(doc(demoProject()).document).toBe(`${HEADER}\n\n${APPENDIX_A}`)
     expect(doc(demoProject()).skipped).toEqual([])
+    const d = doc(demoProject()).document
+    expect(d).toContain('- on click (when a visitor clicks this Block): go to "Menu" page (menu.html) #b3')
+    expect(d).toContain('- on click (when a visitor clicks this Block): open "Order" popup #b12')
+    expect(d).toContain('- on click (when a visitor clicks this Block): submits (fake)')
   })
 
   it('stops with no Site or no Page', () => {

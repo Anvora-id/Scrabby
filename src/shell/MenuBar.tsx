@@ -46,10 +46,12 @@ export default function MenuBar() {
       if (!(e.ctrlKey || e.metaKey)) return
       const target = e.target as Element | null
       if (target?.closest('input, textarea, select')) return
-      if (e.key === 'z' && !e.shiftKey) {
+      // Lower-case: Shift and Caps Lock give 'Z'.
+      const key = e.key.toLowerCase()
+      if (key === 'z' && !e.shiftKey) {
         e.preventDefault()
         undo()
-      } else if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) {
+      } else if (key === 'y' || (key === 'z' && e.shiftKey)) {
         e.preventDefault()
         redo()
       }

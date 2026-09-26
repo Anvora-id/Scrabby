@@ -16,7 +16,9 @@ interface PageError { message: string; file: string }
 const codeOf = (p: Project) => JSON.stringify([p.files, p.assets])
 
 function fileOf(url: string): string {
-  const path = decodeURIComponent(new URL(url, ORIGIN).pathname.replace(/^\/preview\/[^/]+\//, ''))
+  const raw = new URL(url, ORIGIN).pathname.replace(/^\/preview\/[^/]+\//, '')
+  let path = raw
+  try { path = decodeURI(raw) } catch { /* a malformed escape: keep the raw path */ }
   return path || 'index.html'
 }
 
@@ -33,7 +35,8 @@ export default function Preview() {
   const [noWorker, setNoWorker] = useState<string | null>(null)
   const [builds, setBuilds] = useState(0)
   const frame = useRef<HTMLIFrameElement>(null)
-  const pending = useRef<Pending>({ projectId: '', files: {}, assets: [], path: 'index.html', flash: [] })
+  // Null until the first redraw, so the shell never gets an empty load that wipes its cache (TDD §13).
+  const pending = useRef<Pending | null>(null)
   const calls = useRef(0)
   const stale = code !== sent
 
@@ -57,6 +60,7 @@ export default function Preview() {
     if (e.origin !== ORIGIN || !win || e.source !== win) return
     const d = e.data
     if (d?.preview === 'ready') {
+      if (!pending.current) return
       const { projectId, files, assets, path } = pending.current
       win.postMessage({ preview: 'files', projectId, files, assets, path }, ORIGIN)
     } else if (d?.preview === 'no-worker') {
@@ -71,9 +75,10 @@ export default function Preview() {
         return
       }
       setPage(path)
-      const ids = pending.current.flash
-      if (ids.length) {
-        pending.current.flash = []
+      const next = pending.current
+      if (next?.flash.length) {
+        const ids = next.flash
+        next.flash = []
         win.postMessage({ preview: 'flash', ids }, ORIGIN)
       }
     }
@@ -145,7 +150,7 @@ export default function Preview() {
               <p>It needs a Service Worker, and the browser blocked it. Brave and strict privacy settings can do this. Try Chrome, or allow this site to store data.</p>
               <small>{noWorker}</small>
             </div>
-          ) : (
+          ) : load > 0 && (
             <iframe key={load} ref={frame} className={styles.page} src={ORIGIN + '/'} title="Preview of your website" />
           )}
           {built && error && (

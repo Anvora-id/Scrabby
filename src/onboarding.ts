@@ -31,6 +31,7 @@ export async function replaceProject(
     const assetEntry = project.assets.find(a => a.file === ph.file)
     if (!assetEntry) continue
     const blob = await drawPlaceholderPhoto(ph.label, ph.color)
+    assetEntry.bytes = blob.size
     await putAsset({ projectId: project.id, id: assetEntry.id, blob })
   }
   for (const cp of checkpoints) {

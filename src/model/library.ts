@@ -28,7 +28,7 @@ export function formatBytes(n: number): string {
   } else {
     v = n / (1024 * 1024 * 1024); unit = 'GB'
   }
-  const formatted = v < 10 ? v.toFixed(1) : String(Math.round(v))
+  const formatted = v < 10 ? String(+v.toFixed(1)) : String(Math.round(v))
   return `${formatted} ${unit}`
 }
 

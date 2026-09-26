@@ -79,7 +79,9 @@ export async function ask(text: string): Promise<string | undefined> {
   try {
     for await (const e of runAgent({ kind: 'assistant', messages, context: turnContext(p), files: p.files })) {
       if (token.stopped) {
-        if (bob !== undefined) show(said.trim() || 'Stopped.')
+        // Stopped before `start`: still show the question and that it was stopped.
+        start()
+        show(said.trim() || 'Stopped.')
         break
       }
       if (e.type === 'limit') return e.message
@@ -105,7 +107,7 @@ export async function ask(text: string): Promise<string | undefined> {
 const libraryLine = (a: Project['assets'][number]) =>
   `assets/${a.file}: ${a.kind}` +
   (a.width && a.height ? `, ${a.width}×${a.height} px` : '') +
-  (a.seconds !== undefined ? `, ${Math.round(a.seconds)} s` : '')
+  (a.seconds ? `, ${Math.round(a.seconds)} s` : '')
 
 export function turnContext(p: Project): AssistantContext {
   const file = getEditorUi().file
@@ -165,6 +167,7 @@ export function acceptAll(time: number): void {
 }
 
 export function rejectAll(time: number): void {
+  if (proposalAt(time)?.done) return
   setProposal(time, x => ({ ...x, decided: x.total, done: true }))
 }
 
@@ -178,7 +181,7 @@ export async function askAgain(time: number): Promise<void> {
 
 export function decide(time: number, path: string, code: string, proposed: string): void {
   const pr = proposalAt(time)
-  if (!pr) return
+  if (!pr || pr.done || !(path in pr.files)) return
   const before = getProject().files
   const accepted = code !== (pr.files[path]?.base ?? '')
   if (accepted) updateProject(p => { p.files[path] = code }, null)
@@ -195,11 +198,9 @@ export function decide(time: number, path: string, code: string, proposed: strin
 }
 
 export function dropPending(line?: string): void {
+  // Only mark it: the token clears when the reader sees it and stops.
   const token = reply.get()
-  if (token) {
-    token.stopped = true
-    reply.set(null)
-  }
+  if (token) token.stopped = true
   setChat(chat => chat.map(m => (m.proposal && !m.proposal.done ? { ...m, proposal: { ...m.proposal, decided: m.proposal.total, done: true } } : m)))
   if (line) addLine(line)
 }
