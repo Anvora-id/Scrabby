@@ -43,6 +43,7 @@ import {
   CaretDownIcon,
   CheckIcon,
   XIcon,
+  ArrowsInIcon,
 } from '@phosphor-icons/react'
 
 export const ICONS = {
@@ -93,6 +94,8 @@ export const ICONS = {
   check: CheckIcon,
   close: XIcon,
   reload: ArrowClockwiseIcon,
+  full_size: ArrowsOutIcon,
+  normal_size: ArrowsInIcon,
 } satisfies Record<string, Icon>
 
 export type IconKey = keyof typeof ICONS

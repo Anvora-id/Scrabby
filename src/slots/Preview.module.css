@@ -5,6 +5,46 @@
   flex-direction: column;
 }
 
+/* Full size: the panel floats 24px inside the window over the dimmed app,
+   under the show-around (z-index 49 and up). */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: color-mix(in srgb, var(--brand) 88%, transparent);
+  animation: dim var(--t-quick) var(--ease);
+}
+
+.full {
+  position: fixed;
+  inset: 24px;
+  z-index: 46;
+  overflow: hidden;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: var(--r-panel);
+  box-shadow: 0 3px 0 var(--line);
+  animation: grow var(--t-pop) var(--spring);
+}
+
+@keyframes dim {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes grow {
+  from {
+    scale: 0.96;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .full {
+    animation: none;
+  }
+}
+
 /* Address bar: a panel sub-bar */
 .bar {
   display: flex;

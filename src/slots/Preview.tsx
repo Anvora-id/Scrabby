@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { listAssets, listCheckpoints, type AssetBlob } from '../db.ts'
+import { listAssets, type AssetBlob } from '../db.ts'
+import { checkpointTitle } from '../checkpoints.ts'
 import { ICONS } from '../icons.ts'
+import { cx } from '../canvas/cx.ts'
 import { onRedraw, previewHooks, takeFlash } from '../preview.ts'
 import { getProject, useProject } from '../store.ts'
 import type { Project } from '../model/types.ts'
@@ -33,7 +35,7 @@ export default function Preview() {
   const [paused, setPaused] = useState(false)
   const [error, setError] = useState<PageError | null>(null)
   const [noWorker, setNoWorker] = useState<string | null>(null)
-  const [builds, setBuilds] = useState(0)
+  const [full, setFull] = useState(false)
   const frame = useRef<HTMLIFrameElement>(null)
   // Null until the first redraw, so the shell never gets an empty load that wipes its cache (TDD §13).
   const pending = useRef<Pending | null>(null)
@@ -102,26 +104,35 @@ export default function Preview() {
     return () => clearTimeout(t)
   }, [code, sent, paused, stale])
 
+  // ponytail: Esc reaches the app only while it has focus; after a click in the website (another origin) the button or the backdrop closes it.
   useEffect(() => {
-    let on = true
-    listCheckpoints(p.id)
-      .then(cs => { if (on) setBuilds(cs.filter(c => c.blocks).length) })
-      .catch(e => console.error('Loading the Checkpoints failed', e))
-    return () => { on = false }
-  }, [p.id, code])
+    if (!full) return
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') setFull(false) }
+    addEventListener('keydown', key)
+    return () => removeEventListener('keydown', key)
+  }, [full])
 
   const built = Object.keys(p.files).length > 0
   const Reload = ICONS.reload
+  const Size = full ? ICONS.normal_size : ICONS.full_size
 
+  // Full size only swaps a class, so the frame stays put and the page doesn't reload.
   return (
-    <div className={styles.root}>
+    <>
+    {full && <div className={styles.backdrop} onClick={() => setFull(false)} />}
+    <div className={cx(styles.root, full && styles.full)}>
       <div className={styles.bar}>
         <button className={styles.ghost} title="Reload the page with your latest code" onClick={() => redraw()}>
           <Reload size={16} weight="bold" />
           {paused && stale && <span className={styles.dot} aria-label="Your code has changed" />}
         </button>
+        {built && (
+          <button className={styles.ghost} title={full ? 'Back to normal size' : 'Show the website full size'} onClick={() => setFull(!full)}>
+            <Size size={16} weight="bold" />
+          </button>
+        )}
         <span className={styles.pill}>{built ? `${slugOf(p.name)} / ${page}` : 'not built yet'}</span>
-        {builds > 0 && <span>Build {builds}</span>}
+        {p.checkpoint !== undefined && <span>{checkpointTitle(p, p.checkpoint)}</span>}
         <label className={styles.switch}>
           Pause live updates
           <input
@@ -157,11 +168,12 @@ export default function Preview() {
               <span className={styles.bang}>!</span>
               <b>Something on this page isn't working</b>
               <span className={styles.message}>{error.message}</span>
-              <button className={styles.ghost} onClick={() => previewHooks.askBobToFix(error)}>Ask Bob to fix it</button>
+              <button className={styles.ghost} onClick={() => { setFull(false); previewHooks.askBobToFix(error) }}>Ask Bob to fix it</button>
             </div>
           )}
         </div>
       </div>
     </div>
+    </>
   )
 }
