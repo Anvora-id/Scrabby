@@ -7,7 +7,7 @@ import { instructionDocument } from './instructions/document.ts'
 import { flashBlocks } from './preview.ts'
 import { addCheckpoint } from './db.ts'
 import { getProject, getUi, setProject, setStep } from './store.ts'
-import { getBuild, nothingNew, pageName, progress, runBuild, type BuildRun } from './build.ts'
+import { getBuild, guardImages, nothingNew, pageName, progress, runBuild, type BuildRun } from './build.ts'
 
 const fake = vi.hoisted(() => ({ saved: [] as Checkpoint[], events: [] as AgentEvent[], requests: [] as AgentRequest[] }))
 vi.mock('./db.ts', () => ({
@@ -65,7 +65,8 @@ describe('runBuild', () => {
     expect(q.blocks.canvas.children).toContain(loose)
     expect(q.blocks[loose]).toBeDefined()
     expect(q.checkpoint).toBe(1)
-    expect(q.files['style.css']).toBe(v1['style.css'])
+    expect(q.files['style.css']).toBe(guardImages(v1)['style.css'])
+    expect(q.files).toEqual(fake.saved[0].after)
 
     expect(getBuild()).toMatchObject({ n: 1, state: 'done', loose: 1, lit: [pages[0], pages[0]] })
     expect(flashBlocks).toHaveBeenLastCalledWith([pages[0], pages[0]])
@@ -174,5 +175,19 @@ describe('progress', () => {
   it('has every chip done on done and none on failed', () => {
     expect(progress(run('done', ['a']))).toEqual({ done: new Set(['a', 'b', 'c']) })
     expect(progress(run('failed', ['a', 'b']))).toEqual({ done: new Set() })
+  })
+})
+
+describe('guardImages', () => {
+  it('puts the image rule at the top of style.css once', () => {
+    const files = guardImages({ 'index.html': '<p>', 'style.css': 'body { margin: 0; }' })
+    expect(files['style.css']).toBe('/* Pictures and videos never grow wider than their box */\nimg, video { max-width: 100%; height: auto; }\n\nbody { margin: 0; }')
+    expect(guardImages(files)).toBe(files)
+  })
+  it('leaves a guarded or missing style.css alone', () => {
+    const guarded = { 'style.css': 'img, video {\n  max-width: 100%;\n  height: auto;\n}' }
+    expect(guardImages(guarded)).toBe(guarded)
+    const none = { 'index.html': '<p>' }
+    expect(guardImages(none)).toBe(none)
   })
 })

@@ -98,7 +98,7 @@ async function build(): Promise<string | undefined> {
     }
     if (e.type === 'files') {
       const number = saved.length + 1
-      const after = { ...e.files, ['.builds/build-' + n + '.md']: doc.document }
+      const after = guardImages({ ...e.files, ['.builds/build-' + n + '.md']: doc.document })
       try {
         await addCheckpoint({
           projectId: p.id, number, label: 'Checkpoint ' + number,
@@ -118,6 +118,13 @@ async function build(): Promise<string | undefined> {
       return
     }
   }
+}
+
+// Pictures never break a page's layout, even when Bob forgets the code rule.
+export function guardImages(files: Files): Files {
+  const css = files['style.css']
+  if (css === undefined || /img\s*,\s*video\s*\{[^}]*max-width:\s*100%/.test(css)) return files
+  return { ...files, 'style.css': '/* Pictures and videos never grow wider than their box */\nimg, video { max-width: 100%; height: auto; }\n\n' + css }
 }
 
 export function builtBlocks(p: Project, top: string): BuiltBlocks {
