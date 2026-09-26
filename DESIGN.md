@@ -119,7 +119,6 @@ The category colors are "Medium" strength (D-Q18): stronger than the old pastels
   | Build card | Full figure, 118px tall, hopping on the Build stage ([Build button and Build card](#build-button-and-build-card)) |
   | Assistant title bar | Head avatar, 30px ([Assistant](#assistant)) |
   | Speech bubbles | Full figure, 74px tall, beside the bubble ([Speech bubble](#speech-bubble)) |
-  | Age check modal | Full figure, 110px tall, left of the text ([Menus](#menus)) |
   | Empty Canvas | Full figure, 64px tall, above the empty hint ([Canvas](#canvas)) |
   | Empty Preview | Full figure, 64px tall, above the empty line ([Preview](#preview)) |
   | Empty chat | Head, 40px, above the empty line ([Assistant](#assistant)) |
@@ -334,7 +333,6 @@ Bob talking: the show-around, the one-time tip, the limit message and the blocke
 
 - **Context menu** (right-click): `--surface`, 2px `--line`, radius 14px, `--shadow-menu`, padding 6px, min-width 210px, `--fs-md` weight 700. Item padding 8px 12px, radius 9px; hover `--brand-tint` fill with `--brand` text. It pops in from 96% scale over `--t-quick`. Escape or a click outside closes it.
 - **Modal:** a backdrop of `--brand` at 88% over the whole app. The box is centered, 100px from the top, `--surface`, radius `--r-card`, a 6px bottom edge of `#0000002e`, overflow hidden, `--text` weight 600 body text. Its header is 56px tall, `--brand` fill, with the title centered in white 18px weight 900. The body has padding 24px. Buttons sit at the bottom right, gap 8px. The box pops in ([Motion](#motion)). Used for:
-  - **The first-visit age check** (PRD §8), shown once before Plan; the answer is remembered. Title "Welcome to Scrabby". Bob (110px, [Brand and Bob](#brand-and-bob)) stands left of the text, gap 20px. Text: "This early version of Scrabby is for grown-ups: teachers, parents and new coders." One Primary button, **I'm 18 or older, let's go**. Below it, `--fs-sm` `--hint`: "A version for young coders is on its way, through schools and parents." There is no close button and no "No": closing the tab is the way out.
   - **The New Project warning** (PRD §9). Title "Start a new Project?", body "Only one Project is saved, so this one will be replaced, Blocks and all. Download code first to keep a copy of the website's code." Buttons: **Download code** (Secondary), **Cancel** (Text), **Start a new Project** (Primary).
   - **The demo warning** (PRD-43), only if the current Project isn't empty. Title "Load the demo?", body "This replaces your current Project, Blocks and all. Download code first to keep a copy of the website's code." Buttons: **Download code** (Secondary), **Cancel** (Text), **Load the demo** (Primary).
   - **The Checkpoint warning** (ADR 0005), before **Go back to this** or **Edit its Blocks** in [Checkpoints](#checkpoints). Title "Go back to Checkpoint N?" or "Edit the Blocks of Checkpoint N?". Body, one paragraph per line:
@@ -505,7 +503,7 @@ From ticket 02. Three steps, and only one is on screen at a time: **1 Plan › 2
 - **Block chip:** clicking a chip in the code opens Plan on the Checkpoints tab, at the Checkpoint whose Build made that code, with that Block flashing and scrolled to the center.
 - Whatever is jumped to scrolls smoothly to the center.
 
-**First visit** (PRD §8–§9): the age check modal ([Menus](#menus)), shown once. Then Plan opens on an empty Project, with the empty hint ([Canvas](#canvas)), and the show-around starts ([Speech bubble](#speech-bubble)). Below the Site Block, **Try the demo: Maya's bake sale** loads the demo Project ([Canvas](#canvas)); so does **Demo** in the menu bar.
+**First visit** (PRD §9): Plan opens on an empty Project, with the empty hint ([Canvas](#canvas)), and the show-around starts ([Speech bubble](#speech-bubble)). Below the Site Block, **Try the demo: Maya's bake sale** loads the demo Project ([Canvas](#canvas)); so does **Demo** in the menu bar.
 
 **Screen sizes** (D-Q6): design for 1920×1080, the demo recording. The smallest supported size is 1366×768: nothing may scroll sideways or get cut off there, and the palette folds to give the Canvas room. No tablets or phones.
 

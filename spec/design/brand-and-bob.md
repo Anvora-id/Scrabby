@@ -13,7 +13,6 @@
   | Build card | Full figure, 118px tall, hopping on the Build stage ([Build button and Build card](#build-button-and-build-card)) |
   | Assistant title bar | Head avatar, 30px ([Assistant](#assistant)) |
   | Speech bubbles | Full figure, 74px tall, beside the bubble ([Speech bubble](#speech-bubble)) |
-  | Age check modal | Full figure, 110px tall, left of the text ([Menus](#menus)) |
   | Empty Canvas | Full figure, 64px tall, above the empty hint ([Canvas](#canvas)) |
   | Empty Preview | Full figure, 64px tall, above the empty line ([Preview](#preview)) |
   | Empty chat | Head, 40px, above the empty line ([Assistant](#assistant)) |

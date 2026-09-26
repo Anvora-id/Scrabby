@@ -1,4 +1,4 @@
-/* ── modals: age check and replace warnings ─────────────────────────────────── */
+/* ── modals: replace warnings ─────────────────────────────────── */
 
 .backdrop {
   position: fixed;
@@ -43,22 +43,6 @@
 
 .body p {
   margin: 0 0 20px;
-}
-
-.ageBody {
-  display: flex;
-  gap: 20px;
-}
-
-.ageBob {
-  height: 110px;
-  flex: none;
-}
-
-.body .later {
-  margin: 12px 0 0;
-  font-size: var(--fs-sm);
-  color: var(--hint);
 }
 
 .buttons {

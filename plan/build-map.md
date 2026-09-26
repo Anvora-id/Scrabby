@@ -8,7 +8,7 @@ A live Scrabby on Vercel (`*.vercel.app`) that does everything the team prototyp
 
 1. **Bob runs the product.** Builds and the Assistant call IBM Bob's OpenAI-compatible inference endpoint through our own tool loop (TDD §5). Gemini is gone; any fallback model is a settings change.
 2. **Hosted, not local.** Two Vercel Hobby projects from one repo: the app (with the `/api/agent` function) and the Preview origin (TDD §1).
-3. **PRD §8 guardrails and the Bob kit**, which the team prototype cut: the age check, the Bob badge, usage limits, and the Bob kit in the Download (TDD §5.2, §16, §17).
+3. **PRD §8 guardrails and the Bob kit**, which the team prototype cut: the Bob badge, usage limits, and the Bob kit in the Download (TDD §5.2, §16, §17).
 
 Done = issue 17's walk passes on the live URL, and the PRD §7 checklist passes.
 
@@ -72,7 +72,7 @@ Two developers, each driving Bob on one lane. Merge each issue to `main` as soon
 | 6 | 06 Notes, menus, tooltips, Bob picks | 12 Library and Download with the Bob kit |
 | 7 | 07 Custom Blocks UI | (waits for 08) |
 | 8 | 08 Warnings and the instruction document | |
-| 9 | 15 Onboarding, demo, age check | 13 Build |
+| 9 | 15 Onboarding and demo | 13 Build |
 | 10 | | 14 Checkpoints tab |
 | 11 | | 16 Assistant |
 | 12 | 17 Deploy and done walk (both) | 17 |
@@ -99,7 +99,7 @@ Hour 34 (Sun 01:00 UTC): one developer moves to the submission package (PRD §13
 | [12](issues/12-library-download.md) | Library and Download with the Bob kit | 03 | §4 (library), §16 | ~3 |
 | [13](issues/13-build.md) | Build | 08, 09, 10, 11 | §11 | ~4 |
 | [14](issues/14-checkpoints.md) | Checkpoints tab | 13 | §12 | ~4 |
-| [15](issues/15-onboarding.md) | Onboarding, demo and age check | 19 | §17 | ~3 |
+| [15](issues/15-onboarding.md) | Onboarding and demo | 19 | §17 | ~3 |
 | [16](issues/16-assistant.md) | Assistant | 09, 11 | §15, §14 | ~5 |
 | [17](issues/17-deploy-done-walk.md) | Deploy and done walk | 20 | §1, §20 | ~3 |
 | [18](issues/18-deploy-checks.md) | Deploy checks before push and PR | 01 | §1 | ~3 |
@@ -113,7 +113,7 @@ Budget = rough Bobcoins per fresh task (issues 01–07; 08 onward aren't billed 
 - Replicate the team prototype as specified in TDD.md; no prototype code is copied. Where DESIGN.md differs, TDD §18 wins.
 - Runtime: IBM Bob inference endpoint, `Authorization: Apikey`, model `premium`, our own `view`/`create`/`str_replace`/`insert` tools, 40 rounds and 240 s per run, non-streaming model calls (Assistant text arrives per round).
 - Hosting: Vercel Hobby, two projects, `maxDuration` 300, skills shipped with `includeFiles`.
-- Guardrails: age check (18+), Bob badge naming `AGENT_LABEL`, keys server-only, per-browser and daily limits in function memory (PRD §8).
+- Guardrails: Bob badge naming `AGENT_LABEL`, keys server-only, per-browser and daily limits in function memory (PRD §8).
 - Adults only; Scratch's name, logo and Cat never in the product.
 - Plain CSS with DESIGN.md tokens, Phosphor icons, CodeMirror 6, IndexedDB, fflate. No other dependencies.
 

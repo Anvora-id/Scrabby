@@ -23,7 +23,7 @@ Nothing new. The live URL passes the walk below and PRD §7's checklist. Anythin
 
 ## The walk
 
-1. Fresh private window: the age check, then an empty Project on Plan with the empty hint, the demo button and the show-around.
+1. Fresh private window: an empty Project on Plan with the empty hint, the demo button and the show-around.
 2. Load the demo: "✓ Nothing to check". Hover a Block and a Trait: tooltips.
 3. Drag a Block into a Page, change a Trait value, set one Trait to Bob picks, add a Note, fold a Block, Undo and Redo.
 4. Edit the "Top bar" Custom Block: every Instance follows.

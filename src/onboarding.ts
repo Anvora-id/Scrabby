@@ -63,17 +63,6 @@ export function askDemo(): void {
 export function askNewProject(): void { askStore.set('new') }
 export function closeAsk(): void { askStore.set(null) }
 
-// ── age check ─────────────────────────────────────────────────────────────────
-
-function readAdult(): boolean {
-  try { return localStorage.getItem('scrabby.adult') === '1' } catch { return false }
-}
-export const adultStore = createStore(readAdult())
-export function acceptAdult(): void {
-  try { localStorage.setItem('scrabby.adult', '1') } catch { /* storage off: asked again next visit */ }
-  adultStore.set(true)
-}
-
 // ── tours and the tip ─────────────────────────────────────────────────────────
 
 export type TourName = 'plan' | 'try'

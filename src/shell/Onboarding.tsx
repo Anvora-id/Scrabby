@@ -2,47 +2,27 @@ import { useEffect, useLayoutEffect, useReducer, useRef, type ReactNode } from '
 import { getProject, useUi } from '../store.ts'
 import { downloadCode } from '../download.ts'
 import {
-  acceptAdult, adultStore, askDemo, askStore, closeAsk, closeTip, endTour, loadDemo, newProject, nextBubble, once,
+  askDemo, askStore, closeAsk, closeTip, endTour, loadDemo, newProject, nextBubble, once,
   placeBubble, startTour, tipStore, tourStore, TOURS,
 } from '../onboarding.ts'
 import styles from './Onboarding.module.css'
 
 export default function Onboarding() {
-  const adult = adultStore.use()
   const { step } = useUi()
 
   useEffect(() => {
-    if (adult && once('scrabby.tour.plan')) startTour('plan')
-  }, [adult])
+    if (once('scrabby.tour.plan')) startTour('plan')
+  }, [])
   useEffect(() => {
-    if (adult && step === 'try' && once('scrabby.tour.try')) startTour('try')
-  }, [adult, step])
+    if (step === 'try' && once('scrabby.tour.try')) startTour('try')
+  }, [step])
 
-  if (!adult) return <AgeCheck />
   return (
     <>
       <Tour />
       <Tip />
       <ReplaceWarning />
     </>
-  )
-}
-
-function AgeCheck() {
-  return (
-    <div className={styles.backdrop}>
-      <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="age-title">
-        <h2 id="age-title" className={styles.title}>Welcome to Scrabby</h2>
-        <div className={`${styles.body} ${styles.ageBody}`}>
-          <img src="/bob.svg" alt="" className={styles.ageBob} />
-          <div>
-            <p>This early version of Scrabby is for grown-ups: teachers, parents and new coders.</p>
-            <button className={styles.primary} autoFocus onClick={acceptAdult}>I'm 18 or older, let's go</button>
-            <p className={styles.later}>A version for young coders is on its way, through schools and parents.</p>
-          </div>
-        </div>
-      </div>
-    </div>
   )
 }
 

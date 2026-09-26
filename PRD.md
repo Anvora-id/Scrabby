@@ -71,7 +71,7 @@ Locked (PRD-28):
 ## 3. Users
 
 - **Vision:** young developers, roughly ages 8–14, who know Scratch.
-- **Hackathon build: adults only.** The AI providers we can use today do not allow users under 18. The demo is for adult judges and uses sample Projects. Stated users: adult beginners, and adults who teach kids to code. The age check is in §8.
+- **Hackathon build: adults only.** The AI providers we can use today do not allow users under 18. The demo is for adult judges and uses sample Projects. Stated users: adult beginners, and adults who teach kids to code.
 - **Roadmap:** kids get access through schools and parents, who give consent, on an AI provider that allows child users.
 
 ## 4. Core loop
@@ -181,7 +181,7 @@ If the Assistant is dropped, everything that depends on it goes too: the diff ca
   - 2:30–4:00 **Why it matters:** the locked goal words in §2 (including the evidence line), the market, the competitor chart and the revenue model.
   - 4:00–4:45 **Roadmap and team:** the kids' version through schools and parents on an AI provider that allows children, explanation levels matched to ages 7, 9 and 12, games later, and which model ran the demo.
 - **Checklist before submitting** (PRD-42). The submission-package developer runs it at hour 38 (Sun 05:00 UTC, 12:00 local) and again after the final deploy, before submitting:
-  1. In a fresh browser, the link opens the age check, then Plan, and the demo site loads (PRD-43).
+  1. In a fresh browser, the link opens Plan, and the demo site loads (PRD-43).
   2. Building the demo site takes under 2 minutes. This is unmeasured, so time one real Build on day 1. If it's slow, trim the site or lower Bob's thinking level for Builds.
   3. Every link, the popup, the form and the quiz work in the Preview.
   4. A hand edit survives a second Build.
@@ -195,19 +195,13 @@ If the Assistant is dropped, everything that depends on it goes too: the diff ca
 
 Ticket 10, settled with PRD-30 and PRD-35. The hackathon build is for adults: IBM says its services are "not intended for use by children or minors", and lablab's own terms require users to be 18 or older.
 
-1. **Age check** on the first visit, before Plan. It reads as an early version for grown-ups, not a content warning:
-   - Title: "Welcome to Scrabby".
-   - Text: "This early version of Scrabby is for grown-ups: teachers, parents and new coders."
-   - Button: **I'm 18 or older, let's go**.
-   - Below it: "A version for young coders is on its way, through schools and parents."
-   - The answer is remembered in the browser. There is no other way in.
-2. **Bob badge:** the model's name is always shown, so users know they're talking to an AI.
-3. **Keys stay on the server,** never in the browser or the public repo.
-4. **Usage limits** (W-21): each browser gets 10 Builds and 40 Assistant messages per hour. For everyone together, the daily limit is 40 Builds and 150 Assistant answers. The Bobcoin balance of the key's account is the backstop: when it runs low, switch to a fallback model (§5). Counts live in the running server function, so they are approximate (W-20); they key on a per-browser id, never on IP. The messages:
+1. **Bob badge:** the model's name is always shown, so users know they're talking to an AI.
+2. **Keys stay on the server,** never in the browser or the public repo.
+3. **Usage limits** (W-21): each browser gets 10 Builds and 40 Assistant messages per hour. For everyone together, the daily limit is 40 Builds and 150 Assistant answers. The Bobcoin balance of the key's account is the backstop: when it runs low, switch to a fallback model (§5). Counts live in the running server function, so they are approximate (W-20); they key on a per-browser id, never on IP. The messages:
    - For one browser: "You've used this hour's 10 Builds. Try again in N minutes." For questions: "You've asked Bob 40 questions this hour. Try again in N minutes."
    - For everyone: "Scrabby has reached today's limit for everyone. Please try again tomorrow."
-5. **On topic:** Bob helps only with this Project's code and Blocks (§5).
-6. **The model's own safety filters stay on.**
+4. **On topic:** Bob helps only with this Project's code and Blocks (§5).
+5. **The model's own safety filters stay on.**
 
 Not in the hackathon build: a Report button and a log of flagged messages. They come with the kids' version.
 

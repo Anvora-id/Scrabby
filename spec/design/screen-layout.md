@@ -16,6 +16,6 @@ From ticket 02. Three steps, and only one is on screen at a time: **1 Plan › 2
 - **Block chip:** clicking a chip in the code opens Plan on the Checkpoints tab, at the Checkpoint whose Build made that code, with that Block flashing and scrolled to the center.
 - Whatever is jumped to scrolls smoothly to the center.
 
-**First visit** (PRD §8–§9): the age check modal ([Menus](#menus)), shown once. Then Plan opens on an empty Project, with the empty hint ([Canvas](#canvas)), and the show-around starts ([Speech bubble](#speech-bubble)). Below the Site Block, **Try the demo: Maya's bake sale** loads the demo Project ([Canvas](#canvas)); so does **Demo** in the menu bar.
+**First visit** (PRD §9): Plan opens on an empty Project, with the empty hint ([Canvas](#canvas)), and the show-around starts ([Speech bubble](#speech-bubble)). Below the Site Block, **Try the demo: Maya's bake sale** loads the demo Project ([Canvas](#canvas)); so does **Demo** in the menu bar.
 
 **Screen sizes** (D-Q6): design for 1920×1080, the demo recording. The smallest supported size is 1366×768: nothing may scroll sideways or get cut off there, and the palette folds to give the Canvas room. No tablets or phones.
