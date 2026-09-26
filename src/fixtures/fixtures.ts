@@ -25,7 +25,7 @@ export function demoProject(): Project {
     width: 1200,
     height: 800,
   } satisfies Asset))
-  p.next.a = 7
+  p.next.a = DEMO_PHOTOS.length + 1
 
   // Helpers: arguments evaluated before B/T calls, so inner ids come first
   function T(type: Parameters<typeof addTrait>[1], value?: string, extra?: Record<string, unknown>): string {

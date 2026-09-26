@@ -973,7 +973,7 @@ DESIGN.md's look was redone on 2026-09-26 (D-Q14 to D-Q27: Grape, Bob blue, Nuni
 `DEMO_PHOTOS` (real photos in `public/demo/`, credits in `public/demo/CREDITS.md`; each a 1200×800 JPEG under 250 KB; §17 fetches them): `cupcakes.jpg`, `layer-cake.jpg`, `cookies.jpg`, `bake-stall.jpg`, `lemon-drizzle.jpg`, `brownie.jpg`.
 
 **demoProject()** ("Maya's bake sale", PRD §7). `T(type, value?, extra?)` = `addTrait` then assign extra; `B(type, name, traits = [], children = [])` = `addBlock` then set traits and children (arguments are evaluated first, so inner Traits and Blocks get lower ids). Steps:
-1. `p = emptyProject()` (Site `b1`); `p.name = "Maya's bake sale"`; `p.assets` = the 6 photos as `{ id: 'a1'…'a6', file, kind:'image', mime:'image/jpeg', bytes:0, width:1200, height:800 }`; `p.next.a = 7`.
+1. `p = emptyProject()` (Site `b1`); `p.name = "Maya's bake sale"`; `p.assets` = the 6 photos as `{ id: 'a1'…'a6', file, kind:'image', mime:'image/jpeg', bytes:0, width:1200, height:800 }`; `p.next.a = DEMO_PHOTOS.length + 1` (7).
 2. Site: name `Maya's bake sale`, traits `[T('color','#F8BBD0'), T('vibe','playful'), T('font','friendly')]`.
 3. `home = B('page','Home')`, `menu = B('page','Menu')`, `quiz = B('page','Quiz')`; Site children `[home, menu, quiz]`.
 4. Definitions (off the Canvas): `menuButton = B('button','Menu',[T('onclick','page:'+menu)])`; `quizButton = B('button','Quiz',[T('onclick','page:'+quiz)])`; `topBar = B('navbar','Top bar',[],[menuButton, quizButton])` with layout `{d:'col',k:[{d:'row',k:[menuButton, quizButton]}]}`; `bottom = B('footer','Bottom',[],[B('text', undefined)])`. `p.defs.d1 = { id:'d1', blockId: topBar, color:{h:345,s:90,l:82} }`, `d2` = bottom with `{h:15,s:90,l:82}`; set `defines`; `p.next.d = 3`.
