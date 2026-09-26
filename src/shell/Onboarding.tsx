@@ -3,7 +3,7 @@ import { getProject, useUi } from '../store.ts'
 import { downloadCode } from '../download.ts'
 import {
   askDemo, askStore, closeAsk, closeTip, endTour, firstTour, isEmptyProject, loadDemo, newProject,
-  nextBubble, once, placeBubble, startTour, tipStore, tourStore, TOURS,
+  nextBubble, once, placeBubble, startTour, tipStore, tourStore, TOURS, type Box,
 } from '../onboarding.ts'
 import styles from './Onboarding.module.css'
 
@@ -125,7 +125,7 @@ function Tour() {
   const last = tour.i === steps.length - 1
   const s = steps[tour.i]
   return (
-    <SpeechBubble key={`${tour.which}${tour.i}`} target={`[data-tour="${s.target}"]`} text={s.text}>
+    <SpeechBubble key={`${tour.which}${tour.i}`} target={`[data-tour="${s.target}"]`} text={s.text} clearOfBlocks>
       <span className={styles.count}>{tour.i + 1} of {steps.length}</span>
       <button className={styles.text} onClick={endTour}>Skip</button>
       <button className={styles.primary} autoFocus onClick={nextBubble}>{last ? 'Got it' : 'Next'}</button>
@@ -144,7 +144,34 @@ function Tip() {
   )
 }
 
-function SpeechBubble({ target, text, children }: { target: string; text: string; children: ReactNode }) {
+// A tour target can be a plain wrapper filled by the rounded panel it shows (the palette, the Canvas).
+function radiusOf(el: Element): string {
+  const r = getComputedStyle(el).borderRadius
+  const c = el.firstElementChild
+  if (r !== '0px' || !c) return r
+  const a = el.getBoundingClientRect()
+  const b = c.getBoundingClientRect()
+  return Math.abs(a.width - b.width) < 1 && Math.abs(a.height - b.height) < 1 ? radiusOf(c) : r
+}
+
+// The Blocks on the Canvas, cut to the part of the Canvas that shows them.
+function canvasBlocks(): Box[] {
+  const c = document.querySelector('[data-tour="canvas"]')?.getBoundingClientRect()
+  if (!c) return []
+  return [...document.querySelectorAll('[data-tour="canvas"] [data-bid]')]
+    .map(e => {
+      const b = e.getBoundingClientRect()
+      return {
+        left: Math.max(b.left, c.left), top: Math.max(b.top, c.top),
+        right: Math.min(b.right, c.right), bottom: Math.min(b.bottom, c.bottom),
+      }
+    })
+    .filter(b => b.right > b.left && b.bottom > b.top)
+}
+
+function SpeechBubble({ target, text, clearOfBlocks, children }: {
+  target: string; text: string; clearOfBlocks?: boolean; children: ReactNode
+}) {
   useUi() // re-place on a Step or tab change
   const [, replace] = useReducer((n: number) => n + 1, 0)
   const ring = useRef<HTMLDivElement>(null)
@@ -165,9 +192,10 @@ function SpeechBubble({ target, text, children }: { target: string; text: string
     const r = el.getBoundingClientRect()
     Object.assign(g.style, {
       left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px`,
-      borderRadius: getComputedStyle(el).borderRadius,
+      borderRadius: radiusOf(el),
     })
-    const p = placeBubble(r, b.offsetWidth, b.offsetHeight, window.innerWidth, window.innerHeight)
+    const avoid = clearOfBlocks ? canvasBlocks() : []
+    const p = placeBubble(r, b.offsetWidth, b.offsetHeight, window.innerWidth, window.innerHeight, avoid)
     b.style.left = `${p.x}px`
     b.style.top = `${p.y}px`
     b.style.setProperty('--tail', `${p.tail}px`)
