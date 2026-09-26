@@ -287,10 +287,12 @@
   background: var(--c4);
 }
 
+/* Dropdown: a pale wash, so it reads as a control and not as the sticker */
+
 .select {
   appearance: none;
   padding: 3px 24px 3px 10px;
-  background: var(--c2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M0 0h9L4.5 6z' fill='%231F1A33'/%3E%3C/svg%3E") no-repeat right 9px center;
+  background: var(--c4) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M0 0h9L4.5 6z' fill='%231F1A33'/%3E%3C/svg%3E") no-repeat right 9px center;
   border: none;
   border-radius: var(--r-pill);
   box-shadow: inset 0 -2px 0 #00000014;
@@ -300,45 +302,57 @@
   cursor: pointer;
 }
 
-.select option {
-  background: #fff;
-  color: #000;
-  font-weight: var(--w-body);
+.select:hover {
+  background-color: var(--surface);
 }
 
-.select.warn,
-.select option.warn {
-  background-color: var(--alert-bg);
-  border: 1.5px solid var(--alert);
-}
+/* Color chip: the chosen color itself; the ring keeps white visible on the sticker's white edge */
 
 .color {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 0 6px 0 0;
-  background: none;
+  padding: 3px 9px 3px 10px;
   border: none;
+  border-radius: var(--r-pill);
+  box-shadow: 0 0 0 1.5px #0003;
   color: var(--ink);
   font: inherit;
   font-weight: var(--w-heavy);
   cursor: pointer;
 }
 
-.swatch {
-  width: 20px;
-  height: 20px;
-  border: 2.5px solid #fff;
-  border-radius: 50%;
-  box-shadow: 0 0 0 1.5px var(--c3);
+.color::after {
+  content: '';
+  width: 9px;
+  height: 6px;
+  background: currentColor;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
 }
 
-/* Color menu: the context menu look */
+.color.onDark {
+  color: #fff;
+}
 
-.colorMenu {
+.color:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1.5px #0003, var(--focus);
+}
+
+/* JetBrains Mono is loaded at 500 only */
+.hex {
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+/* Dropdown list and color menu: the context menu look */
+
+.menu {
   position: fixed;
   z-index: 30;
   min-width: 210px;
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
   padding: 6px;
   background: var(--surface);
   border: 2px solid var(--line);
@@ -347,11 +361,68 @@
   color: var(--ink);
   font-size: var(--fs-md);
   font-weight: 700;
+  white-space: nowrap;
+  cursor: default;
+  transform-origin: top left;
+  animation: menuPop var(--t-quick) ease;
 }
 
-.colorTitle {
+@keyframes menuPop {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu {
+    animation: none;
+  }
+}
+
+.menuTitle {
   padding: 4px 6px 6px;
   font-weight: var(--w-heavy);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  border-radius: 9px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.item:hover,
+.item:focus {
+  outline: none;
+  background: var(--brand-tint);
+  color: var(--brand);
+}
+
+.item[aria-selected='true'] {
+  font-weight: var(--w-heavy);
+}
+
+.item svg {
+  margin-left: auto;
+}
+
+.split {
+  height: 2px;
+  margin: 4px 6px;
+  background: var(--line-soft);
+}
+
+.select.warn,
+.item.warn {
+  background-color: var(--alert-bg);
+  border: 1.5px solid var(--alert);
 }
 
 .swatches {

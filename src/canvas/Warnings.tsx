@@ -48,7 +48,7 @@ export function Popover({ p, id, ws, x, y, onShow, onClose }: {
 
   function pickOne() {
     onClose()
-    document.querySelector(`[data-tid="${id}"]`)?.querySelector<HTMLElement>('select, input, textarea')?.focus()
+    document.querySelector(`[data-tid="${id}"]`)?.querySelector<HTMLElement>('button[aria-haspopup], input, textarea')?.focus()
   }
 
   return createPortal(

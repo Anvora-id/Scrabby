@@ -10,9 +10,9 @@ Every word you put on the page, and every made-up record.
 ## Must follow
 
 1. Text in a `text` Trait appears exactly as the user wrote it, emoji included.
-2. Invent content only where a `fake data` Trait or `You choose` asks for it. Anywhere else, write only the words a part needs to work: a heading, a button label, a message.
+2. Invent records only where a `fake data` Trait or `You choose` asks for it. Anywhere else, write the words a part needs, plus the short supporting lines the Visual style Skill allows: a lead line, a badge, a popup intro, a field hint. Each is one short, specific sentence or phrase about this site.
 3. Never add testimonials, reviews, "by the numbers" sections or statistics to fill a gap.
-4. Never use images from the internet. Under `You choose`, pick a Library Asset no Trait names. Otherwise a Frame Block with no `image` Trait is a plain box labelled with the Block's name.
+4. Never use images from the internet. Under `You choose`, pick a Library Asset no Trait names. Otherwise a Frame Block with no `image` Trait is `<div class="placeholder">Cupcakes</div>`, with the name of the picture that belongs there. In a Card, the placeholder is empty, since the Card's title names it: `<div class="placeholder" role="img" aria-label="Photo of lemon loaf"></div>`.
 
 ## Card grids
 
@@ -21,7 +21,7 @@ Every word you put on the page, and every made-up record.
 
 ```html
 <!-- Menu cards -->
-<div class="card-grid" data-block="b10">
+<div class="grid" data-block="b10">
   <article class="card" data-block="b11" data-category="cake" data-price="4.50">
     <img src="assets/carrot-cake.jpg" alt="Slice of carrot cake with cream cheese icing">
     <h3>Carrot cake</h3>

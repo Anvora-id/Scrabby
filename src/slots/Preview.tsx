@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { listAssets, listCheckpoints, type AssetBlob } from '../db.ts'
+import { listAssets, type AssetBlob } from '../db.ts'
+import { checkpointTitle } from '../checkpoints.ts'
 import { ICONS } from '../icons.ts'
+import { cx } from '../canvas/cx.ts'
 import { onRedraw, previewHooks, takeFlash } from '../preview.ts'
 import { getProject, useProject } from '../store.ts'
 import type { Project } from '../model/types.ts'
@@ -33,8 +35,9 @@ export default function Preview() {
   const [paused, setPaused] = useState(false)
   const [error, setError] = useState<PageError | null>(null)
   const [noWorker, setNoWorker] = useState<string | null>(null)
-  const [builds, setBuilds] = useState(0)
+  const [full, setFull] = useState(false)
   const frame = useRef<HTMLIFrameElement>(null)
+  const sizeButton = useRef<HTMLButtonElement>(null)
   // Null until the first redraw, so the shell never gets an empty load that wipes its cache (TDD §13).
   const pending = useRef<Pending | null>(null)
   const calls = useRef(0)
@@ -102,66 +105,82 @@ export default function Preview() {
     return () => clearTimeout(t)
   }, [code, sent, paused, stale])
 
+  // Closing puts focus back on the full-size button, so the keyboard doesn't land on the page.
+  function shrink() {
+    setFull(false)
+    sizeButton.current?.focus()
+  }
+
+  // ponytail: Esc reaches the app only while it has focus; after a click in the website (another origin) the button or the backdrop closes it.
   useEffect(() => {
-    let on = true
-    listCheckpoints(p.id)
-      .then(cs => { if (on) setBuilds(cs.filter(c => c.blocks).length) })
-      .catch(e => console.error('Loading the Checkpoints failed', e))
-    return () => { on = false }
-  }, [p.id, code])
+    if (!full) return
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') shrink() }
+    addEventListener('keydown', key)
+    return () => removeEventListener('keydown', key)
+  }, [full])
 
   const built = Object.keys(p.files).length > 0
   const Reload = ICONS.reload
+  const Size = full ? ICONS.normal_size : ICONS.full_size
 
+  // Full size only swaps a class, so the frame stays put and the page doesn't reload.
   return (
-    <div className={styles.root}>
-      <div className={styles.bar}>
-        <button className={styles.ghost} title="Reload the page with your latest code" onClick={() => redraw()}>
-          <Reload size={16} weight="bold" />
-          {paused && stale && <span className={styles.dot} aria-label="Your code has changed" />}
-        </button>
-        <span className={styles.pill}>{built ? `${slugOf(p.name)} / ${page}` : 'not built yet'}</span>
-        {builds > 0 && <span>Build {builds}</span>}
-        <label className={styles.switch}>
-          Pause live updates
-          <input
-            type="checkbox"
-            role="switch"
-            checked={paused}
-            onChange={e => {
-              setPaused(e.target.checked)
-              if (!e.target.checked) redraw()
-            }}
-          />
-          <span className={styles.track} />
-        </label>
-      </div>
-      {paused && <div className={styles.strip}>Live updates are paused. Press ↻ to see your latest code.</div>}
-      <div className={styles.body}>
-        <div className={styles.frame}>
-          {!built ? (
-            <div className={styles.empty}>
-              <p>Press Build to make your website.</p>
-            </div>
-          ) : noWorker !== null ? (
-            <div className={styles.card} role="alert">
-              <b>The Preview can't start in this browser.</b>
-              <p>It needs a Service Worker, and the browser blocked it. Brave and strict privacy settings can do this. Try Chrome, or allow this site to store data.</p>
-              <small>{noWorker}</small>
-            </div>
-          ) : load > 0 && (
-            <iframe key={load} ref={frame} className={styles.page} src={ORIGIN + '/'} title="Preview of your website" />
+    <>
+      {full && <div className={styles.backdrop} onClick={shrink} />}
+      <div className={cx(styles.root, full && styles.full)}>
+        <div className={styles.bar}>
+          <button className={styles.ghost} title="Reload the page with your latest code" onClick={() => redraw()}>
+            <Reload size={16} weight="bold" />
+            {paused && stale && <span className={styles.dot} aria-label="Your code has changed" />}
+          </button>
+          {built && (
+            <button ref={sizeButton} className={styles.ghost} title={full ? 'Back to normal size' : 'Show the website full size'} onClick={() => setFull(!full)}>
+              <Size size={16} weight="bold" />
+            </button>
           )}
-          {built && error && (
-            <div className={styles.error} role="alert">
-              <span className={styles.bang}>!</span>
-              <b>Something on this page isn't working</b>
-              <span className={styles.message}>{error.message}</span>
-              <button className={styles.ghost} onClick={() => previewHooks.askBobToFix(error)}>Ask Bob to fix it</button>
-            </div>
-          )}
+          <span className={styles.pill}>{built ? `${slugOf(p.name)} / ${page}` : 'not built yet'}</span>
+          {p.checkpoint !== undefined && <span>{checkpointTitle(p, p.checkpoint)}</span>}
+          <label className={styles.switch}>
+            Pause live updates
+            <input
+              type="checkbox"
+              role="switch"
+              checked={paused}
+              onChange={e => {
+                setPaused(e.target.checked)
+                if (!e.target.checked) redraw()
+              }}
+            />
+            <span className={styles.track} />
+          </label>
+        </div>
+        {paused && <div className={styles.strip}>Live updates are paused. Press ↻ to see your latest code.</div>}
+        <div className={styles.body}>
+          <div className={styles.frame}>
+            {!built ? (
+              <div className={styles.empty}>
+                <p>Press Build to make your website.</p>
+              </div>
+            ) : noWorker !== null ? (
+              <div className={styles.card} role="alert">
+                <b>The Preview can't start in this browser.</b>
+                <p>It needs a Service Worker, and the browser blocked it. Brave and strict privacy settings can do this. Try Chrome, or allow this site to store data.</p>
+                <small>{noWorker}</small>
+              </div>
+            ) : load > 0 && (
+              <iframe key={load} ref={frame} className={styles.page} src={ORIGIN + '/'} title="Preview of your website" />
+            )}
+            {built && error && (
+              <div className={styles.error} role="alert">
+                <span className={styles.bang}>!</span>
+                <b>Something on this page isn't working</b>
+                <span className={styles.message}>{error.message}</span>
+                <button className={styles.ghost} onClick={() => { setFull(false); previewHooks.askBobToFix(error) }}>Ask Bob to fix it</button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

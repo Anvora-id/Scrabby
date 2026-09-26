@@ -464,3 +464,27 @@ describe("demo's Top bar", () => {
     expect(p.blocks[inst2MenuBtn].name).toBe('Navigation')
   })
 })
+
+describe('Project name', () => {
+  it('renames the Site, and after a Build the Checkpoint Block', () => {
+    const p = applyChange(emptyProject(), q => { q.name = "Maya's bake sale" })
+    expect(p.blocks.b1.name).toBe("Maya's bake sale")
+    const built = applyChange(p, q => { q.blocks.b1.type = 'checkpoint' })
+    expect(applyChange(built, q => { q.name = 'Bake sale' }).blocks.b1.name).toBe('Bake sale')
+  })
+
+  it('wins over the old name a Checkpoint load brings back', () => {
+    const p = applyChange(emptyProject(), q => { q.name = 'New name' })
+    const loaded = applyChange(p, q => { q.blocks.b1 = { ...q.blocks.b1, name: 'Old name' } })
+    expect(loaded.name).toBe('New name')
+    expect(loaded.blocks.b1.name).toBe('New name')
+  })
+
+  it('a Project saved with a renamed Site takes its name on the first edit', () => {
+    const p = emptyProject()
+    p.blocks.b1.name = 'Renamed site'
+    const after = applyChange(p, q => { q.blocks.b1.note = 'hi' })
+    expect(after.name).toBe('Renamed site')
+    expect(after.blocks.b1.name).toBe('Renamed site')
+  })
+})

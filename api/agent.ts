@@ -16,7 +16,8 @@ export type Model = (args: { messages: ChatMsg[]; signal: AbortSignal }) => Prom
 
 const skill = (path: string) => readFileSync(join(process.cwd(), 'skills', path), 'utf8').replace(/\r\n/g, '\n')
 
-const SKILLS = ['code-rules', 'behavior', 'content', 'visual-style'].map((s) => skill(`${s}/SKILL.md`)).join('\n\n')
+const SKILLS = ['code-rules', 'layout', 'behavior', 'content', 'visual-style'].map((s) => skill(`${s}/SKILL.md`)).join('\n\n')
+const BASE_CSS = skill('base.css')
 const PROMPT_ENDING = /## Prompt ending[\s\S]*?```text\n([\s\S]*?)\n```/.exec(skill('instruction-header.md'))![1]
 
 const BUILD_ROLE = `You are Bob. You build the user's website from the instruction document, following the Skills below.
@@ -157,6 +158,10 @@ export async function* runLoop(
   model: Model,
   { ms = MAX_MS, signal }: { ms?: number; signal?: AbortSignal } = {},
 ): AsyncGenerator<AgentEvent> {
+  // Build 1 starts from base.css, so the reset, popups and shared parts are right without Bob writing them.
+  if (req.kind === 'build' && Object.keys(req.files).every((path) => path.startsWith('.builds/'))) {
+    req = { ...req, files: { ...req.files, 'base.css': BASE_CSS } }
+  }
   const files = { ...req.files }
   const messages = prompt(req)
   const timeout = AbortSignal.timeout(ms)
@@ -212,7 +217,7 @@ export async function* runLoop(
   }
 }
 
-export type ModelConfig = { baseUrl: string; apiKey: string; authScheme: string; model: string; headers: string }
+export type ModelConfig = { baseUrl: string; apiKey: string; authScheme: string; model: string; headers: string; reasoning?: string }
 
 export function primaryConfig(): ModelConfig {
   const env = process.env
@@ -222,6 +227,7 @@ export function primaryConfig(): ModelConfig {
     authScheme: env.AGENT_AUTH_SCHEME || 'Apikey',
     model: env.AGENT_MODEL || 'premium',
     headers: env.AGENT_HEADERS || '{}',
+    reasoning: env.AGENT_REASONING_EFFORT || 'low',
   }
 }
 
@@ -246,7 +252,8 @@ export function openAiModel(cfg: ModelConfig): Model {
         authorization: `${cfg.authScheme} ${cfg.apiKey}`,
         ...JSON.parse(cfg.headers),
       },
-      body: JSON.stringify({ model: cfg.model, messages, tools: TOOLS, tool_choice: 'auto' }),
+      // With thinking on and no max_tokens, the Bob endpoint cuts replies at 5,120 tokens: one whole page won't fit.
+      body: JSON.stringify({ model: cfg.model, messages, tools: TOOLS, tool_choice: 'auto', reasoning_effort: cfg.reasoning, max_tokens: 16_000 }),
       signal,
     })
     if (!res.ok) throw new Error(`model answered ${res.status}: ${(await res.text()).slice(0, 300)}`)
@@ -296,9 +303,23 @@ const DAY_CAP = { build: 40, assistant: 150 }
 // ponytail: in-memory counts, per server instance; a shared store if one instance stops being enough
 export function createLimits() {
   const hours = new Map<string, number[]>()
+  const runs = new Map<string, number>()
   let date = ''
   let day = { build: 0, assistant: 0 }
   return {
+    // A run id seen in the last hour is a replay: it never starts a second run or counts twice.
+    first(run: string, now: number): boolean {
+      for (const [id, t] of runs) if (t <= now - HOUR) runs.delete(id)
+      if (runs.has(run)) return false
+      runs.set(run, now)
+      return true
+    },
+    // A Build that ended without files gives its hour back (the day count stays: the tokens were spent).
+    give(kind: Kind, browser: string, at: number) {
+      const times = hours.get(`${kind}:${browser}`) ?? []
+      const i = times.indexOf(at)
+      if (i >= 0) times.splice(i, 1)
+    },
     take(kind: Kind, browser: string, now: number): string | null {
       const today = new Date(now).toISOString().slice(0, 10)
       if (today !== date) {
@@ -334,10 +355,15 @@ export function agentHandler(model: (onSwitch: (label: string) => void) => Model
       return new Response('The body is not JSON', { status: 400 })
     }
     if (req?.kind !== 'build' && req?.kind !== 'assistant') return new Response('kind must be build or assistant', { status: 400 })
+    const run = request.headers.get('x-scrabby-run')?.slice(0, 64)
+    if (run && !limits.first(run, Date.now())) return new Response('This run already started', { status: 409 })
+    let giveBack = () => {}
     if (process.env.AGENT_LIMITS !== 'off') {
       const browser = (request.headers.get('x-scrabby-browser') || 'anon').slice(0, 64)
-      const message = limits.take(req.kind, browser, Date.now())
+      const now = Date.now()
+      const message = limits.take(req.kind, browser, now)
       if (message) return Response.json({ message }, { status: 429 })
+      if (req.kind === 'build') giveBack = () => limits.give('build', browser, now)
     }
     const encoder = new TextEncoder()
     const send = (controller: ReadableStreamDefaultController<Uint8Array>, event: AgentEvent) =>
@@ -347,7 +373,10 @@ export function agentHandler(model: (onSwitch: (label: string) => void) => Model
     const onSwitch = (label: string) => send(stream, { type: 'model', label })
     const events = (async function* (): AsyncGenerator<AgentEvent> {
       yield { type: 'start' }
-      yield* runLoop(req, model(onSwitch), { signal: request.signal })
+      for await (const event of runLoop(req, model(onSwitch), { signal: request.signal })) {
+        if (event.type === 'error') giveBack()
+        yield event
+      }
     })()
     const body = new ReadableStream<Uint8Array>({
       start(controller) {

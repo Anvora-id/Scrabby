@@ -25,7 +25,7 @@ describe('readAgentStream', () => {
     const res = await agentHandler(() => model)(
       new Request('http://localhost/api/agent', { method: 'POST', body: JSON.stringify({ kind: 'build', document: 'D', files: {} }) }),
     )
-    expect(await collect(readAgentStream(res))).toEqual([{ type: 'start' }, { type: 'files', files: {} }])
+    expect(await collect(readAgentStream(res))).toEqual([{ type: 'start' }, { type: 'files', files: { 'base.css': expect.any(String) } }])
   })
 
   it('joins messages split across chunks', async () => {
@@ -57,6 +57,16 @@ describe('runAgent', () => {
       { type: 'limit', message: 'Try again in 5 minutes.' },
     ])
     expect(fetch).toHaveBeenCalledOnce()
+  })
+
+  it('sends a new run id with every run', async () => {
+    const fetch = vi.fn(async (_url: string, _init: RequestInit) => chunked(['data: {"type":"files","files":{}}\n\n']))
+    vi.stubGlobal('fetch', fetch)
+    await collect(runAgent({ kind: 'build', document: 'D', files: {} }))
+    await collect(runAgent({ kind: 'build', document: 'D', files: {} }))
+    const ids = fetch.mock.calls.map(([, init]) => (init.headers as Record<string, string>)['x-scrabby-run'])
+    expect(ids[0]).toMatch(/^[0-9a-f-]{36}$/)
+    expect(ids[1]).not.toBe(ids[0])
   })
 
   it('a model event sets the badge label; the next run starts on the GET label again', async () => {

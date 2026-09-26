@@ -71,6 +71,7 @@ export interface Project {
   chat: ChatMessage[]
   updated: number
   checkpoint?: number   // the Checkpoint the current code came from; unset before Build 1
+  checkpointNames?: Record<number, string> // names the user gave Checkpoints, by number
 }
 export interface BuiltBlocks { top: string[]; blocks: Record<string, Block>; traits: Record<string, Trait>; defs: Record<string, CustomBlockDef> }
 export interface Checkpoint {

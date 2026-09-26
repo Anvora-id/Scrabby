@@ -15,6 +15,7 @@ import {
   canRedo,
   clearHistory,
   startStore,
+  fillBlankName,
 } from './store.ts'
 
 // Reset history between tests
@@ -82,5 +83,21 @@ describe('store', () => {
     expect(getProject().name).toBe(beforeName)
     // But chat is preserved (never undone)
     expect(getProject().chat).toEqual([{ role: 'user', text: 'hello', time: 1 }])
+  })
+})
+
+describe('fillBlankName', () => {
+  it('puts back "My website" in the typing step, so Undo never gives a blank name', async () => {
+    await startStore()
+    updateProject(p => { p.name = 'Bake sale' }, null)
+    reset()
+    const field = {} as Element
+    vi.stubGlobal('document', { activeElement: null })
+    updateProject(p => { p.name = '' }, field)
+    fillBlankName(field)
+    expect(getProject().name).toBe('My website')
+    undo()
+    expect(getProject().name).toBe('Bake sale')
+    vi.unstubAllGlobals()
   })
 })

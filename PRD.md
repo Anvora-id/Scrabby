@@ -110,12 +110,12 @@ What users can make: websites, and simple web apps with no backend (a quiz, a to
 - **Every product Build and Assistant answer spends the Bobcoins of the account that owns the Inference key.** Watch its balance (Bob IDE → Settings → General) and switch the variables to a fallback model before it runs out.
 - The UI always calls the agent **Bob**, with a badge naming the model that runs it. The video and deck say plainly which model ran the demo.
 - The Prototype is plain HTML, CSS and JS with no npm: one `.html` per Page Block, a shared `style.css` and `script.js`, and Assets in `assets/`.
-- **Download** (PRD-48): a zip with the website files, which runs by double-clicking `index.html`, plus a **Bob kit**. The kit is an `AGENTS.md` with Bob's rules for this Project and the plan as the text Bob reads, and `.bob/skills/` with the four Skills (every Build loads all four). Opening the folder in the IBM Bob IDE lets the user keep building with Bob, using the same rules and plan.
+- **Download** (PRD-48): a zip with the website files and Assets only, which runs by double-clicking `index.html`.
 - All product code is written in the Bob IDE. The Bobcoin budget sets the drop order (§6).
 
 **Assistant** (ticket 08): the chat panel where the user talks with Bob about the code.
 - It lives only in Try & tweak. In Plan, hover tooltips explain each Block and Trait instead (§11).
-- **What Bob sees** when the user asks something: the list of Prototype files, which Bob reads with its `view` tool; the text each past Build sent, as read-only files `.builds/build-N.md`; the file open in the editor and any lines the user selected; the last Build's card (its checklist); and the names of the Library's images and videos. Bob never sees the Canvas or unbuilt Blocks. It explains a Build from what that Build asked for and never invents the Build's reasoning. `.builds/` is never in the Download.
+- **What Bob sees** when the user asks something: the list of Prototype files, which Bob reads with its `view` tool; the text each past Build sent, as read-only files `.builds/build-N.md`; the file open in the editor and any lines the user selected; the last Build's card (its state, its Blocks, what it skipped and any failure line); and the names of the Library's images and videos. Bob never sees the Canvas or unbuilt Blocks. It explains a Build from what that Build asked for and never invents the Build's reasoning. `.builds/` is never in the Download.
 - **Explanation level** (PRD-36): a small picker at the top of the Assistant, "Explain: very simply · simply · in detail", defaulting to "simply". It only changes how Bob words its answers. No ages appear on screen. The deck and video say that in the kids' version these levels match ages 7, 9 and 12.
 - Bob changes code only, as diffs. When a fix belongs in the Blocks, Bob says in words which Block to add (for example "put a Footer Block in the Checkpoint Block").
 - Every answer from Bob explains in plain words what the code does or what the change does, because learning the code is the headline claim.
@@ -146,7 +146,7 @@ Build in this order:
 | Must | Preview: redraws a moment after typing stops, with a "Pause live updates" switch; the changed parts flash after a Build or an accepted change (W-16, W-17) |
 | Must | Code editor; the next Build keeps hand edits |
 | Must | Library, images and video, with the image and video Traits |
-| Must | Save one Project in the browser (with its chat); Download code as a zip, with a Bob kit inside (PRD-48) |
+| Must | Save one Project in the browser (with its chat); Download code as a zip (PRD-48) |
 | Must | Guardrails (§8) |
 | Must | Onboarding (§9): sample Project, hints, New Project, a short show-around |
 | Must | Preview error bar (§10) |
@@ -164,11 +164,12 @@ If the Assistant is dropped, everything that depends on it goes too: the diff ca
 
 - **Story** (PRD-39): Maya, 11, is made up. The video tells how she *could* use Scrabby to build a quick project for her own needs. No child appears or takes part: the team plays Maya's part on screen. Her project is the demo site.
 - **The demo site: "Maya's bake sale"** (Site: color pink, vibe playful, font "friendly" typed in custom…):
-  - A Navbar with buttons that go to the Menu and the Quiz.
-  - Home: a Hero (a headline and a photo) and an **Order** button that opens a Popup with an Order form (on click: submits, fake).
-  - Menu: a Card grid of cakes (fake data: 6 cakes with prices and photos).
-  - Quiz: "Which cupcake are you?", a Section with a tell Bob Trait (3 questions) and a Button (on click: checks an answer).
-  - A Footer.
+  - A Navbar with buttons that go to the Menu and the Quiz (position: stays on top when scrolling).
+  - Home: a full-width Hero (a headline and a photo slideshow) and an **Order** button that opens a Popup with an Order form (a Note says what it asks; on click: submits, fake). A "Next sale" Section counts down, with a Panel of a photo and a half-price line.
+  - Menu: a Card grid of cakes (fake data: 6 cakes with prices and photos; sort by price, fake), each Card adds to the cart (fake).
+  - Quiz: "Which cupcake are you?", a Section with a tell Bob Trait (3 questions), a let Bob pick Trait (the colors) and a Button (on click: checks an answer).
+  - A Footer: "Made by Maya, age 11".
+  - The demo uses every Block and every Trait except sound and video. Its three Pages sit side by side on the Canvas.
   - The photos are in the demo's Library.
 - **Where it shows:** behind the Demo button on the live link (§9), in the video's demo, on one deck slide (the Canvas beside the finished site), and on the cover image.
 - **Proof of "under 10 minutes"** (PRD-40): record the real planning session, from an empty Site to the first Build, with a clock on screen. Play it sped up in the video.
@@ -208,7 +209,8 @@ Not in the hackathon build: a Report button and a log of flagged messages. They 
 ## 9. Onboarding
 
 The judges open the link cold, so the first visit has to work without help.
-- **Demo site:** it does not open by itself. The first visit opens an empty Project. The demo site (a finished plan, ready to Build; contents in §7) loads from two places (PRD-43): a big **Try the demo: Maya's bake sale** button on the empty Canvas, and a **Demo** button in the menu bar. Loading it replaces the current Project. If that Project isn't empty, a warning shows first: title "Load the demo?", text "This replaces your current Project, Blocks and all. Download code first to keep a copy of the website's code.", buttons **Download code** · **Cancel** · **Load the demo**.
+- **Greeting:** every visit (every page load) opens on a greeting card: Bob and "Scrabby", the slogan "Ideas are best blocked out.", the line "Snap your idea together. Bob builds it for real.", and buttons. With an empty Project (the first visit): **Take me to the Demo** and **Start my own site**. With work saved (a rename counts): **Continue “<Project name>”**, **Take me to the Demo** and **Start a new site**; the last two ask first (the warnings below), and Cancel goes back to the card. Escape does what Continue does, or Start my own site when there's no work. New Project and Demo in the menu bar never bring the greeting back.
+- **Demo site:** it does not open by itself. The first visit opens an empty Project. The demo site (a finished plan, ready to Build; contents in §7) loads from two places (PRD-43): the greeting's **Take me to the Demo** button, and a **Demo** button in the menu bar. Both then run the Plan show-around, even if it was seen before. The empty Canvas has no demo button. Loading it replaces the current Project. If that Project isn't empty, a warning shows first: title "Load the demo?", text "This replaces your current Project, Blocks and all. Download code first to keep a copy of the website's code.", buttons **Download code** · **Cancel** · **Load the demo**.
 - **Short show-around:** speech bubbles, one at a time, with Next and Skip. Replay it from **Show me around** in the menu bar. The words:
   - Plan, first visit:
     1. Palette: "These are your Blocks and Traits. Drag one onto the Canvas to use it."
@@ -238,7 +240,7 @@ Ticket 29, settled 2026-09-25.
   - The answer is broken or incomplete (for example bad JSON): "Bob's answer came back broken, so this Build was stopped."
 - **Actions:** **Try again** (Primary) reruns the same request. **← Back to the Blocks** (ghost) returns to Plan. There are no other actions.
 - **Time cap:** 4 minutes (240 s) per Build, under Vercel's 300 s function limit. There is no Stop button while a Build runs; the time cap stops a stuck Build.
-- **Usage limits** (§8) are not failures: the Build never starts, and the limit message shows. A failed Build counts toward the Build limits, because it still spent tokens. Try again has no other limit.
+- **Usage limits** (§8) are not failures: the Build never starts, and the limit message shows on the Build card. A Build that fails before any files gives its hour back; it still counts toward the everyone-per-day limit, because it spent tokens. Try again has no other limit. Each press carries its own run id, so a replayed request never starts a second Build or counts twice.
 - **Errors in the Preview** (broken code from a finished Build, a hand edit or an accepted diff): a thin bar under the Preview says "Something on this page isn't working", with the error in small text and an **Ask Bob to fix it** button. The button asks Bob in the Assistant, sending the error and the file, and Bob answers with a diff. The bar stays until the page runs without an error. It is a bar, not a toast, because a toast disappears before a beginner reads it, and the error stays until it is fixed. If the Assistant is dropped, the button becomes **Open the file**.
 - **A link to a page with no file** shows a one-line page in the Preview: "This page has no file yet."
 - **A check after each Build** (PRD-47) is stretch (§6). Until it ships, a Build cannot find broken code; the Preview's error bar and the "This page has no file yet" page cover most problems.
@@ -360,7 +362,7 @@ Owner: the developer who moves over at hour 34 (§1). Submit at Sun 13:00 UTC (2
 - Long description (about 1,150 characters):
   > Kids who code are developers too, but AI builders expect them to describe a whole website in words, and that is hard. Only 27% of US eighth-graders write at NAEP's Proficient level, and when 14- and 15-year-olds asked ChatGPT in their own words, 39% of the answers were high-level, against 84% with expert prompts.
   >
-  > Scrabby replaces the prompt with a plan. Young developers lay out their idea as nested Blocks and Traits on a Canvas, the way they already know from Scratch: a Page holds a Hero, which holds a Button that goes to the Shop. Bob, Scrabby's AI agent, reads the plan and writes a real website in plain HTML, CSS and JS. In Try & tweak they click through it, edit the real code and ask Bob what it does. Bob answers in plain words, at the level they pick, and proposes changes they accept or reject. The next Build keeps every hand edit. A download runs with a double-click and carries a Bob kit, so the project continues in the IBM Bob IDE.
+  > Scrabby replaces the prompt with a plan. Young developers lay out their idea as nested Blocks and Traits on a Canvas, the way they already know from Scratch: a Page holds a Hero, which holds a Button that goes to the Shop. Bob, Scrabby's AI agent, reads the plan and writes a real website in plain HTML, CSS and JS. In Try & tweak they click through it, edit the real code and ask Bob what it does. Bob answers in plain words, at the level they pick, and proposes changes they accept or reject. The next Build keeps every hand edit. A download runs with a double-click.
   >
   > We built Scrabby with IBM Bob 2.0: we planned in documents, and Bob's Agent mode, subagents and parallel tasks built the product from them. A version for young coders will come through schools and parents.
 - Tags: IBM Bob, Generative AI, AI Agents, Education, Web Development, Developer Onboarding, Block-based Programming, Vercel.
@@ -389,7 +391,7 @@ An honest read of the idea against lablab's four criteria and the theme, as of 2
 | Application of Technology | 3–4 | Built entirely in the Bob IDE, with session evidence. The risk is completeness: the must tier is large for 48 hours and a limited Bobcoin budget, and the link must keep working through judging. | Show Bob's named features in the video: Agent mode, subagents, parallel tasks, and document understanding (Bob builds Scrabby from this PRD and DESIGN.md). Run Bob inside the product if the access allows it. |
 | Presentation | 4–5 | The outline covers the problem, demo, market, revenue, competitors and roadmap in under 5 minutes. | Keep it 3–5 minutes. A 5 needs the competitor slide. |
 | Business Value | 3, 4 with work | A large audience, a clear gap and a revenue model. But schools buy slowly, and kids' access needs consent and an AI provider that allows children. | Name a specific first customer (coding clubs and schools), give TAM and SAM, and show the School Edition. |
-| Originality | 4–5 | No product we found turns a kid's block plan into real code with AI. | Stress the Bob link: the Download carries a Bob kit (PRD-48), so the user's Project continues in the IBM Bob IDE. |
+| Originality | 4–5 | No product we found turns a kid's block plan into real code with AI. | Stress the Bob link: the product's Bob runs on IBM Bob's inference endpoint, and Bob built Scrabby. |
 
 - **The biggest risk is theme fit.** Judges may read Scrabby as an education product rather than a developer-workflow tool. The challenge asks teams to show "how your solution increases productivity, reduces manual effort, errors, and rework, or significantly shortens the time required". So one slide must show our numbers: idea to working prototype in under 10 minutes, and every hand edit kept across rebuilds (no rework).
 - **The biggest lever is showing IBM Bob 2.0 clearly.** Both Application of Technology and Originality name Bob.

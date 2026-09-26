@@ -37,6 +37,7 @@ const ask = (messages: ChatMessage[], files: Files = {}, ctx = context): AgentRe
 const outputs = (got: ChatMsg[][]) =>
   got[got.length - 1].flatMap((m) => (m.role === 'tool' ? [m.content] : []))
 
+const BASE_CSS = readFileSync('skills/base.css', 'utf8').replace(/\r\n/g, '\n')
 const SITE = { 'index.html': 'one\ntwo\nthree', 'style.css': 'a $ b\na $ b' }
 
 describe('runLoop', () => {
@@ -53,7 +54,10 @@ describe('runLoop', () => {
       { type: 'block', id: 'b3' },
       {
         type: 'files',
-        files: { 'index.html': '<main data-block="b1"><div data-block="b2"></div><p data-block="b1"></p><p data-block="b3"></p></main>' },
+        files: {
+          'base.css': BASE_CSS,
+          'index.html': '<main data-block="b1"><div data-block="b2"></div><p data-block="b1"></p><p data-block="b3"></p></main>',
+        },
       },
     ])
   })
@@ -123,14 +127,14 @@ describe('runLoop', () => {
     const events = await collect(runLoop(build(files), model))
     const refused = 'Error: .builds/ is read-only. It holds the past instruction documents.'
     expect(outputs(got)).toEqual([refused, refused, refused, refused, 'Error: paths stay inside the site folder.'])
-    expect(events.at(-1)).toEqual({ type: 'files', files })
+    expect(events.at(-1)).toEqual({ type: 'files', files: { ...files, 'base.css': BASE_CSS } })
   })
 
-  it('puts the four Skills in the system message and document, files, ending in the user message', async () => {
+  it('puts the five Skills in the system message and document, files, ending in the user message', async () => {
     const { model, got } = fake([say('Done.')])
     await collect(runLoop(build({ 'index.html': 'hi', '.builds/build-1.md': 'old' }, 'THE DOC'), model))
     const [system, user] = got[0]
-    for (const s of ['code-rules', 'behavior', 'content', 'visual-style']) {
+    for (const s of ['code-rules', 'layout', 'behavior', 'content', 'visual-style']) {
       expect(system.content).toContain(readFileSync(`skills/${s}/SKILL.md`, 'utf8').replace(/\r\n/g, '\n'))
     }
     expect(system.content).toMatch(/^You are Bob\. You build the user's website/)
@@ -139,7 +143,9 @@ describe('runLoop', () => {
     )
     const { model: m2, got: g2 } = fake([say('Done.')])
     await collect(runLoop(build({}, 'D'), m2))
-    expect(g2[0][1].content).toBe('D\n\n# Current files\n\nNone yet.\n\nKeep every `data-block` mark.\nChange only what the request asks.')
+    expect(g2[0][1].content).toBe(
+      `D\n\n# Current files\n\n<file path="base.css">\n${BASE_CSS}\n</file>\n\nKeep every \`data-block\` mark.\nChange only what the request asks.`,
+    )
   })
 
   it('stops after 40 rounds with turns (41 model calls)', async () => {
@@ -248,10 +254,10 @@ describe('runLoop', () => {
   })
 })
 
-const post = (body: unknown, browser = 'b1') =>
+const post = (body: unknown, browser = 'b1', run?: string) =>
   new Request('http://localhost/api/agent', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-scrabby-browser': browser },
+    headers: { 'content-type': 'application/json', 'x-scrabby-browser': browser, ...run && { 'x-scrabby-run': run } },
     body: typeof body === 'string' ? body : JSON.stringify(body),
   })
 
@@ -281,7 +287,7 @@ describe('agentHandler', () => {
     const res = await agentHandler(() => fake([]).model)(post(build()))
     expect(res.headers.get('content-type')).toBe('text/event-stream')
     const text = await res.text()
-    expect(text).toBe('data: {"type":"start"}\n\ndata: {"type":"files","files":{}}\n\n')
+    expect(text).toBe(`data: {"type":"start"}\n\ndata: ${JSON.stringify({ type: 'files', files: { 'base.css': BASE_CSS } })}\n\n`)
   })
 
   it('the 11th Build in an hour from one browser gets 429; AGENT_LIMITS=off skips the limits', async () => {
@@ -295,6 +301,28 @@ describe('agentHandler', () => {
     expect((await handler(post(build(), 'b2'))).status).toBe(200)
     process.env.AGENT_LIMITS = 'off'
     expect((await handler(post(build()))).status).toBe(200)
+  })
+
+  it('a repeated run id never starts a second run or counts twice, also with AGENT_LIMITS=off', async () => {
+    delete process.env.AGENT_LIMITS
+    const handler = agentHandler(() => fake([]).model, createLimits())
+    expect((await handler(post(build(), 'b1', 'r1'))).status).toBe(200)
+    expect((await handler(post(build(), 'b1', 'r1'))).status).toBe(409)
+    for (let i = 2; i <= 10; i++) expect((await handler(post(build(), 'b1', `r${i}`))).status).toBe(200)
+    expect((await handler(post(build(), 'b1', 'r11'))).status).toBe(429)
+    process.env.AGENT_LIMITS = 'off'
+    expect((await handler(post(build(), 'b1', 'r5'))).status).toBe(409)
+    expect((await handler(post(build(), 'b1', 'r12'))).status).toBe(200)
+  })
+
+  it('a Build that ends without files gives its hour back', async () => {
+    delete process.env.AGENT_LIMITS
+    const limits = createLimits()
+    const broken = agentHandler(() => fake([{ content: '  ', tool_calls: [], finish: 'stop' }]).model, limits)
+    for (let i = 0; i < 12; i++) expect(await (await broken(post(build()))).text()).toContain('"reason":"broken"')
+    const handler = agentHandler(() => fake([]).model, limits)
+    for (let i = 0; i < 10; i++) expect(await (await handler(post(build()))).text()).toContain('"type":"files"')
+    expect((await handler(post(build()))).status).toBe(429)
   })
 })
 
@@ -364,7 +392,7 @@ describe('withFallback', () => {
     expect(fallback.got).toHaveLength(2)
     const last = events[events.length - 1]
     expect(last.type === 'files' && Object.keys(last.files).sort()).toEqual(
-      [...Array.from({ length: failAt }, (_, i) => `bob${i + 1}.html`), 'gem.html'].sort(),
+      ['base.css', ...Array.from({ length: failAt }, (_, i) => `bob${i + 1}.html`), 'gem.html'].sort(),
     )
     expect(log).toHaveBeenCalledWith('[agent] Bob failed, switching to Gemini:', 'model answered 403: blocked')
   })

@@ -1,8 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react'
-import { acceptAll, ask, askAgain, cardState, openFiles, rejectAll, setLevel, useLevel, useReplying, type Level } from '../assistant.ts'
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { acceptAll, ask, askAgain, cardState, openFiles, rejectAll, setLevel, useLevel, useReply, type Level } from '../assistant.ts'
+import { withNames } from '../checkpoints.ts'
 import { startReview } from '../code/navigation.ts'
 import { ICONS } from '../icons.ts'
-import type { Files, Proposal } from '../model/types.ts'
+import type { ChatMessage, Files, Proposal } from '../model/types.ts'
 import BobBadge from '../shell/BobBadge.tsx'
 import { useProject } from '../store.ts'
 import styles from './Assistant.module.css'
@@ -12,13 +13,20 @@ const LEVELS: Level[] = ['very simply', 'simply', 'in detail']
 export default function Assistant() {
   const project = useProject()
   const level = useLevel()
-  const replying = useReplying()
+  const run = useReply()
+  const replying = run !== null
+  // A reply for a replaced Project (New Project, the demo) shows nothing here.
+  const live = run && run.project === project.id ? run : null
+  // Sent, but the server hasn't accepted it yet: the question and Bob thinking show in the panel only.
+  const waiting = live && live.bob === undefined ? live.asked : null
   const [draft, setDraft] = useState('')
   const [limit, setLimit] = useState<string | null>(null)
   const chatRef = useRef<HTMLDivElement>(null)
   const pinned = useRef(true)
-  const chat = project.chat
-  const lastBob = chat.filter(m => m.role === 'bob' && !m.line).at(-1)
+  // Keyed by position, so when the server accepts, the real messages take the waiting pair's places without popping again.
+  // (A replaced chat reuses elements and skips its pop, unseen: New Project and the demo switch to Plan.)
+  const chat: ChatMessage[] = waiting === null ? project.chat : [...project.chat, { role: 'user', text: waiting, time: -2 }, { role: 'bob', text: '', time: -1 }]
+  const liveBob = live ? live.bob ?? -1 : undefined
 
   useLayoutEffect(() => {
     const el = chatRef.current
@@ -55,6 +63,7 @@ export default function Assistant() {
   return (
     <div className={styles.root}>
       <div className={styles.title}>
+        <img className={styles.head} src="/bob-head.svg" alt="" />
         <span className={styles.name}>Bob</span>
         <BobBadge />
       </div>
@@ -71,21 +80,20 @@ export default function Assistant() {
       <div className={styles.chat} ref={chatRef} onScroll={onScroll}>
         {chat.length === 0 && (
           <div className={styles.empty}>
+            <img className={styles.emptyHead} src="/bob-head.svg" alt="" />
             Ask Bob what a part of your code does, or ask for a change.
           </div>
         )}
-        {chat.map(m =>
+        {chat.map((m, i) =>
           m.line ? (
-            <p key={m.time} className={styles.line}>{m.text}</p>
+            <p key={i} className={styles.line}>{withNames(project, m.text)}</p>
+          ) : m.role === 'user' ? (
+            <div key={i} className={styles.user}>{m.text}</div>
           ) : (
-            <div key={m.time} className={m.role === 'user' ? styles.user : styles.bob}>
-              {m === lastBob && !m.text && replying ? (
-                <span className={styles.dots} role="status" aria-label="Bob is thinking…"><i /><i /><i /></span>
-              ) : (
-                m.text
-              )}
+            <BobSays key={i}>
+              {m.time === liveBob && !m.proposal ? (m.text ? <>{m.text}<Dots /></> : <Thinking />) : m.text}
               {m.proposal && <DiffCard time={m.time} proposal={m.proposal} files={project.files} replying={replying} />}
-            </div>
+            </BobSays>
           ),
         )}
       </div>
@@ -110,6 +118,28 @@ export default function Assistant() {
         </span>
       </form>
     </div>
+  )
+}
+
+function BobSays({ children }: { children: ReactNode }) {
+  return (
+    <div className={styles.bobRow}>
+      <img className={styles.avatar} src="/bob-head.svg" alt="" />
+      <div className={styles.bob}>{children}</div>
+    </div>
+  )
+}
+
+function Dots() {
+  return <span className={styles.dots} aria-hidden="true"><i /><i /><i /></span>
+}
+
+function Thinking() {
+  return (
+    <span className={styles.thinking} role="status">
+      <Dots />
+      Bob is thinking…
+    </span>
   )
 }
 

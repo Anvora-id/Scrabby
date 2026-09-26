@@ -4,10 +4,11 @@ import { ICONS } from '../icons.ts'
 import { BLOCK_TYPES, TRAIT_TYPES } from '../model/catalogue.ts'
 import type { CustomBlockDef, Layout, Project } from '../model/types.ts'
 import { hasOverride } from '../model/project.ts'
-import { setEditing, updateProject } from '../store.ts'
+import { fillBlankName, setEditing, updateProject } from '../store.ts'
+import { checkpointTitle } from '../checkpoints.ts'
 import { cx } from './cx.ts'
 import { dragSource, useDrag } from './drag.ts'
-import { insertInto, isTraitItem, repairLayout } from './tree.ts'
+import { insertInto, isFolded, isTraitItem, repairLayout } from './tree.ts'
 import TraitPill, { TextField } from './TraitPill.tsx'
 import { BlockNote, openMenu } from './Overlays.tsx'
 import { Mark } from './Warnings.tsx'
@@ -47,21 +48,16 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
   const custom = b.inst ?? b.defines
   const def = custom ? p.defs[custom] : undefined
   const checkpoint = b.type === 'checkpoint'
-  const folded = !checkpoint && (b.folded ?? depth >= 4)
+  const site = b.type === 'site'
+  const folded = isFolded(b, depth)
   const target = drag?.target?.id === id ? drag.target : null
   const blockDrop = !!target && !isTraitItem(drag!.item)
   const liftedBlock = drag?.item.kind === 'block' ? drag.item.id : null
-  const liftedTrait = drag?.item.kind === 'trait' ? drag.item.id : null
   const childInst = inInst || !!b.inst
   const Icon = ICONS[custom ? 'custom' : type.icon]
 
-  const ghost = (pill: boolean) => (
-    <div data-ghost className={cx(styles.ghost, pill && styles.ghostPill)} style={{ width: drag!.w, height: drag!.h }} />
-  )
-
-  // The Trait ghost goes before the pill it lands in front of, counting pills that are not lifted; '' = at the end.
-  const shown = b.traits.filter(t => t !== liftedTrait)
-  const ghostBefore = target?.tIdx === undefined ? null : shown[target.tIdx] ?? ''
+  // Only a Block opens a gap; a Trait's spot is a drop line over its row, so nothing moves under the pointer.
+  const ghost = blockDrop && <div data-ghost className={styles.ghost} style={{ width: drag!.w, height: drag!.h }} />
 
   const empty = !b.children.some(c => c !== liftedBlock) && !blockDrop
 
@@ -70,18 +66,19 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
       data-bid={id}
       className={cx(
         styles.block,
-        checkpoint ? styles.checkpoint : b.type === 'site' ? styles.site : b.locked ? styles.lockedPage : custom ? 'cat-my' : `cat-${type.category}`,
+        checkpoint ? styles.checkpoint : site ? styles.site : b.locked ? styles.lockedPage : custom ? 'cat-my' : `cat-${type.category}`,
         b.inst && styles.inst,
         b.defines && styles.def,
         target && styles.over,
         liftedBlock === id && styles.lifted,
-        p.blocks.canvas.children.includes(id) && b.type !== 'site' && !checkpoint && styles.loose,
+        p.blocks.canvas.children.includes(id) && !site && !checkpoint && styles.loose,
       )}
       style={def && customColor(def.color)}
       onPointerDown={b.defines ? undefined : dragSource({ kind: 'block', id })}
       onContextMenu={e => openMenu(e, id)}
     >
-      <div className={cx(styles.header, !drag && styles.pressable)} data-tip={`b:${id}`}>
+      <div className={cx(styles.header, !drag && styles.pressable)} data-tip={`b:${id}`}
+        onBlur={site ? e => { if (e.target instanceof HTMLInputElement) fillBlankName(e.target) } : undefined}>
         {!checkpoint && (
           <button className={o.fold} title={folded ? 'Open this Block' : 'Fold this Block'}
             onClick={() => updateProject(d => { d.blocks[id].folded = !folded })}>
@@ -91,7 +88,7 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
         {checkpoint ? (
           <>
             <ICONS.checkpoint weight="fill" size={16} />
-            Checkpoint
+            {p.checkpoint ? checkpointTitle(p, p.checkpoint) : 'Checkpoint'}
             <span className={styles.hint}>the built site</span>
           </>
         ) : b.locked ? (
@@ -106,7 +103,11 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
               <Icon weight="fill" size={16} />
               {b.inst ? p.blocks[def?.blockId ?? '']?.name : b.defines ? 'Custom Block' : type.label}
             </span>
-            <TextField className={styles.name} value={b.name} onChange={v => updateProject(d => { d.blocks[id].name = v })} />
+            {/* The Site's name is the Project name (applyChange copies it onto the Site) */}
+            <TextField className={styles.name} value={b.name} onChange={v => updateProject(d => {
+              if (site) d.name = v
+              else d.blocks[id].name = v
+            })} />
             {b.inst && (
               <button
                 className={o.editPill}
@@ -118,7 +119,7 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
             {inInst && !b.from && <span className={o.marker}>+ only here</span>}
           </>
         )}
-        {p.blocks.canvas.children.includes(id) && b.type !== 'site' && !checkpoint && <span className={o.badge}>not built</span>}
+        {p.blocks.canvas.children.includes(id) && !site && !checkpoint && <span className={o.badge}>not built</span>}
         <Mark id={id} />
       </div>
       {(b.note || b.noteOn) && <BlockNote id={id} note={b.note} noteOn={b.noteOn} />}
@@ -135,27 +136,21 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
             return <span key={c} className={o.chip} onPointerDown={dragSource({ kind: 'block', id: c })}><CIcon weight="fill" size={16} />{child.name}</span>
           })}
           {b.traits.length === 0 && b.children.length === 0 && <span className={cx(o.chip, o.none)}>empty</span>}
-          {target && <div data-ghost className={cx(styles.ghost, styles.ghostPill, o.chipGhost)} />}
+          {blockDrop && <div data-ghost className={cx(styles.ghost, styles.ghostPill, o.chipGhost)} />}
         </div>
       ) : (
         <>
-          <div className={styles.traits}>
-            {b.traits.map(t => (
-              <Fragment key={t}>
-                {t === ghostBefore && ghost(true)}
-                <TraitPill p={p} id={t} inInst={childInst} />
-              </Fragment>
-            ))}
-            {ghostBefore === '' && ghost(true)}
+          <div className={styles.traits} data-pills={id}>
+            {b.traits.map(t => <TraitPill key={t} p={p} id={t} inInst={childInst} />)}
           </div>
           {type.accepts.length > 0 && (
             <div className={cx(styles.inside, empty && !b.locked && styles.empty)}>
               {!empty ? (
                 <LayoutView
                   l={blockDrop ? insertInto(repairLayout(b), GHOST, target!.slot) : repairLayout(b)}
-                  p={p} depth={depth + 1} inInst={childInst} ghost={blockDrop && ghost(false)}
+                  p={p} depth={depth + 1} inInst={childInst} ghost={ghost}
                 />
-              ) : b.type === 'site' ? (
+              ) : site ? (
                 <div className={styles.emptyHint}>
                   Drag a Page into your Site to start.
                 </div>

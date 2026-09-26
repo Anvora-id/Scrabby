@@ -11,10 +11,37 @@
 .title {
   display: flex;
   align-items: center;
-  gap: 8px;
   padding: 10px 12px;
   background: var(--bob-tint);
   border-bottom: 2px solid var(--line-soft);
+}
+
+/* Bob's head: an avatar in a white circle with a ring (Brand and Bob). */
+.head,
+.avatar,
+.emptyHead {
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #fff;
+  border: 2px solid var(--line);
+}
+
+/* No gap on the title: the badge brings its own 8px margin. */
+.head {
+  width: 28px;
+  height: 28px;
+  margin-right: 8px;
+}
+
+.avatar {
+  width: 24px;
+  height: 24px;
+}
+
+.emptyHead {
+  width: 48px;
+  height: 48px;
 }
 
 .name {
@@ -29,7 +56,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
+  padding: 8px 12px;
   background: var(--soft);
   border-bottom: 2px solid var(--line-soft);
   font-weight: 700;
@@ -102,7 +129,6 @@
 
 .user,
 .bob {
-  max-width: 90%;
   padding: 9px 12px;
   border-radius: 16px;
   font-weight: 700;
@@ -110,19 +136,33 @@
   line-height: 1.45;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  animation: pop var(--t-pop) var(--spring);
 }
 
 .user {
   align-self: flex-end;
+  max-width: 90%;
+  animation: pop var(--t-pop) var(--spring);
   background: var(--brand);
   color: #fff;
   border-bottom-right-radius: 5px;
   box-shadow: 0 3px 0 var(--brand-dark);
 }
 
-.bob {
+/* Bob's head beside his bubble, level with its flat corner. */
+.bobRow {
   align-self: flex-start;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  max-width: 95%;
+  animation: pop var(--t-pop) var(--spring);
+}
+
+.bob {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   background: var(--bob-tint);
   color: var(--ink);
   border-bottom-left-radius: 5px;
@@ -148,6 +188,18 @@
   animation: bounce 1s infinite;
 }
 
+.thinking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--hint);
+}
+
+.thinking .dots i {
+  width: 9px;
+  height: 9px;
+}
+
 .dots i:nth-child(2) { animation-delay: .15s; }
 .dots i:nth-child(3) { animation-delay: .3s; }
 
@@ -168,7 +220,6 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 6px;
-  margin-top: 8px;
   padding: 10px;
   background: var(--surface);
   border: 2px solid var(--line);
@@ -202,11 +253,14 @@
 }
 
 .buttons {
+  align-self: stretch;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   margin-top: 2px;
+  padding-top: 8px;
+  border-top: 2px solid var(--line-soft);
 }
 
 .status {
@@ -301,7 +355,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
+  padding: 8px 12px;
   background: var(--soft);
   border-top: 2px solid var(--line-soft);
 }
@@ -371,7 +425,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .user,
-  .bob,
+  .bobRow,
   .bubble {
     animation: none;
   }

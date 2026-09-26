@@ -4,10 +4,12 @@ import type { BlockType, TraitType } from './types.ts'
 
 // ── id helpers ───────────────────────────────────────────────────────────────
 
+export const NEW_NAME = 'My website' // also where a name field left blank goes back to
+
 export function emptyProject(): Project {
   const p: Project = {
     id: crypto.randomUUID(),
-    name: 'My website',
+    name: NEW_NAME,
     next: { b: 1, t: 1, d: 1, a: 1 },
     blocks: {
       canvas: { id: 'canvas', type: 'canvas', name: 'Canvas', note: '', traits: [], children: [] },
@@ -19,7 +21,7 @@ export function emptyProject(): Project {
     chat: [],
     updated: Date.now(),
   }
-  const siteId = addBlock(p, 'site', 'My website')
+  const siteId = addBlock(p, 'site', NEW_NAME)
   p.blocks[siteId].pos = { x: 40, y: 40 }
   p.blocks['canvas'].children.push(siteId)
   return p
@@ -169,7 +171,25 @@ export function applyChange(before: Project, recipe: (p: Project) => void): Proj
   recipe(p)
   recordInstanceEdits(before, p)
   resolveAll(p)
+  syncName(before, p)
   return p
+}
+
+// The Project name and the top Block's name are one name: the chip and the Site's name field both set
+// `p.name`, and the top Block follows, also after a Build or when a Checkpoint load brings back an old one.
+function syncName(before: Project, p: Project): void {
+  const top = topOf(p)
+  if (!top) return
+  const was = topOf(before)
+  // ponytail: a Project saved before the names were joined takes its renamed Site's name on the first edit;
+  // Undo of that edit brings the old mismatch back. Only old local saves have it.
+  if (p.name === before.name && was && was.name !== before.name) p.name = was.name
+  top.name = p.name
+}
+
+// Same as topBlock (instructions/warnings.ts), kept here so the model doesn't import the instructions.
+function topOf(p: Project): Block | undefined {
+  return p.blocks.canvas.children.map(id => p.blocks[id]).find(b => b?.type === 'site' || b?.type === 'checkpoint')
 }
 
 function instanceParts(p: Project): Map<string, string> {

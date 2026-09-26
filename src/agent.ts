@@ -35,13 +35,15 @@ export function browserId(): string {
   }
 }
 
-export async function* runAgent(req: AgentRequest): AsyncGenerator<AgentEvent> {
+export async function* runAgent(req: AgentRequest, signal?: AbortSignal): AsyncGenerator<AgentEvent> {
   let res: Response
   try {
     res = await fetch('/api/agent', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-scrabby-browser': browserId() },
+      // A fresh id per run: the server refuses a replay of the same request.
+      headers: { 'content-type': 'application/json', 'x-scrabby-browser': browserId(), 'x-scrabby-run': crypto.randomUUID() },
       body: JSON.stringify(req),
+      signal,
     })
   } catch {
     yield { type: 'error', reason: 'unreachable' }

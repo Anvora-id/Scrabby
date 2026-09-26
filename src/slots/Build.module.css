@@ -29,6 +29,14 @@
   transition-duration: var(--t-press);
 }
 
+/* The pressed button sits 4px lower; this strip (placed against the button, which its transform makes the
+   containing block) keeps its old top edge, so a press that starts there still clicks. */
+.button:active:not(:disabled)::before {
+  content: "";
+  position: absolute;
+  inset: -4px 0 0;
+}
+
 .button:disabled {
   opacity: .6;
   cursor: default;
@@ -149,7 +157,6 @@
   font-weight: 600;
 }
 
-.check,
 .bang {
   flex: none;
   display: inline-grid;
@@ -163,11 +170,6 @@
   line-height: 1;
 }
 
-.check {
-  background: var(--go);
-  box-shadow: 0 2px 0 var(--go-dark);
-}
-
 .bang {
   background: var(--alert-dark);
 }
@@ -178,35 +180,35 @@
   font-size: 16px;
 }
 
-.spinner,
-.smallSpinner {
+/* On a pressed Build or Try again button, until Bob starts. */
+.buttonSpinner {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  border: 3px solid #ffffff59;
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.primary .buttonSpinner {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+.spinner {
   flex: none;
   box-sizing: border-box;
   border-radius: 50%;
   border-style: solid;
   border-color: var(--idle);
   border-top-color: var(--bob);
-  animation: spin 1s linear infinite;
-}
-
-.spinner {
   width: 26px;
   height: 26px;
   border-width: 4px;
-}
-
-.smallSpinner {
-  width: 15px;
-  height: 15px;
-  border-width: 3px;
-}
-
-.markSlot {
-  flex: none;
-  display: inline-grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
@@ -217,7 +219,7 @@
 
 .stage {
   position: relative;
-  height: 150px;
+  height: 220px;
   flex: none;
   border-radius: var(--r-panel);
   background: var(--bob-tint) radial-gradient(circle, var(--ws-dot) 1.4px, transparent 1.6px) 0 0 / 18px 18px;
@@ -238,54 +240,50 @@
   font-weight: 800;
 }
 
+/* The pile: 10 units of 36px by 7 rows of 22px, clear of the caption and of Bob.
+   Clipped from 20px above it (8px under the caption), so a falling brick appears below the caption and never crosses it;
+   the 8px at the sides and bottom keep the squash, the flash and the bottom edges. */
 .base {
   position: absolute;
-  left: 32px;
+  left: 28px;
   bottom: 14px;
-  width: 236px;
-  height: 134px;
+  width: 360px;
+  height: 152px;
+  clip-path: inset(-20px -8px -8px);
 }
 
-.miniBlock,
-.miniSticker {
+.brick {
   position: absolute;
   box-sizing: border-box;
+  border: 2px solid var(--c3);
+  border-radius: 5px;
   background: var(--c1);
+  box-shadow: 0 2px 0 var(--c3);
   transform-origin: bottom center;
 }
 
-.miniBlock {
-  border: 2px solid var(--c3);
-  border-radius: 8px;
-  box-shadow: 0 3px 0 var(--c3);
-}
-
-.miniBlock::after {
+.brick::after {
   content: '';
   position: absolute;
   left: 4px;
   right: 4px;
   bottom: 3px;
-  height: 3px;
-  border-radius: 2px;
+  height: 2px;
+  border-radius: 1px;
   background: var(--c4);
 }
 
-.miniSticker {
-  border: 2.5px solid #fff;
-  border-radius: var(--r-pill);
-  box-shadow: 0 0 0 1.5px var(--c3);
-}
-
-.stage-failed .base > :last-child {
-  animation: slideOff 600ms var(--ease) forwards;
+/* A failed Build: the whole pile tips over and slides out of view. */
+.stage-failed .base {
+  transform-origin: bottom right;
+  animation: tipOff 600ms var(--ease) forwards;
 }
 
 .bob {
   position: absolute;
   right: 26px;
   bottom: 10px;
-  height: 118px;
+  height: 170px;
   transform-origin: bottom center;
 }
 
@@ -312,12 +310,12 @@
   80% { transform: scale(1.04, .95); }
 }
 
-@keyframes slideOff {
-  40% { transform: translateX(40px); }
-  100% { transform: translate(60px, 200px); }
+@keyframes tipOff {
+  30% { transform: rotate(6deg); }
+  100% { transform: translate(140px, 260px) rotate(18deg); }
 }
 
-/* Chips and checklist */
+/* Chips */
 
 .chips {
   display: flex;
@@ -342,12 +340,100 @@
   transition: opacity var(--t-pop) var(--spring), transform var(--t-pop) var(--spring);
 }
 
-.chip.lit {
+.chip.done {
   opacity: 1;
   transform: none;
 }
 
-.lines {
+/* On a failed Build every chip goes back to dim at once. */
+.failed .chip {
+  transition: none;
+}
+
+/* The chip Bob is on: breathes, and stays dimmer than a done chip. */
+.chip.working {
+  box-shadow: 0 0 0 2px var(--bob), 0 3px 0 2px var(--bob);
+  animation: breathe 1.2s var(--ease) infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: .45; transform: scale(.96); }
+  50% { opacity: .75; transform: none; }
+}
+
+.fold {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 5px 12px;
+  border: 2px solid var(--line);
+  border-radius: var(--r-btn);
+  background: var(--surface);
+  box-shadow: 0 2px 0 var(--line);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 250ms var(--spring), box-shadow 250ms var(--spring);
+}
+
+.fold:hover {
+  border-color: var(--brand);
+}
+
+.fold:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--line);
+  transition-duration: var(--t-press);
+}
+
+.fold:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+}
+
+.fold .chip {
+  font-size: var(--fs);
+}
+
+.chevron {
+  flex: none;
+  transition: transform var(--t-quick);
+}
+
+.chevron.turned {
+  transform: rotate(-90deg);
+}
+
+.drawer {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--t-settle) var(--ease);
+}
+
+.drawer.open {
+  grid-template-rows: 1fr;
+}
+
+.drawer > div {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Room for the chips' rings and bottom edges, which the fold would clip; about 5 rows, then it scrolls. */
+.drawer .chips {
+  position: relative;
+  max-height: 204px;
+  padding: 12px 3px 6px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.notes {
   display: flex;
   flex-direction: column;
   margin: 0;
@@ -355,22 +441,23 @@
   list-style: none;
 }
 
-.lines li {
+.notes li,
+.failRow {
   display: flex;
   align-items: center;
   gap: 10px;
   color: var(--text);
   font-size: var(--fs-md);
-  font-weight: 700;
   line-height: 1.6;
 }
 
-.lines li.current {
-  color: var(--ink);
+.notes li {
+  font-weight: 600;
 }
 
-.lines li.skip {
-  font-weight: 600;
+.failRow {
+  margin: 0;
+  font-weight: 700;
 }
 
 .dash {
@@ -387,12 +474,6 @@
   background: var(--alert-bg);
   color: var(--ink);
   font-weight: 900;
-}
-
-p.failLine {
-  display: inline-block;
-  margin: 8px 0 0;
-  font-size: var(--fs-md);
 }
 
 /* Actions */
@@ -424,7 +505,12 @@ p.failLine {
   font-weight: 900;
 }
 
-.primary:active {
+.primary:disabled {
+  opacity: .6;
+  cursor: default;
+}
+
+.primary:active:not(:disabled) {
   transform: translateY(2px);
   box-shadow: 0 1px 0 var(--brand-dark);
   transition-duration: var(--t-press);
@@ -456,14 +542,25 @@ p.failLine {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .button, .button:active:not(:disabled), .primary, .primary:active, .ghost, .ghost:active {
+  .button, .button:active:not(:disabled), .primary, .primary:active, .ghost, .ghost:active, .fold, .fold:active {
     transition: none;
     transform: none;
   }
-  .bubble, .spinner, .smallSpinner, .stage .bob, .stage-failed .base > :last-child {
+  .bubble, .spinner, .buttonSpinner, .stage .bob, .stage-failed .base {
     animation: none;
   }
-  .chip {
+  .stage-failed .base {
+    visibility: hidden;
+  }
+  .chip, .chevron, .drawer {
     transition: none;
+  }
+  .drawer .chips {
+    scroll-behavior: auto;
+  }
+  .chip.working {
+    animation: none;
+    opacity: .6;
+    transform: none;
   }
 }

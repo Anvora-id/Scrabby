@@ -98,9 +98,23 @@
 }
 
 .empty {
-  margin: 0;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
   color: var(--hint);
-  font-style: italic;
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+
+.bob {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--line);
 }
 
 .entry {
@@ -152,6 +166,38 @@
 .hereTag {
   background: var(--brand);
   color: #fff;
+}
+
+.nameInput {
+  box-sizing: border-box;
+  width: 24ch;
+  max-width: 100%;
+  font: inherit;
+  font-size: var(--fs-md);
+  font-weight: var(--w-bold);
+  color: var(--ink);
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  padding: 1px 6px;
+}
+
+.rename {
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--hint);
+  cursor: pointer;
+}
+
+.rename:hover {
+  background: var(--soft);
+  color: var(--ink);
 }
 
 .gist {
@@ -215,7 +261,8 @@
 .ghost:focus-visible,
 .link:focus-visible,
 .pick:focus-visible,
-.see:focus-visible {
+.see:focus-visible,
+.rename:focus-visible {
   outline: none;
   box-shadow: var(--focus);
 }

@@ -3,37 +3,49 @@ import type { PointerEvent as ReactPointerEvent } from 'react'
 import { ICONS } from '../icons.ts'
 import type { Pos, Project } from '../model/types.ts'
 import { getProject, getUi, setEditing, updateProject, updateProjectWithoutUndo, useProject, useUi } from '../store.ts'
-import { getDrag, peekPending, setDrag, takePending, useDrag } from '../canvas/drag.ts'
-import type { Pending } from '../canvas/drag.ts'
+import { aimStep, getDrag, peekPending, sameAim, setDrag, takePending, useDrag } from '../canvas/drag.ts'
+import type { Aim, Pending } from '../canvas/drag.ts'
 import { targetAt } from '../canvas/target.ts'
 import type { DragRects } from '../canvas/target.ts'
 import { canDrop, canTrash, dropItem, isTraitItem, parentMap, removeItem, repairLayout } from '../canvas/tree.ts'
-import type { Drop } from '../canvas/tree.ts'
+import type { DragItem, Drop } from '../canvas/tree.ts'
 import BlockView from '../canvas/BlockView.tsx'
 import TraitPill from '../canvas/TraitPill.tsx'
-import { ContextMenu, Tooltip } from '../canvas/Overlays.tsx'
+import { ContextMenu, openMenu, Tooltip } from '../canvas/Overlays.tsx'
 import { flash, MarksContext, Popover, Stepper } from '../canvas/Warnings.tsx'
 import { marksOf, stopsOf } from '../canvas/marks.ts'
-import { warnings } from '../instructions/warnings.ts'
+import { topBlock, warnings } from '../instructions/warnings.ts'
 import styles from '../canvas/Canvas.module.css'
 import parts from '../canvas/parts.module.css'
 import { droppedBlock } from '../onboarding.ts'
-import { DemoButton } from '../shell/Onboarding.tsx'
 
 const MIN_ZOOM = 0.3
 const MAX_ZOOM = 2
 const CORNER = 40
 const DOTS = 24
+const DWELL = 250 // ms the pointer rests on a spot before a Block's gap moves there
+const HOLD = [[12, 0], [-12, 0], [0, 12], [0, -12]] // a chosen spot holds while any of these nudges still picks it
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n))
 const at = (pos: Pos | undefined, i: number) => ({ left: pos?.x ?? 20 + i * 40, top: pos?.y ?? 20 + i * 40 })
 
 // A Block that never had a layout gets one on its first drop; repair layouts and sort keys so that alone is no change.
+// dropItem pins `folded` on Blocks shown folded, which changes nothing on screen, so folding is left out too.
 function shape(p: Project): string {
-  const blocks = Object.values(p.blocks).map(b => ({ ...b, layout: repairLayout(b) }))
+  const blocks = Object.values(p.blocks).map(b => ({ ...b, layout: repairLayout(b), folded: undefined }))
   return JSON.stringify([blocks, p.traits], (_, v: unknown) =>
     v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort()) : v)
 }
+
+const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches
+
+// --t-quick with --ease, for the motion run from script
+function quick() {
+  const css = getComputedStyle(document.documentElement)
+  return { duration: parseFloat(css.getPropertyValue('--t-quick')), easing: css.getPropertyValue('--ease') }
+}
+
+const spotKey = (el: HTMLElement) => el.dataset.bid ? 'b' + el.dataset.bid : 't' + el.dataset.tid
 
 function measure(world: HTMLElement): DragRects {
   const rects = (sel: string, key: 'bid' | 'tid') => new Map(
@@ -56,10 +68,15 @@ export default function Canvas() {
   const rects = useRef<DragRects | null>(null)
   const pan = useRef<{ x: number; y: number } | null>(null)
   const avatar = useRef<HTMLElement | null>(null)
+  const source = useRef<HTMLElement | null>(null)
   const grab = useRef({ x: 0, y: 0 })
-  const projectId = useRef(p.id)
+  // '' so the first render places the view too
+  const projectId = useRef('')
   const prevEditing = useRef<string | null>(null)
   const stepAt = useRef(-1)
+  const dwell = useRef<{ next: Aim; timer: number } | null>(null)
+  const slideFrom = useRef<Map<string, { x: number; y: number }> | null>(null)
+  const slides = useRef<Animation[]>([])
   const [busy, setBusy] = useState<string | null>(null)
   const [pop, setPop] = useState<{ id: string; x: number; y: number } | null>(null)
   const closePop = useCallback(() => setPop(null), [])
@@ -106,10 +123,38 @@ export default function Canvas() {
     zoomAt(vp.clientWidth / 2, vp.clientHeight / 2, z)
   }
 
+  // 100% with the top Block's corner 40px in, where a new Site starts (the edit view's definition sits there too).
+  function home() {
+    const pos = (!editingId && topBlock(p)?.pos) || { x: 40, y: 40 }
+    view.current = { x: 40 - pos.x, y: 40 - pos.y, z: 1 }
+  }
+
+  // Where each Block and Trait sits in the world, unscaled, so panning or zooming never counts as moving.
+  function spots(): Map<string, { x: number; y: number }> {
+    const world = worldRef.current!, w = world.getBoundingClientRect(), z = view.current.z
+    return new Map([...world.querySelectorAll<HTMLElement>('[data-bid], [data-tid]')]
+      .filter(el => el.getClientRects().length > 0)
+      .map(el => {
+        const r = el.getBoundingClientRect()
+        return [spotKey(el), { x: (r.left - w.left) / z, y: (r.top - w.top) / z }]
+      }))
+  }
+
+  // Before a drag moves things: the next render slides each one from here.
+  function snap() {
+    if (worldRef.current && !reduced()) slideFrom.current = spots()
+  }
+
+  function stopDwell() {
+    if (dwell.current) clearTimeout(dwell.current.timer)
+    dwell.current = null
+  }
+
   useLayoutEffect(() => {
+    // Arriving on the Canvas (back on Plan, or a new Project)
     if (p.id !== projectId.current) {
       projectId.current = p.id
-      view.current = { x: 0, y: 0, z: 1 }
+      home()
     }
     // Entering edit view: save current view, reset to {0,0,1}
     if (editingId && !prevEditing.current) {
@@ -133,6 +178,8 @@ export default function Canvas() {
       e.preventDefault()
       const d = getDrag()
       if (d) {
+        stopDwell()
+        snap()
         rects.current = null
         setDrag({ ...d, target: null })
       }
@@ -232,12 +279,18 @@ export default function Canvas() {
       const fields = a.querySelectorAll<HTMLInputElement>('input, textarea, select')
       el.querySelectorAll<HTMLInputElement>('input, textarea, select').forEach((f, i) => { fields[i].value = f.value })
       a.classList.add(styles.avatar)
+      // The lift is 3%, but at most 8px, so a big Block doesn't balloon.
+      a.style.setProperty('--lift', String(Math.min(1.03, 1 + 8 / Math.max(el.offsetWidth, el.offsetHeight))))
       a.classList.remove(parts.over)
+      // Keeps the size it had where it was grabbed, e.g. a palette Trait's wider padding.
+      a.style.width = `${el.offsetWidth}px`
       if (worldRef.current?.contains(el)) a.style.transform = `scale(${view.current.z})`
       document.body.append(a)
       avatar.current = a
+      source.current = el
       document.body.style.userSelect = 'none'
       getSelection()?.removeAllRanges()
+      snap()
       setDrag({ item: pending.item, w: el.offsetWidth, h: el.offsetHeight, pill: isTraitItem(pending.item), target: null, trash: false })
     }
 
@@ -248,35 +301,119 @@ export default function Canvas() {
         start(takePending()!)
       }
       const d = getDrag()!
-      avatar.current!.style.left = `${e.clientX - grab.current.x}px`
-      avatar.current!.style.top = `${e.clientY - grab.current.y}px`
-      const p = getProject()
-      const under = document.elementFromPoint(e.clientX, e.clientY)
-      let next: { target: Drop | null; trash: boolean } = { target: null, trash: false }
-      if (under?.closest('[data-palette]')) next.trash = canTrash(p, d.item)
-      else if (!under || !viewportRef.current?.contains(under) || !rects.current) { /* nothing takes it */ }
-      else if (!under.closest('[data-bid]')) {
-        if (!getUi().editing && canDrop(p, d.item, 'canvas')) next.target = { id: 'canvas' }
-      } else next.target = targetAt(p, rects.current, d.item, e.clientX, e.clientY)
-      if (JSON.stringify(next) !== JSON.stringify({ target: d.target, trash: d.trash })) setDrag({ ...d, ...next })
+      const { clientX: x, clientY: y } = e
+      avatar.current!.style.left = `${x - grab.current.x}px`
+      avatar.current!.style.top = `${y - grab.current.y}px`
+      const cur: Aim = { target: d.target, trash: d.trash }
+      const now = aim(x, y)
+      const step = aimStep(d.item, cur, now, () => nearGap(x, y) || HOLD.some(([dx, dy]) => sameAim(aim(x + dx, y + dy), cur)))
+      if (step === 'wait' && dwell.current && sameAim(dwell.current.next, now)) return
+      stopDwell()
+      if (step === 'now') take(now)
+      // A Block's gap moves only once the pointer rests on the new spot.
+      if (step === 'wait') dwell.current = { next: now, timer: window.setTimeout(() => { dwell.current = null; take(now) }, DWELL) }
     }
 
-    function end(e: PointerEvent) {
+    // Over the open gap, or within 12px of it, the gap stays where it is.
+    function nearGap(x: number, y: number) {
+      const g = worldRef.current?.querySelector('[data-ghost]')?.getBoundingClientRect()
+      return !!g && x > g.left - 12 && x < g.right + 12 && y > g.top - 12 && y < g.bottom + 12
+    }
+
+    // Where the item would go with the pointer at x, y.
+    function aim(x: number, y: number): Aim {
+      const d = getDrag()!, p = getProject()
+      const under = document.elementFromPoint(x, y)
+      if (under?.closest('[data-palette]')) return { target: null, trash: canTrash(p, d.item) }
+      if (!under || !viewportRef.current?.contains(under) || !rects.current) return { target: null, trash: false }
+      if (!under.closest('[data-bid]')) return { target: !getUi().editing && canDrop(p, d.item, 'canvas') ? { id: 'canvas' } : null, trash: false }
+      return { target: targetAt(p, rects.current, d.item, x, y), trash: false }
+    }
+
+    // A Block's gap moves, so the others slide from where they were and the spots are measured again.
+    function take(next: Aim) {
+      const d = getDrag()!
+      if (!d.pill) {
+        snap()
+        rects.current = null
+      }
+      setDrag({ ...d, ...next })
+    }
+
+    // Adds cls, then calls done once the transitions or animations it starts have ended (at once if reduced motion starts none).
+    // A tab that paints no frames never ends them, so done also runs after 1s; every done here is safe to run twice.
+    function play(el: HTMLElement, cls: string, done: () => void) {
+      el.classList.add(cls)
+      Promise.allSettled(el.getAnimations().map(x => x.finished)).then(done)
+      setTimeout(done, 1000)
+    }
+
+    const fade = (a: HTMLElement) => play(a, styles.gone, () => a.remove())
+
+    // Where nothing takes it, a new item's copy fades away and a moved item's copy flies back to its spot:
+    // the Block or Trait, or the chip it was grabbed from in a folded Block.
+    function putBack(a: HTMLElement, item: DragItem, grabbed: HTMLElement) {
+      if (!('id' in item)) return fade(a)
+      // The next frame comes after the render that shows the item in its spot again.
+      requestAnimationFrame(() => {
+        const el = itemEl(item.id) ?? (grabbed.isConnected ? grabbed : null)
+        if (!el) return fade(a)
+        const r = el.getBoundingClientRect()
+        el.classList.add(styles.waiting)
+        a.style.left = `${r.left}px`
+        a.style.top = `${r.top}px`
+        a.style.transform = `scale(${view.current.z})`
+        play(a, styles.back, () => { a.remove(); el.classList.remove(styles.waiting) })
+      })
+    }
+
+    // Every drop settles by the same few pixels whatever its size: 2% wider and 3% shorter, at most 4px and 3px,
+    // held 40ms, then back over --t-quick with --ease.
+    function land(id: string) {
+      requestAnimationFrame(() => {
+        const el = itemEl(id)
+        if (!el || reduced()) return
+        const { duration, easing } = quick()
+        const sx = Math.min(1.02, 1 + 4 / el.offsetWidth), sy = Math.max(0.97, 1 - 3 / el.offsetHeight)
+        const squash = { scale: `${sx} ${sy}`, transformOrigin: '50% 100%' }
+        el.animate([squash, { ...squash, offset: 40 / (40 + duration), easing }, { scale: '1', transformOrigin: '50% 100%' }], 40 + duration)
+      })
+    }
+
+    // Ends the drag and hands back what was dragged, its copy and the element it was grabbed from; null when nothing was dragged.
+    function takeDrag() {
       takePending()
+      stopDwell()
       const d = getDrag()
-      if (!d) return
-      avatar.current?.remove()
-      avatar.current = null
+      if (!d) return null
+      snap()
+      const a = avatar.current!, el = source.current!
+      avatar.current = source.current = null
       document.body.style.userSelect = ''
       rects.current = null
       setDrag(null)
-      if (e.type === 'pointercancel') return
-      const { item, target, trash } = d
+      return { d, a, el }
+    }
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return
+      const s = takeDrag()
+      if (s) putBack(s.a, s.d.item, s.el)
+    }
+
+    function end(e: PointerEvent) {
+      const s = takeDrag()
+      if (!s) return
+      const { d: { item, target, trash }, a, el } = s
+      if (e.type === 'pointercancel') return putBack(a, item, el)
+      const p = getProject()
       if (trash) {
-        if (item.kind === 'block' || item.kind === 'trait') updateProject(q => removeItem(q, item.id))
+        fade(a)
+        // Undo during the drag may already have taken it away.
+        if ('id' in item && (item.kind === 'block' ? p.blocks : p.traits)[item.id]) updateProject(q => removeItem(q, item.id))
         return
       }
-      if (!target) return
+      if (!target) return putBack(a, item, el)
       const to: Drop = { ...target }
       if (target.id === 'canvas') {
         const r = viewportRef.current!.getBoundingClientRect(), v = view.current
@@ -285,36 +422,66 @@ export default function Canvas() {
           y: Math.round((e.clientY - grab.current.y - r.top - v.y) / v.z),
         }
       }
-      const p = getProject()
       const dry = structuredClone(p)
-      dropItem(dry, item, to)
-      if (shape(dry) === shape(p)) return
+      // Undo during the drag can take away the item or its target; then it goes back like a release that can't land.
+      try { dropItem(dry, item, to) } catch { return putBack(a, item, el) }
+      a.remove()
+      // Back on its own spot: it still lands, but nothing is saved.
+      if (shape(dry) === shape(p)) {
+        if ('id' in item) land(item.id)
+        return
+      }
       let newId = ''
       updateProject(q => { newId = dropItem(q, item, to) })
       setBusy(newId)
+      land(newId)
       if (item.kind === 'newBlock') droppedBlock(newId)
     }
 
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', end)
     window.addEventListener('pointercancel', end)
+    window.addEventListener('keydown', onKey)
     return () => {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', end)
       window.removeEventListener('pointercancel', end)
+      window.removeEventListener('keydown', onKey)
+      // Leaving the Canvas mid-drag (a Build switches the step): end the drag and take its copy away.
+      takeDrag()?.a.remove()
     }
   }, [])
 
   useLayoutEffect(() => {
-    const line = lineRef.current!
+    const line = lineRef.current!, world = worldRef.current!
     line.hidden = true
     if (!drag) return
-    rects.current ??= measure(worldRef.current!)
-    const g = worldRef.current!.querySelector('[data-ghost]')?.getBoundingClientRect()
-    if (!g || !drag.target) return
-    const where = drag.target.slot?.where
+    if (!rects.current) {
+      // Spots are where things end up, not where a slide still shows them.
+      for (const a of slides.current) a.cancel()
+      rects.current = measure(world)
+    }
+    if (!drag.target) return
     const s = line.style
-    if (drag.target.tIdx !== undefined || where === 'left' || where === 'right') {
+    if (drag.target.tIdx !== undefined) {
+      // A Trait opens no gap: the line stands before the sticker it lands in front of, after the last one,
+      // or under the header when the row is empty. A folded Block has no row; its ring alone shows the spot.
+      const row = world.querySelector(`[data-pills="${drag.target.id}"]`)
+      if (!row) return
+      const pills = [...row.children].filter(el => el.getClientRects().length > 0).map(el => el.getBoundingClientRect())
+      const i = drag.target.tIdx, r = pills[Math.min(i, pills.length - 1)]
+      const above = row.previousElementSibling!.getBoundingClientRect(), z = view.current.z
+      s.left = `${!r ? above.left : i < pills.length ? r.left - 5 : r.right + 1}px`
+      s.top = `${r ? r.top : above.bottom + 4 * z}px`
+      s.width = '4px'
+      s.height = `${r ? r.height : drag.h * z}px`
+      line.hidden = false
+      return
+    }
+    const g = world.querySelector('[data-ghost]')?.getBoundingClientRect()
+    if (!g) return
+    const where = drag.target.slot?.where
+    if (where === 'left' || where === 'right') {
       s.left = `${where === 'right' ? g.left - 5 : g.right + 1}px`
       s.top = `${g.top}px`
       s.width = '4px'
@@ -327,6 +494,28 @@ export default function Canvas() {
     }
     line.hidden = false
   }, [drag])
+
+  // After a drag moves things, each Block and Trait slides from where it was over --t-quick with --ease.
+  useLayoutEffect(() => {
+    const before = slideFrom.current
+    if (!before) return
+    slideFrom.current = null
+    for (const a of slides.current) a.cancel()
+    const now = spots()
+    const moved = new Map<Element, { x: number; y: number }>()
+    for (const el of worldRef.current!.querySelectorAll<HTMLElement>('[data-bid], [data-tid]')) {
+      const a = before.get(spotKey(el)), b = now.get(spotKey(el))
+      if (a && b) moved.set(el, { x: a.x - b.x, y: a.y - b.y })
+    }
+    const timing = quick()
+    slides.current = [...moved].flatMap(([el, d]) => {
+      // A parent's slide carries its children, so each one slides only by its own share.
+      const parent = el.parentElement?.closest('[data-bid]')
+      const up = (parent && moved.get(parent)) || { x: 0, y: 0 }
+      const x = d.x - up.x, y = d.y - up.y
+      return Math.abs(x) < 1 && Math.abs(y) < 1 ? [] : [el.animate({ translate: [`${x}px ${y}px`, '0 0'] }, timing)]
+    })
+  })
 
   const canvas = p.blocks.canvas
   // Instances count for the EditBar
@@ -342,6 +531,7 @@ export default function Canvas() {
       onPointerCancel={onPanEnd}
       onMouseDown={e => { if (e.button === 1) e.preventDefault() }}
       onAuxClick={e => { if (e.button === 1) e.preventDefault() }}
+      onContextMenu={e => openMenu(e, 'canvas', [{ label: 'Reset zoom', act: () => { home(); apply() } }])}
     >
       <div ref={worldRef} className={styles.world}>
         <MarksContext.Provider value={editingId ? { marks: new Map(), busy: null, open: () => {} } : { marks, busy, open: openPop }}>
@@ -354,7 +544,6 @@ export default function Canvas() {
             {canvas.children.map((id, i) => (
               <div key={id} className={styles.placed} style={at(p.blocks[id]?.pos, i)}>
                 <BlockView p={p} id={id} />
-                {p.blocks[id]?.type === 'site' && !p.blocks[id].children.length && <DemoButton />}
               </div>
             ))}
             {canvas.traits.map((id, i) => (
@@ -383,7 +572,7 @@ export default function Canvas() {
         <button className={styles.zoomButton} title="Zoom out" onClick={() => zoomCenter(view.current.z / 1.25)}>
           <ICONS.zoom_out size={18} />
         </button>
-        <button className={styles.zoomButton} title="Reset zoom" onClick={() => zoomCenter(1)}>
+        <button className={styles.zoomButton} title="Reset zoom" onClick={() => { home(); apply() }}>
           <ICONS.zoom_reset size={18} />
         </button>
       </div>

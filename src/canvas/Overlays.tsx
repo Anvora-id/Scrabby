@@ -6,6 +6,7 @@ import { updateProject } from '../store.ts'
 import { setEditing } from '../store.ts'
 import { getDrag, peekPending } from './drag.ts'
 import { menuItems } from './menu.ts'
+import type { MenuItem } from './menu.ts'
 import { tipFor } from './tooltip.ts'
 import { cx } from './cx.ts'
 import styles from './Overlays.module.css'
@@ -17,6 +18,7 @@ interface MenuState {
   id: string
   x: number
   y: number
+  items?: MenuItem[]
 }
 
 let menuState: MenuState | null = null
@@ -27,12 +29,13 @@ function setMenuState(s: MenuState | null) {
   menuListeners.forEach(l => l())
 }
 
-export function openMenu(e: React.MouseEvent, id: string): void {
+// `items` replaces the id's own items (the empty Canvas has its own menu).
+export function openMenu(e: React.MouseEvent, id: string, items?: MenuItem[]): void {
   const target = e.target as Element
   if (target.closest('input, textarea')) return
   e.preventDefault()
   e.stopPropagation()
-  setMenuState({ id, x: e.clientX, y: e.clientY })
+  setMenuState({ id, x: e.clientX, y: e.clientY, items })
 }
 
 export function isMenuOpen(): boolean {
@@ -71,11 +74,9 @@ export function ContextMenu({ p }: { p: Project }) {
 
   if (!state) return null
   const { id, x, y } = state
-  const b = p.blocks[id]
-  const t = p.traits[id]
-  if (!b && !t) return null
+  if (!state.items && !p.blocks[id] && !p.traits[id]) return null
 
-  const items = menuItems(p, id)
+  const items = state.items ?? menuItems(p, id)
   const left = Math.min(x, innerWidth - 210)
   const top = Math.min(y, innerHeight - 8 - 32 * items.length)
 
@@ -155,15 +156,20 @@ export function Tooltip({ p }: { p: Project }) {
   }, [tip])
 
   // Place it from its real size: 8px below the item (else above), 8px inside the window on every side.
+  // The arrow points at the item's first 20px, or its middle when it is narrower.
   useLayoutEffect(() => {
     const el = box.current
     if (!el || !tip) return
     const r = tip.rect
     const w = el.offsetWidth
     const h = el.offsetHeight
-    const top = r.bottom + 8 + h <= innerHeight - 8 ? r.bottom + 8 : r.top - 8 - h
-    el.style.left = Math.max(8, Math.min(r.left, innerWidth - 8 - w)) + 'px'
+    const below = r.bottom + 8 + h <= innerHeight - 8
+    const left = Math.max(8, Math.min(r.left, innerWidth - 8 - w))
+    const top = below ? r.bottom + 8 : r.top - 8 - h
+    el.style.left = left + 'px'
     el.style.top = Math.max(8, Math.min(top, innerHeight - 8 - h)) + 'px'
+    el.style.setProperty('--arrow', Math.max(12, Math.min(r.left + Math.min(r.width / 2, 20) - left, w - 12)) + 'px')
+    el.toggleAttribute('data-above', !below)
   }, [tip])
 
   if (!tip) return null
@@ -175,7 +181,7 @@ export function Tooltip({ p }: { p: Project }) {
   return createPortal(
     <div
       ref={box}
-      className={cx(styles.tip, data.cat ? `cat-${data.cat}` : styles.tipMuted)}
+      className={cx(styles.tip, data.cat && `cat-${data.cat}`)}
       role="tooltip"
     >
       <div className={styles.tipTitle}>

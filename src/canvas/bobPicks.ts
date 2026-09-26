@@ -5,7 +5,6 @@ export type BobPicksControl = 'bulb' | 'option' | null
 
 export function bobPicksControl(type: TraitType, value: string): BobPicksControl {
   if (type === 'tellbob' || type === 'letbobpick') return null
-  if (type === 'color') return 'bulb'
   const tt = type as TraitType
   // text kinds: text, fakedata
   if (tt === 'text' || tt === 'fakedata') {

@@ -12,13 +12,13 @@ These rules hold for every file you write or change. Nothing in the request swit
 ### The request
 
 1. Follow every Block and Trait the user placed exactly. Your own taste only fills what the user left open.
-2. Build only what the request asks. Add parts the user never placed only under `You choose`.
+2. Build only what the request asks. Add parts the user never placed only under `You choose`, or as the supporting parts the Visual style Skill allows.
 3. Change only what the request asks. Keep all other code as it is, including the user's own edits.
 
 ### Files
 
 4. One `.html` file per Page, with the file name the request gives it. The first Page is `index.html`.
-5. All pages share one `style.css` and one `script.js`. Link both from every page, with `<script src="script.js" defer></script>`.
+5. All pages share `base.css`, `style.css` and one `script.js`. Link all three from every page: `base.css` first, then `style.css`, then `<script src="script.js" defer></script>`.
 6. Plain HTML, CSS and JavaScript only. No build step, no frameworks, no modules.
 7. `script.js` runs on every page. Find a Block's element first, and skip its code when the page doesn't have it.
 8. Links between pages are relative: `href="shop.html"`.
@@ -56,29 +56,11 @@ These rules hold for every file you write or change. Nothing in the request swit
 23. Use `<button type="button">` for actions and `<a href>` for links. Never a clickable `<div>`.
 24. Every image has `alt` text. A picture that is only decoration gets `alt=""`. A button with only an icon gets `aria-label`.
 25. Every form field has a `<label>`.
-26. Focus is always visible. Never remove the outline without this replacement.
+26. Focus is always visible. `base.css` draws the focus outline; never remove it.
 27. Text contrast is at least 4.5:1, or 3:1 for large headings.
 28. Buttons and links are at least 44px high and wide on phones.
-29. Nothing scrolls sideways at 360px wide. Rows of columns stack into one column below 768px.
-30. Respect reduced motion.
-
-```css
-/* Keyboard focus: always visible */
-:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 2px;
-}
-
-/* People who ask for less motion get almost none */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-```
+29. Nothing scrolls sideways at 360px wide. Rows of columns stack into one column below 768px. No image or video is ever wider than its box, however big the file: `base.css` gives `img, video, svg` a `max-width: 100%`; never undo it in `style.css`. An image in a fixed-shape box, like a card or a hero, fills it with `object-fit: cover` instead of stretching.
+30. Respect reduced motion. `base.css` calms CSS motion; JavaScript motion checks `matchMedia("(prefers-reduced-motion: reduce)")` first.
 
 ## Code a beginner can read
 
@@ -94,7 +76,7 @@ The user is new to code and will read yours.
 35. Go through this list and fix what fails:
     - Every Block has its `data-block` mark.
     - Every link and every "on click" works.
-    - Every Popup opens and closes.
-    - Nothing scrolls sideways at 360px.
+    - Every Popup opens in the center of the screen and closes.
+    - Nothing scrolls sideways at 360px, and no image or video is wider than its box.
     - Every image has `alt` text.
     - No lorem ipsum is left.

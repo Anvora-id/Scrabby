@@ -1,6 +1,6 @@
 # Scrabby technical design (hackathon build)
 
-**Status:** build spec, 2026-09-26. It describes the team prototype as built (planning repo `spbob_prototype`, commit `267140d`), plus the hackathon changes: Bob runs the product through its inference endpoint, and the app is hosted on Vercel with the PRD §8 guardrails and the Bob kit.
+**Status:** build spec, 2026-09-26. It describes the team prototype as built (planning repo `spbob_prototype`, commit `267140d`), plus the hackathon changes: Bob runs the product through its inference endpoint, and the app is hosted on Vercel with the PRD §8 guardrails.
 **Readers:** Bob and the two developers. Bob builds from this file: every name, string and number here is exact. Do not rename, reword or "improve" anything.
 **Other sources:** words in [`CONTEXT.md`](CONTEXT.md), what and why in [`PRD.md`](PRD.md), the look in [`DESIGN.md`](DESIGN.md), work order in [`plan/build-map.md`](plan/build-map.md), rules for Bob in [`AGENTS.md`](AGENTS.md).
 **Precedence:** this file wins over PRD.md on mechanisms. §18 wins over DESIGN.md where they differ. DESIGN.md wins on every look value §18 does not mention.
@@ -59,9 +59,9 @@ Local dev: app on http://localhost:5173 (with /api/agent mounted by a Vite plugi
 | `plan/` | `build-map.md` and `issues/`. |
 | `assets/` | Bob's artwork as drawn (DESIGN.md Brand and Bob): `Scrabby_2.svg`, `bob-head.svg`, `Scrabby.png` (video and deck only). Never edit them. |
 | `public/` | `bob.svg` (a copy of `assets/Scrabby_2.svg`) and `bob-head.svg` (a copy of `assets/bob-head.svg`), served at `/bob.svg` and `/bob-head.svg`. |
-| `skills/` | The four Skills and `instruction-header.md`, copied word for word from the planning repo. Never edit them in a code issue. |
+| `skills/` | The five Skills and `instruction-header.md`, copied word for word from the planning repo, and `base.css` (the CSS every site starts from; not a Skill). Never edit them in a code issue. |
 | `src/model/` | `types.ts`, `catalogue.ts`, `project.ts`, `library.ts`. |
-| `src/canvas/` | `tree.ts`, `target.ts`, `drag.ts`, `marks.ts`, `menu.ts`, `tooltip.ts`, `bobPicks.ts`, `cx.ts`, `BlockView.tsx`, `TraitPill.tsx`, `Overlays.tsx`, `Warnings.tsx`, CSS Modules `Canvas`, `parts`, `Overlays`, `Warnings`. |
+| `src/canvas/` | `tree.ts`, `target.ts`, `drag.ts`, `marks.ts`, `menu.ts`, `tooltip.ts`, `bobPicks.ts`, `contrast.ts`, `cx.ts`, `BlockView.tsx`, `TraitPill.tsx`, `Overlays.tsx`, `Warnings.tsx`, CSS Modules `Canvas`, `parts`, `Overlays`, `Warnings`. |
 | `src/instructions/` | `warnings.ts`, `document.ts`. |
 | `src/code/` | `code.ts`, `setup.ts`, `navigation.ts`, `MergeReview.tsx`, `editor.module.css`. |
 | `src/shell/` | `MenuBar`, `StepBar`, `Steps`, `Onboarding`, `BobBadge` (each `.tsx` + `.module.css`). |
@@ -128,7 +128,7 @@ export default defineConfig({
 
 | Project | Settings | Environment variables |
 |---|---|---|
-| `scrabby` (the app, the submitted URL) | Framework Vite. Build `pnpm build`. Output `dist`. | `AGENT_API_KEY` (Sensitive), `AGENT_BASE_URL`, `AGENT_MODEL`, `AGENT_AUTH_SCHEME`, `AGENT_LABEL`, optional `AGENT_HEADERS`; optional `FALLBACK_API_KEY` (Sensitive) and the other `FALLBACK_*`; `VITE_PREVIEW_ORIGIN` = the preview project's URL |
+| `scrabby` (the app, the submitted URL) | Framework Vite. Build `pnpm build`. Output `dist`. | `AGENT_API_KEY` (Sensitive), `AGENT_BASE_URL`, `AGENT_MODEL`, `AGENT_AUTH_SCHEME`, `AGENT_LABEL`, optional `AGENT_HEADERS` and `AGENT_REASONING_EFFORT`; optional `FALLBACK_API_KEY` (Sensitive) and the other `FALLBACK_*`; `VITE_PREVIEW_ORIGIN` = the preview project's URL |
 | `scrabby-preview` | Framework Other. Build `pnpm build:preview`. Output `dist-preview`. | `VITE_APP_ORIGIN` = the app project's URL. No `AGENT_*` variables, so its copy of `/api/agent` never reaches a model. |
 
 **vercel.json** (root, applies to both projects):
@@ -146,6 +146,7 @@ export default defineConfig({
 | `AGENT_AUTH_SCHEME` | `Apikey` | Sent as `authorization: <scheme> <key>`. `Bearer` for other providers. |
 | `AGENT_MODEL` | `premium` | The model id. |
 | `AGENT_HEADERS` | `{}` | Optional JSON object of extra request headers (for example a `User-Agent` or a team-id header the endpoint asks for). |
+| `AGENT_REASONING_EFFORT` | `low` | Sent as `reasoning_effort` with every request to the main model. |
 | `AGENT_LABEL` | `IBM Bob` | The name on the Bob badge. |
 | `AGENT_LIMITS` | on | `off` turns the usage limits off (local dev only). |
 | `FALLBACK_API_KEY` | none | Turns the fallback model on (§5.2 `withFallback`). Server only (Vercel: Sensitive). |
@@ -241,6 +242,7 @@ export interface Project {
   chat: ChatMessage[]
   updated: number
   checkpoint?: number   // the Checkpoint the current code came from; unset before Build 1
+  checkpointNames?: Record<number, string> // names the user gave Checkpoints, by number
 }
 export interface BuiltBlocks { top: string[]; blocks: Record<string, Block>; traits: Record<string, Trait>; defs: Record<string, CustomBlockDef> }
 export interface Checkpoint {
@@ -315,7 +317,7 @@ The Canvas is the Block `canvas`. Its `children` are the Site or Checkpoint Bloc
 
 `COLOR_PRESETS` (name, hex, in this order): coral `#FF8A80`, pink `#F8BBD0`, orange `#FFB74D`, sunny yellow `#FFE066`, lime `#C5E1A5`, mint `#A8E6CF`, sky blue `#81D4FA`, navy `#1E3A5F`, lavender `#C5B3F6`, brown `#8D6E63`, black `#111111`, white `#FFFFFF`.
 
-**icons.ts:** `ICONS` maps key → Phosphor component (`<Name>Icon` from `@phosphor-icons/react`), `satisfies Record<string, Icon>`; `IconKey = keyof typeof ICONS`. Keys: site Globe, page FileText, navbar List, hero FlagBanner, section Rows, cardgrid SquaresFour, card Cards, form ClipboardText, popup PictureInPicture, footer SquareHalfBottom, text TextT, image Image, button CursorClick, box Square, custom PuzzlePiece, checkpoint Lock, t_color Palette, t_font TextAa, t_vibe Sparkle, t_size ArrowsOut, t_position PushPin, t_onclick Lightning, t_purpose Gear, t_fakedata DiceFive, t_text PencilSimpleLine, t_image ImageSquare, t_sound SpeakerHigh, t_video VideoCamera, t_tellbob ChatCircleDots, t_bobpicks Lightbulb, flag Flag, tab_canvas PuzzlePiece, tab_library Image, tab_checkpoints ClockCounterClockwise, new Plus, demo Cake, download DownloadSimple, undo ArrowCounterClockwise, redo ArrowClockwise, help Question, zoom_in Plus, zoom_out Minus, zoom_reset Equals, fold CaretDown, check Check, close X, reload ArrowClockwise. Every icon renders with `weight="fill"` unless §18 says otherwise.
+**icons.ts:** `ICONS` maps key → Phosphor component (`<Name>Icon` from `@phosphor-icons/react`), `satisfies Record<string, Icon>`; `IconKey = keyof typeof ICONS`. Keys: site Globe, page FileText, navbar List, hero FlagBanner, section Rows, cardgrid SquaresFour, card Cards, form ClipboardText, popup PictureInPicture, footer SquareHalfBottom, text TextT, image Image, button CursorClick, box Square, custom PuzzlePiece, checkpoint Lock, t_color Palette, t_font TextAa, t_vibe Sparkle, t_size ArrowsOut, t_position PushPin, t_onclick Lightning, t_purpose Gear, t_fakedata DiceFive, t_text PencilSimpleLine, t_image ImageSquare, t_sound SpeakerHigh, t_video VideoCamera, t_tellbob ChatCircleDots, t_bobpicks Lightbulb, flag Flag, tab_canvas PuzzlePiece, tab_library Image, tab_checkpoints ClockCounterClockwise, new Plus, demo Cake, download DownloadSimple, undo ArrowCounterClockwise, redo ArrowClockwise, help Question, zoom_in Plus, zoom_out Minus, zoom_reset Equals, fold CaretDown, check Check, close X, reload ArrowClockwise, full_size ArrowsOut, normal_size ArrowsIn. Every icon renders with `weight="fill"` unless §18 says otherwise; the Preview address bar's `reload`, `full_size` and `normal_size` render `weight="bold"`.
 
 ## 4. Project functions
 
@@ -334,7 +336,8 @@ The Canvas is the Block `canvas`. Its `children` are the Site or Checkpoint Bloc
 - `makeCustomBlock(p, id)`: `d = addDef(p, id)`; `inst = makeInstance(p, d)`; in the parent that holds `id`, replace `id` by `inst` in `children` and in `layout` (mapLayout); if the Block had `pos`, move it to the Instance and delete it from the definition. Returns `d`. The caller checks it is allowed (§9.4).
 - `newCustomBlock(p)`: `addDef(p, addBlock(p, 'box', 'My block'))` (no Instance).
 - `hasOverride(x)`: `!!x.ov && Object.values(x.ov).some(Boolean)`.
-- `applyChange(before, recipe)`: `p = structuredClone(before)`; `recipe(p)`; `recordInstanceEdits(before, p)`; `resolveAll(p)`; return `p`.
+- `applyChange(before, recipe)`: `p = structuredClone(before)`; `recipe(p)`; `recordInstanceEdits(before, p)`; `resolveAll(p)`; `syncName(before, p)`; return `p`.
+- `syncName(before, p)` (private): the Project name and the top Block's name (the Site, or the Checkpoint Block after a Build) are one name. top = the Site or Checkpoint Block in `canvas.children`; none → return. If `p.name` is unchanged and the top Block in `before` has a name other than `before.name` (a Project saved before the names were joined), `p.name` = that name. Then top `name = p.name`, so a Checkpoint load that brings back an older name keeps the current one. `NEW_NAME = 'My website'` (exported) is the new-Project name.
 - `instanceParts(p)` (private): for every Instance on the Canvas, map each Block and Trait inside it (the Instance included) to the Instance id.
 - `recordInstanceEdits(before, after)` (private). `now = instanceParts(after)`; `up` = part id → the Block that held it in `before`. For each `[id, instId]` of `instanceParts(before)`:
   1. Skip if `after.blocks[instId]?.inst` is not set (the whole Instance went).
@@ -405,7 +408,7 @@ export type ModelReply = { content: string | null; tool_calls: ToolCall[]; finis
 export type Model = (args: { messages: ChatMsg[]; signal: AbortSignal }) => Promise<ModelReply>
 ```
 
-**Skills:** read at module load with `readFileSync(join(process.cwd(), 'skills', path), 'utf8')`, CRLF → LF. `SKILLS` = the four `SKILL.md` files (`code-rules`, `behavior`, `content`, `visual-style`, in that order) joined with a blank line. `PROMPT_ENDING` = the text inside the ```` ```text ```` block after `## Prompt ending` in `skills/instruction-header.md` (the two lines "Keep every `data-block` mark." and "Change only what the request asks.").
+**Skills:** read at module load with `readFileSync(join(process.cwd(), 'skills', path), 'utf8')`, CRLF → LF. `SKILLS` = the five `SKILL.md` files (`code-rules`, `layout`, `behavior`, `content`, `visual-style`, in that order) joined with a blank line. `BASE_CSS` = `skills/base.css`. `PROMPT_ENDING` = the text inside the ```` ```text ```` block after `## Prompt ending` in `skills/instruction-header.md` (the two lines "Keep every `data-block` mark." and "Change only what the request asks.").
 
 **Roles** (exact text):
 
@@ -457,7 +460,7 @@ LEVELS:
 - `blockIds(args)`: ids from `data-block="([^"]+)"` in `[file_text, new_str, insert_text].join('\n')`.
 
 **runLoop(req, model, { ms = MAX_MS, signal } = {}): AsyncGenerator<AgentEvent>**
-1. `files = { ...req.files }`, `messages = prompt(req)`, `timeout = AbortSignal.timeout(ms)`, `stop = signal ? AbortSignal.any([timeout, signal]) : timeout`, `lit = new Set()`, `said: string[] = []`.
+1. A Build whose files are all under `.builds/` (Build 1) first gets `'base.css': BASE_CSS` added to `req.files`, so the reset, the popup and the shared parts are right without Bob writing them. Then `files = { ...req.files }`, `messages = prompt(req)`, `timeout = AbortSignal.timeout(ms)`, `stop = signal ? AbortSignal.any([timeout, signal]) : timeout`, `lit = new Set()`, `said: string[] = []`.
 2. For `round = 0, 1, …`:
    1. `reply = await model({ messages, signal: stop })`.
    2. `text = reply.content ?? ''`. If `!text.trim()` and no tool calls → throw Broken. If `reply.finish` is `length` or `content_filter` → throw Broken.
@@ -468,10 +471,10 @@ LEVELS:
    7. `stop.throwIfAborted()`.
 3. catch: if `signal?.aborted` → return silently (the client left). reason = Broken ? `broken` : `timeout.aborted` ? `time` : `unreachable`. Log `[agent] the model call failed:` + message when unreachable. Yield `{ type:'error', reason }`.
 
-**ModelConfig** = `{ baseUrl, apiKey, authScheme, model, headers }` (all strings; `headers` is JSON). `primaryConfig()` reads the `AGENT_*` variables, `fallbackConfig()` the `FALLBACK_*` ones (`null` when `FALLBACK_API_KEY` is unset), each with its §1 default.
+**ModelConfig** = `{ baseUrl, apiKey, authScheme, model, headers, reasoning? }` (all strings; `headers` is JSON; only `primaryConfig()` sets `reasoning`, from `AGENT_REASONING_EFFORT`). `primaryConfig()` reads the `AGENT_*` variables, `fallbackConfig()` the `FALLBACK_*` ones (`null` when `FALLBACK_API_KEY` is unset), each with its §1 default.
 
 **openAiModel(cfg): Model**:
-- POST `${cfg.baseUrl}/chat/completions` (strip one trailing `/` from the base), headers `content-type: application/json`, `authorization: ${cfg.authScheme} ${cfg.apiKey}`, plus `JSON.parse(cfg.headers)`; body `{ model: cfg.model, messages, tools: TOOLS, tool_choice: 'auto' }`; `signal`.
+- POST `${cfg.baseUrl}/chat/completions` (strip one trailing `/` from the base), headers `content-type: application/json`, `authorization: ${cfg.authScheme} ${cfg.apiKey}`, plus `JSON.parse(cfg.headers)`; body `{ model: cfg.model, messages, tools: TOOLS, tool_choice: 'auto', reasoning_effort: cfg.reasoning, max_tokens: 16_000 }` (with thinking on and no `max_tokens`, the Bob endpoint cuts replies at 5,120 tokens, and one whole page won't fit; an unset `reasoning` is left out); `signal`.
 - Not `ok` → throw `Error(\`model answered ${status}: ${first 300 chars of the body}\`)` (→ unreachable).
 - `choice = json.choices?.[0]`. No choice → `{ content: null, tool_calls: [], finish: null }` (→ broken). `content` = `message.content` when it is a string; when it is an array, join the `text` of its parts; else null. `tool_calls = message.tool_calls ?? []`. `finish = choice.finish_reason ?? null`.
 - Never log the key or the headers.
@@ -484,24 +487,27 @@ LEVELS:
 - Caps: per browser per rolling hour: build 10, assistant 40. For everyone per UTC day (`new Date(now).toISOString().slice(0, 10)`): build 40, assistant 150. Day counts reset when the date changes.
 - Day cap reached → `Scrabby has reached today's limit for everyone. Please try again tomorrow.`
 - Hour: timestamps for `${kind}:${browser}` newer than `now - 3_600_000`. At the cap → m = `Math.max(1, Math.ceil((oldest + 3_600_000 - now) / 60_000))`; build → `` `You've used this hour's 10 Builds. Try again in ${m} minute${m === 1 ? '' : 's'}.` ``; assistant → `` `You've asked Bob 40 questions this hour. Try again in ${m} minute${m === 1 ? '' : 's'}.` ``
-- Else record `now` for the browser and add 1 to the day count; return null. A failed Build still counts (it was counted when it started).
+- Else record `now` for the browser and add 1 to the day count; return null.
+- `first(run: string, now: number): boolean`: forget run ids older than an hour; false if `run` is still known, else remember it and return true.
+- `give(kind, browser, at)`: remove the timestamp `at` from that browser's hour list. The day count stays (the tokens were spent).
 
 **agentHandler(model: (onSwitch: (label: string) => void) => Model, limits = createLimits())** returns `(request: Request) => Promise<Response>`:
 - `GET` → `Response.json({ model: process.env.AGENT_LABEL || 'IBM Bob' })`.
 - Not `POST` → 405 `POST an AgentRequest`. Body not JSON → 400 `The body is not JSON`. `kind` not `build`/`assistant` → 400 `kind must be build or assistant`.
-- Unless `process.env.AGENT_LIMITS === 'off'`: browser = header `x-scrabby-browser` (first 64 chars) or `anon`; `message = limits.take(kind, browser, Date.now())`; if set → `Response.json({ message }, { status: 429 })`.
+- Header `x-scrabby-run` (first 64 chars), when present and `!limits.first(run, Date.now())` → 409 `This run already started` (also with `AGENT_LIMITS=off`), so a replay never starts a second run or counts twice.
+- Unless `process.env.AGENT_LIMITS === 'off'`: browser = header `x-scrabby-browser` (first 64 chars) or `anon`; `message = limits.take(kind, browser, now)`; if set → `Response.json({ message }, { status: 429 })`. For a Build, an `error` event from `runLoop` calls `limits.give('build', browser, now)`: a Build that ends without files gives its hour back.
 - Else stream SSE: a `ReadableStream` whose `pull` sends `data: ${JSON.stringify(event)}\n\n` for `{ type:'start' }` first, then every `runLoop(req, model(onSwitch), { signal: request.signal })` event, and closes when it ends; `onSwitch(label)` enqueues `{ type:'model', label }` right away (through the controller kept from `start`), before the next event; `cancel` calls `events.return()`. Headers `content-type: text/event-stream`, `cache-control: no-cache`.
 
 ### 5.3 Client (src/agent.ts)
 
 - `browserId()`: `localStorage['scrabby.browser']`, created with `crypto.randomUUID()` on first use; if storage throws, one id per page load.
-- `runAgent(req)`: `fetch('/api/agent', { method:'POST', headers: { 'content-type':'application/json', 'x-scrabby-browser': browserId() }, body: JSON.stringify(req) })`. A throw → yield `unreachable`, return. Status 429 → `message` from the JSON body (fallback `Scrabby has reached today's limit for everyone. Please try again tomorrow.`), yield `{ type:'limit', message }`, return. Else yield every `readAgentStream(res)` event; on `start` set the label store back to the GET value, on `model` set it to `label` (so every BobBadge shows the fallback for the rest of that run).
+- `runAgent(req, signal?)`: `fetch('/api/agent', { method:'POST', signal, headers: { 'content-type':'application/json', 'x-scrabby-browser': browserId(), 'x-scrabby-run': crypto.randomUUID() }, body: JSON.stringify(req) })`. A throw → yield `unreachable`, return. Status 429 → `message` from the JSON body (fallback `Scrabby has reached today's limit for everyone. Please try again tomorrow.`), yield `{ type:'limit', message }`, return. Else yield every `readAgentStream(res)` event; on `start` set the label store back to the GET value, on `model` set it to `label` (so every BobBadge shows the fallback for the rest of that run).
 - `readAgentStream(res)`: if `res.ok && res.body`: read with `res.body.pipeThrough(new TextDecoderStream()).getReader()` in a `read()` loop (not `for await`: Safari cannot iterate a stream). Buffer text; split on `\n\n`; keep the last piece as the buffer; each message is JSON after stripping `^data: `; yield it; return after a `files`, `error` or `limit` event. A throw falls through. `finally` cancels the reader (ignore errors). After the loop (stream ended early, or not ok): yield `{ type:'error', reason:'unreachable' }`.
 - `useAgentLabel(): string | null`: a store filled once by `fetch('/api/agent')` (GET) → `model`; null until it arrives or if it fails. `runAgent` changes it during a run (above). `agentLabel()` reads it outside React.
 
 ### 5.4 scripts/build-demo.ts
 
-Runs one real Build with no browser (use it on day 1 to prove the key and the endpoint). `process.loadEnvFile('.env')` in a try; throw `AGENT_API_KEY is not set. Add it to .env.` if missing. Reads `scripts/demo-instructions.md`, calls `agentHandler(bobModel, createLimits())` with a POST Request `{ kind:'build', document, files:{} }`, prints `Building the demo with ${AGENT_MODEL || 'the default model'}…` first, reads it with `readAgentStream`, and prints `${seconds} s  Building <id>` per block, `The Build failed: <reason>` (exit 1), or on files: empties `tmp/demo-site/`, writes each file (skip paths that leave the folder), writes a placeholder `assets/cupcakes.svg`, prints `Done: <paths> in tmp/demo-site/`. Import the server with `'../api/agent.ts'` and the client with `'../src/agent.ts'` (Node runs TypeScript directly).
+Runs one real Build with no browser (use it on day 1 to prove the key and the endpoint). `process.loadEnvFile('.env')` in a try; throw `AGENT_API_KEY is not set. Add it to .env.` if missing. Reads `scripts/demo-instructions.md`, calls `agentHandler(bobModel, createLimits())` with a POST Request `{ kind:'build', document, files:{} }`, prints `Building the demo with ${AGENT_MODEL || 'the default model'}…` first, reads it with `readAgentStream`, and prints `${seconds} s  Building <id>` per block, `The Build failed: <reason>` (exit 1), or on files: empties `tmp/demo-site/`, writes each file (skip paths that leave the folder), copies each of `DEMO_PHOTOS` from `public/demo/` to `assets/` (`demo-instructions.md` is the demo's Build 1 document), prints `Done: <paths> in tmp/demo-site/`. Import the server with `'../api/agent.ts'` and the client with `'../src/agent.ts'` (Node runs TypeScript directly).
 
 ## 6. State: store, history, IndexedDB
 
@@ -513,6 +519,7 @@ Runs one real Build with no browser (use it on day 1 to prove the key and the en
 - `setProject(p)`: set, then `saveProject(p)` (fire and forget; on failure `console.error('Saving the Project failed', e)`).
 - `updateProject(recipe, key = focusedField())`: `before = get()`; `updateProjectWithoutUndo(recipe)`; `history.record(before, key)`. `focusedField()` = `document.activeElement?.closest('input, textarea') ?? null` (guard `globalThis.document`).
 - `updateProjectWithoutUndo(recipe)`: `setProject({ ...applyChange(get(), recipe), updated: Date.now() })`.
+- `fillBlankName(field)`: when a name field (the Project name chip §7, the Site's name field §9.1) loses focus: if `document.activeElement === field` (only the window lost focus) or the Project name isn't blank after trim, nothing; else `updateProject(d => { d.name = NEW_NAME }, field)`, so the reset joins the typing's Undo step and Undo never brings back a blank name.
 - `undo()` / `redo()`: `p = history.undo(get())` (or redo); if p: `setProject({ ...p, chat: get().chat })` (the chat is never undone). `canUndo`, `canRedo`, `clearHistory`.
 - `startStore()`: `navigator.storage?.persist?.()` (ignore errors); `saved = await loadLatestProject()` (on error log `Loading the Project failed`, treat as none); if saved, set it without saving; else `setProject(get())` (saves the empty Project).
 - UI store: `{ step: 'plan' | 'build' | 'try', planTab: 'canvas' | 'library' | 'checkpoints', editing: string | null }`, start `{ step:'plan', planTab:'canvas', editing:null }`; `useUi`, `getUi`, `setStep`, `setPlanTab`, `setEditing` (types `Step`, `PlanTab`). `editing` = the Custom Block id whose edit view the Canvas shows.
@@ -528,11 +535,11 @@ Runs one real Build with no browser (use it on day 1 to prove the key and the en
 
 **Files:** `src/App.tsx`, `src/App.module.css`, `src/shell/MenuBar.tsx`, `StepBar.tsx`, `Steps.tsx`, `BobBadge.tsx` (+ CSS Modules). Look: DESIGN.md Shell, Screen layout, Buttons.
 
-- **App:** `<div class=app>` (height 100vh, min-width 1366px, flex column) holding `<MenuBar/>`, `<StepBar/>`, `<main class=page>` (flex 1, min-height 0, flex, padding 10px, `--page`) with the Step on screen, then `<Onboarding/>` (§17). `body`: margin 0, `--page` background, `--text` color, `--font`, `--fs`; `* { box-sizing: border-box }` (`:global` rules in App.module.css).
-- **MenuBar** (reads `useProject()` so Undo/Redo stay current): the logo (`<img src="/bob.svg" alt="">` 40px tall, then "Scrabby" in `--fs-logo` weight 900), the Project name, then buttons, each with its icon (§3), **New Project** (`askNewProject`), **Demo** (`askDemo`), **Download code** (`downloadCode(project)`; on error log `Download code failed`), **Undo** (disabled unless `canUndo()`, title `Undo (Ctrl+Z)`), **Redo** (disabled unless `canRedo()`, title `Redo (Ctrl+Y)`), a dev-only `<select>` (rendered only when `import.meta.env.DEV`; disabled placeholder option "Dev: load fixture…", one option per `FIXTURES` entry, title "Dev only: replace the current Project with a fixture", value always `""`), and at the right end (`margin-left: auto`) **Show me around** (icon `help`) (disabled on the Build step; starts tour `try` on Try & tweak, else `plan`). Window keydown: with Ctrl or Meta, not inside `input, textarea, select`: `z` without Shift → undo; `y`, or `z` with Shift → redo; `preventDefault()`.
+- **App:** `<div class=app>` (height 100vh, min-width 1366px, flex column) holding `<MenuBar/>`, `<StepBar/>`, `<main class=page>` (flex 1, min-height 0, flex, padding 10px, `--page`) with the Step on screen; the app div is `inert` while the greeting shows or a replace warning is open (§17). After it, outside it: `<Onboarding/>` (§17). `body`: margin 0, `--page` background, `--text` color, `--font`, `--fs`; `* { box-sizing: border-box }` (`:global` rules in App.module.css).
+- **MenuBar** (reads `useProject()` so Undo/Redo stay current): the logo (`<img src="/bob.svg" alt="">` 40px tall, then "Scrabby" in `--fs-logo` weight 900), the Project name chip (an `<input>`, `aria-label` `Project name`, title `Rename your Project`, `size` as TextField §9.2; typing → `updateProject(d => { d.name = value })`, which renames the Site too (§4 `syncName`); Enter blurs; on blur `fillBlankName` §6), then buttons, each with its icon (§3), **New Project** (`askNewProject`), **Demo** (`askDemo`), **Download code** (`downloadCode(project)`; on error log `Download code failed`), **Undo** (disabled unless `canUndo()`, title `Undo (Ctrl+Z)`), **Redo** (disabled unless `canRedo()`, title `Redo (Ctrl+Y)`), a dev-only `<select>` (rendered only when `import.meta.env.DEV`; disabled placeholder option "Dev: load fixture…", one option per `FIXTURES` entry, title "Dev only: replace the current Project with a fixture", value always `""`), and at the right end (`margin-left: auto`) **Show me around** (icon `help`) (disabled on the Build step; starts tour `try` on Try & tweak, else `plan`). Window keydown: with Ctrl or Meta, not inside `input, textarea, select`: `z` without Shift → undo; `y`, or `z` with Shift → redo; `preventDefault()`.
 - **StepBar** (`<nav data-tour="steps">`): steps Plan (`plan`), Build (`build`), Try & tweak (`try`), a "›" between them. Each is a button with `data-state` = `current`, `done` (before current) or `idle`; inside, a circle (the `check` icon when done, else its number) and the label. Disabled: the Build step always, and every step while the Build step is on screen. Click → `setStep`. On Try & tweak only: a right-aligned **← Back to the Blocks** button → Plan.
 - **PlanStep:** a tab row (`role=tablist`; each tab `role=tab`, `aria-selected`, icon `tab_<id>` 20px fill; z-index: selected 3, others `2 - index`) over one tab panel. Canvas tab: the palette column (`data-tour="palette"`), then the Canvas area (`data-tour="canvas"`, flex 1, position relative) holding `<Canvas/>` and the Build button holder (absolute, right 20px, bottom 22px, flex). Library tab: `<Library/>`. Checkpoints tab: `<Checkpoints/>`.
-- **BuildStep:** a grid that centers a 560px-wide (max 100%) holder with `<BuildCard/>`.
+- **BuildStep:** a grid that centers a 640px-wide (max 100%) holder with `<BuildCard/>`.
 - **TryStep:** grid `minmax(0,1.2fr) minmax(0,1fr) 320px`, gap `--gap`; Two 8px drag handles sit between the panels (`role="separator"`, `aria-orientation="vertical"`, title `Drag to resize, double-click to reset`): transparent, `cursor: col-resize`, a 2px `--line` bar in the middle that turns `--brand` on hover and while dragging. Dragging sets the columns in px, with minimums Preview 320, Code 320, Assistant 260; the rest stays with the Preview. While dragging, the handle has pointer capture, `body` gets `user-select: none` and the Preview iframe `pointer-events: none`. Left/Right arrow keys on a focused handle move it by 16px. Double-click resets to the default grid. The widths are kept in `localStorage['scrabby.tryCols']` (no storage = the default grid). Panels: three panels (`--surface`, 2px `--line`, a 3px `--line` bottom edge, radius `--r-panel`, min-height 0, flex; the code editor's panel is the editor itself, DESIGN.md Code editor): Preview (`data-tour="preview"`), CodeEditor, Assistant (`data-tour="assistant"`). No Build button here.
 - **BobBadge:** `useAgentLabel()`; renders nothing while unknown; else a pill "running on {label}" with title `Bob's answers come from {label} right now.` Look: DESIGN.md Bob badge. Used in the Assistant title bar and at the right end of the Build card's running title.
 
@@ -572,20 +579,21 @@ Layout tree (a group runs `row` or `col`; the root is a `col`):
 
 ### 8.3 drag.ts
 
-A tiny store: `DragState { item; w; h; pill: boolean; target: Drop | null; trash: boolean }`, `getDrag`, `setDrag`, `useDrag`. A pending press `Pending { el; item; x; y }` with `takePending()` (returns and clears) and `peekPending()`. `dragSource(item)` returns an `onPointerDown`: ignore non-left buttons and presses inside `input, select, textarea, button`; `stopPropagation()` (the innermost item wins); store the pending press.
+A tiny store: `DragState { item; w; h; pill: boolean; target: Drop | null; trash: boolean }`, `getDrag`, `setDrag`, `useDrag`. A pending press `Pending { el; item; x; y }` with `takePending()` (returns and clears) and `peekPending()`. `dragSource(item)` returns an `onPointerDown`: ignore non-left buttons and presses inside `input, select, textarea, button`; `stopPropagation()` (the innermost item wins); store the pending press. `Aim = { target: Drop | null; trash: boolean }`; `sameAim(a, b)` compares them as JSON. `aimStep(item, cur, now, held)`: same aim → `keep`; `cur` has a target or trash and `held()` → `keep`; a Trait item, or `now` or `cur` is trash → `now`; else `wait`.
 
 ### 8.4 Canvas.tsx
 
 Constants `MIN_ZOOM 0.3`, `MAX_ZOOM 2`, `CORNER 40`, `DOTS 24`. Refs: viewport, world, drop line, `view {x, y, z}`, rects.
-- **Render:** viewport (class `viewport`; plus `panning` while panning) → world (absolute, `transform-origin: 0 0`) → inside `MarksContext.Provider` (§10.3): in the edit view only the definition Block, absolute at left 40, top 70; else each Canvas child Block at its `pos` (fallback `20 + i*40` for left and top) as `<BlockView>`, with `<DemoButton/>` (§17) under a Site Block that has no children; then the loose Traits as `<TraitPill>` the same way (index continues after the Blocks). After the world: the EditBar (edit view only), `<Stepper>` and `<Popover>` (not in the edit view; §10.3), the zoom buttons, the drop line (class `dropLine`, hidden), `<ContextMenu/>`, `<Tooltip/>` (§9.5).
+- **Render:** viewport (class `viewport`; plus `panning` while panning) → world (absolute, `transform-origin: 0 0`) → inside `MarksContext.Provider` (§10.3): in the edit view only the definition Block, absolute at left 40, top 70; else each Canvas child Block at its `pos` (fallback `20 + i*40` for left and top) as `<BlockView>`; then the loose Traits as `<TraitPill>` the same way (index continues after the Blocks). After the world: the EditBar (edit view only), `<Stepper>` and `<Popover>` (not in the edit view; §10.3), the zoom buttons, the drop line (class `dropLine`, hidden), `<ContextMenu/>`, `<Tooltip/>` (§9.5).
 - **apply()** (a layout effect after every render, and on window resize): over the world's direct children (offset boxes), clamp `v.x` to `[CORNER - z*maxRight, viewportWidth - CORNER - z*minLeft]` and `v.y` likewise; world transform `translate(${x}px, ${y}px) scale(${z})`; viewport `backgroundPosition: ${x}px ${y}px`, `backgroundSize: ${DOTS*z}px ${DOTS*z}px`.
-- **Zoom:** `zoomAt(mx, my, z)` clamps z and keeps the point still (`v.x = mx - ((mx - v.x) / v.z) * z`, same for y). Wheel (non-passive, `preventDefault`): Ctrl → zoom at the pointer by `v.z * exp(-deltaY * 0.002)`; else pan by `-deltaX`, `-deltaY`. A wheel during a drag drops the rects and the drag target (they are measured again). Buttons (titles Zoom in, Zoom out, Reset zoom): ×1.25, ÷1.25, 1, at the viewport center; 18px icons `zoom_in`, `zoom_out`, `zoom_reset` (§3).
-- **Reset view:** a new Project id → `{0, 0, 1}`. Entering the edit view remembers the Canvas view and starts at `{0, 0, 1}`; leaving restores it.
+- **Zoom:** `zoomAt(mx, my, z)` clamps z and keeps the point still (`v.x = mx - ((mx - v.x) / v.z) * z`, same for y). Wheel (non-passive, `preventDefault`): Ctrl → zoom at the pointer by `v.z * exp(-deltaY * 0.002)`; else pan by `-deltaX`, `-deltaY`. A wheel during a drag drops the rects and the drag target (they are measured again). Buttons (titles Zoom in, Zoom out, Reset zoom): ×1.25 and ÷1.25 at the viewport center; Reset zoom → the home view; 18px icons `zoom_in`, `zoom_out`, `zoom_reset` (§3).
+- **Reset view:** on mount and on a new Project id, the home view `{ x: 40 - pos.x, y: 40 - pos.y, z: 1 }` with `pos` = the top Block's `pos` (§10, `topBlock`; `{40, 40}` if unset), so its corner sits 40px in. Entering the edit view remembers the Canvas view and starts at `{0, 0, 1}`; leaving restores it.
 - **Pan:** pointer down with the middle button anywhere, or the left button on the viewport or world element itself → `preventDefault`, capture the pointer, drag the view. Prevent middle-click autoscroll (`mousedown`/`auxclick` with button 1).
 - **Dragging** (window `pointermove`, `pointerup`, `pointercancel`, set up once):
-  - move: a pending press and no drag and the pointer moved more than 4px → start: avatar = `cloneNode(true)` of the pressed element with field values copied into the clone's fields; add class `avatar`, remove `over`; `transform: scale(z)` when the element is in the world; append to `body`; `body.style.userSelect = 'none'`; clear the text selection; `setDrag({ item, w: offsetWidth, h: offsetHeight, pill: isTraitItem(item), target: null, trash: false })`. During a drag: place the avatar at pointer minus the grab offset; compute: element under the pointer inside `[data-palette]` → `{ target: null, trash: canTrash }`; not inside the viewport, or no rects yet → none; not inside a `[data-bid]` → `{ id:'canvas' }` when not in the edit view and `canDrop(item, 'canvas')`, else null; else `targetAt`. Update the store only when target or trash changed (JSON compare).
-  - up / cancel: clear the pending press. If dragging: remove the avatar, reset `userSelect`, clear rects, `setDrag(null)`; stop on cancel. Trash with a `block` or `trait` → `updateProject(d => removeItem(d, id))`. A target: for the Canvas, `pos` = the pointer in world coordinates minus the grab offset, rounded. Dry-run `dropItem` on `structuredClone(project)`; if `[blocks, traits]` are unchanged (JSON), save nothing. Else `updateProject(d => id = dropItem(d, item, to))`, make `id` busy (§10.3), and call `droppedBlock(id)` (§17) for a new Block.
-- **Drop line** (layout effect on every drag change): hide it; if dragging, measure rects once per drag (every `[data-bid]` and `[data-tid]` in the world that has client rects); find `[data-ghost]`; for a Trait target or a left/right slot draw a 4px-wide line at x = ghost.left − 5 (`right`) or ghost.right + 1 (else), ghost's top and height; otherwise a 4px-tall line at y = ghost.bottom + 1 (`above`, `rowBefore`) or ghost.top − 5 (else), ghost's left and width.
+  - move: a pending press and no drag and the pointer moved more than 4px → start: avatar = `cloneNode(true)` of the pressed element with field values copied into the clone's fields; add class `avatar` (the rule is `body > .avatar`, so the clone's own classes never beat it), remove `over`; width = the element's `offsetWidth`; `--lift` = min(1.03, 1 + 8 / the larger of its width and height); remember the pressed element as the source; `transform: scale(z)` when the element is in the world; append to `body`; `body.style.userSelect = 'none'`; clear the text selection; snap; `setDrag({ item, w: offsetWidth, h: offsetHeight, pill: isTraitItem(item), target: null, trash: false })`. During a drag: place the avatar at pointer minus the grab offset. `aim(x, y)`: element under the point inside `[data-palette]` → `{ target: null, trash: canTrash }`; not inside the viewport, or no rects yet → none; not inside a `[data-bid]` → `{ id:'canvas' }` when not in the edit view and `canDrop(item, 'canvas')`, else null; else `targetAt`. Then `aimStep(item, current, aim(pointer), held)`, where `held` = the pointer is within 12px of `[data-ghost]`, or `aim` at the pointer ±12px on x or y still gives the current aim. `keep` → drop any waiting aim; `now` → take it; `wait` → unless the same aim is already waiting, take it after `DWELL` = 250ms (a wheel, the end of the drag or unmounting cancels the wait). Take: for a Block item, snap and clear the rects (measured again); `setDrag` with the aim.
+  - up / cancel / Escape (window `keydown`): clear the pending press. If dragging: snap, take the avatar and the source, reset `userSelect`, clear rects, `setDrag(null)`. `play(el, class, done)` adds the class, then calls `done` once `el.getAnimations()` have settled (at once when reduced motion starts none). **Put back** (cancel, Escape, or no target): a new item's avatar plays `gone`, then is removed; for a moved Block or Trait, on the next frame (the item shows again) the item (or, when it isn't rendered, the source if it is still in the page, e.g. a folded Block's chip; else play `gone`) gets `waiting` (hidden), the avatar moves to the item's rect with `scale(z)` and plays `back`, then the avatar is removed and `waiting` taken off. Trash → the avatar plays `gone`, then is removed; a `block` or `trait` that still exists → `updateProject(d => removeItem(d, id))`. A target: for the Canvas, `pos` = the pointer in world coordinates minus the grab offset, rounded. Dry-run `dropItem` on `structuredClone(project)`; if it throws (Undo during the drag took away the item or its target) → put back; else remove the avatar; if `[blocks, traits]` are unchanged (JSON, with layouts repaired and `folded` left out, since `dropItem` pins the folding of a Block shown folded), save nothing, only land the item. Else `updateProject(d => id = dropItem(d, item, to))`, make `id` busy (§10.3), land it, and call `droppedBlock(id)` (§17) for a new Block. **Land** (none under reduced motion): on the next frame `el.animate` a squash `scale: sx sy` with `transform-origin: 50% 100%` held 40ms, then back to 1 over `--t-quick` with `--ease`; sx = min(1.02, 1 + 4 / width), sy = max(0.97, 1 − 3 / height), so any size moves a few pixels at most. `play` also calls `done` after 1s, for a tab that paints no frames. Unmounting mid-drag ends the drag and removes the avatar.
+- **Drop line** (layout effect on every drag change): hide it; if dragging and there are no rects, cancel the running slides and measure them (every `[data-bid]` and `[data-tid]` in the world that has client rects). A Trait target (BlockView opens no gap for it): in the Block's `[data-pills]` row (none when folded: no line), a 4px-wide line at the shown sticker `tIdx` (x = its left − 5) or after the last one (right + 1), at its top and height; an empty row → under the element before the row (its left, bottom + 4·z, height h·z). A Block target: find `[data-ghost]`; for a left/right slot draw a 4px-wide line at x = ghost.left − 5 (`right`) or ghost.right + 1 (else), ghost's top and height; otherwise a 4px-tall line at y = ghost.bottom + 1 (`above`, `rowBefore`) or ghost.top − 5 (else), ghost's left and width.
+- **Slides:** snap (skipped under reduced motion) records every visible `[data-bid]`/`[data-tid]` at its unscaled world spot (its rect minus the world's, ÷ z), so panning and zooming never count. The layout effect after the next render cancels the running slides, measures again, and animates each moved item's `translate` from its old spot to 0 over `--t-quick` with `--ease`, less the parent Block's own move (the parent carries it). Snaps: drag start, each taken Block aim, a wheel during a drag, the end of the drag.
 - **show(id):** find `[data-bid=id], [data-tid=id]`; move the view so the item's point `(left + min(width,400)/2, top + min(height,200)/2)` lands at 42% across and 40% down the viewport; `apply()`; `flash(el)` (§10.3).
 - **Stepper go(d):** index moves cyclically through `stops` (§10.3); the first press goes to the first (next) or last (previous). If the target is not rendered (a folded ancestor), set `folded = false` on every ancestor with `updateProjectWithoutUndo`, then on the next animation frame show it and open its popover. The popover opens 6px below the item's `[data-badge]` (or the item itself), left edges lined up.
 - **EditBar:** `Editing Custom Block "{name}". Changes reach all {n} Instance{n === 1 ? '' : 's'}, except parts an Instance changed itself.` plus **Done** (`setEditing(null)`). n = Instances of it on the Canvas. Only the definition shows; `editing` is ignored if that Custom Block no longer exists.
@@ -593,7 +601,7 @@ Constants `MIN_ZOOM 0.3`, `MAX_ZOOM 2`, `CORNER 40`, `DOTS 24`. Refs: viewport, 
 
 ## 9. Blocks, Traits, Notes, menus, tooltips, Bob picks, Custom Blocks UI
 
-**Files:** `src/canvas/BlockView.tsx`, `TraitPill.tsx`, `Overlays.tsx`, `menu.ts`, `tooltip.ts`, `bobPicks.ts`, `src/slots/Palette.tsx`, CSS Modules `parts`, `Overlays`, `Palette`. Look: DESIGN.md Block, Trait, Note, Palette, Menus, Tooltip, and §18.
+**Files:** `src/canvas/BlockView.tsx`, `TraitPill.tsx`, `Overlays.tsx`, `menu.ts`, `tooltip.ts`, `bobPicks.ts`, `contrast.ts`, `src/slots/Palette.tsx`, CSS Modules `parts`, `Overlays`, `Palette`. Look: DESIGN.md Block, Trait, Note, Palette, Menus, Tooltip, and §18.
 
 ### 9.1 BlockView({ p, id, depth = 1, inInst = false })
 
@@ -601,9 +609,9 @@ Constants `MIN_ZOOM 0.3`, `MAX_ZOOM 2`, `CORNER 40`, `DOTS 24`. Refs: viewport, 
 - `customColor({h, s, l})` (exported): `--c1 hsl(h s l)`, `--c2 hsl(h s l-9)`, `--c3 hsl(h s-25 l-26)`, `--c4 hsl(h 100 92.6)`, each clamped 0–100; plus `--ink: #fff` when `l < 55`.
 - `onPointerDown = dragSource({ kind:'block', id })`, except on a definition. `onContextMenu = openMenu(e, id)`.
 - **Header** (`data-tip="b:<id>"`): fold button (not on the Checkpoint Block; title `Open this Block` / `Fold this Block`; the 12px `fold` icon, turned −90° when folded) → `updateProject(d.blocks[id].folded = !folded)`. Then:
-  - Checkpoint Block: lock icon, "Checkpoint", hint "the built site".
+  - Checkpoint Block: lock icon, `checkpointTitle(p, p.checkpoint)` (§12; "Checkpoint" when unset), hint "the built site".
   - Locked Page: lock icon, `Page "<name>"`, hint = its file.
-  - Else: icon (`custom` for an Instance/definition, else the type's) and type label (the Custom Block's name for an Instance, "Custom Block" for a definition, else the label), then the name `TextField` (→ `name`), an **Edit** pill on an Instance (title `Edit this Custom Block` → `setEditing(inst)`), then the marker (§9.4).
+  - Else: icon (`custom` for an Instance/definition, else the type's) and type label (the Custom Block's name for an Instance, "Custom Block" for a definition, else the label), then the name `TextField` (→ `name`; on the Site → the Project `name`, and when the name field loses focus, `fillBlankName` §6), an **Edit** pill on an Instance (title `Edit this Custom Block` → `setEditing(inst)`), then the marker (§9.4).
   - A loose Block adds the `not built` badge. Last: `<Mark id>` (§10.3).
 - Folded = not the Checkpoint Block and (`folded` ?? `depth >= 4`).
 - Under the header: the Block Note if `note || noteOn` (§9.3).
@@ -616,16 +624,18 @@ Constants `MIN_ZOOM 0.3`, `MAX_ZOOM 2`, `CORNER 40`, `DOTS 24`. Refs: viewport, 
 - `<span class="pill cat-<category> [lifted] [loose]" data-tid data-tip="t:<id>">`, `dragSource({kind:'trait', id})`, context menu. Content: icon + label; the value (a Bob picks chip when `bobPicks`, else the value field); the bulb button when not Bob picks and `bobPicksControl` is `bulb` (class `bulb cat-bob`, title `Let Bob pick this value`, 14px bulb icon); the Trait Note when `(note || noteOn) && !bobPicks`; inside an Instance the short marker (first word only: `✎` or `+`); `<Mark id>`. Handing the value to Bob (bulb, or the dropdown option) sets `bobPicks` and focuses the hint field once.
 - **TextField** (exported): `<input class=text size={clamp(len(value || placeholder) + 1, 3, 34)}>`; Enter blurs.
 - **LongText** (text kinds): a TextField plus `⤢` (title `Show all of it`) when longer than 30 chars; open → a `textarea class=big` (autofocus) plus `⤡` (title `Make it smaller`). The placeholder is the type's `hint`.
-- **Dropdown(value, options, onChange, back, onBobPicks)**: a `<select class=select>` of the options (the font list shows each option in its own `fontFamily`), then `💡 Bob picks`, then `custom…`. A value not in the options, or after choosing `custom…` (which sets the value to `''`), shows a TextField (placeholder `type your own`, autofocus only after choosing custom) plus `▾` (title `Pick from the list`) that returns the value to `back` (the type's default; `''` for Assets). A `missing` option gets class `warn` and title `What this pointed to was deleted. Pick another one.`
+- **Dropdown(value, options, onChange, back, onBobPicks, title)**: a button `class=select` (`aria-label` `<title>: <label>`, `aria-haspopup=listbox`, `aria-expanded`) with the current option's label; a click, ↓ or ↑ opens a **ListMenu** at the button's left/bottom + 4px; while it is open, the button's `onPointerDown` stops the menu's outside listener, as in ColorField. **ListMenu** (a Popover titled `title`, the Trait's label with a capital first letter): a `role=listbox` of `role=option` buttons: the options (the font list shows each option in its own `fontFamily`; the current one `aria-selected`, weight 900, a bold 14px `check` icon on the right), a 2px `--line-soft` line (`aria-hidden`), then `💡 Bob picks`, then `custom…`. It focuses the current option on open; ↑/↓ move, Home/End jump, Enter/Space pick and close, Escape or Tab close; closing returns focus to the button. An option takes focus on pointerenter (so one row is lit). Keys with Ctrl or Cmd stop propagating, so undo/redo never run under the open list. A value not in the options, or after choosing `custom…` (which sets the value to `''`), shows a TextField (placeholder `type your own`, autofocus only after choosing custom) plus `▾` (title `Pick from the list`) that returns the value to `back` (the type's default; `''` for Assets). A `missing` option, and the button while the current option is missing, gets class `warn` and title `What this pointed to was deleted. Pick another one.`
   - choice kinds: options = the choices. action (on click): `onClickOptions`. asset: `pick from Library` (`''`), then the Library Assets of the Trait's kind (`image`, `video`, `sound`) by file name; a value like `a<digits>` not among them → `{ label: 'missing file', missing }`.
-- **ColorField:** a button with a 20px swatch and the preset name (or the value); click toggles the color menu at the button's left/bottom + 4px; while the menu is open, the button's `onPointerDown` calls `e.nativeEvent.stopImmediatePropagation()` so the menu's outside listener does not close it before the click toggles it (clamped to `innerWidth - 230`, `innerHeight - 150`). **ColorMenu** (portal to body): title `Colors`, the 12 preset swatches (title = name, `on` for the current one) → set and close; `Any color` with `<input type=color>` (value lower-cased when it is a 6-digit hex, else `#000000`; output upper-cased). Closes on pointerdown outside or Escape. Its pointerdown must not start a drag (`stopPropagation`).
+- **Popover({ at, title, onClose })** (portal to body, class `menu`): the title, then its content. Placed at `at` (`under(el)`: the element's left, bottom + 4px, and top − 4px as the bottom edge when it opens above), above the element when it doesn't fit below, then kept inside the window with 8px margins (measured with `offsetWidth`/`offsetHeight`, which ignore the pop-in scale). Closes on pointerdown outside, Escape, a wheel outside it (the Canvas scrolls or zooms under it) or a window resize. Its pointerdown must not start a drag and its contextmenu must not open the Trait's menu (`stopPropagation` on both).
+- **ColorField:** a chip button (`aria-label` `<title>: <name or hex>`, `aria-expanded`) filled with the value (inline `background`), its text white when `whiteTextOn(value)` (class `onDark`), else `--ink`: the preset name, or the value upper-cased in a `hex` span. A click toggles the color menu at the button's left/bottom + 4px; while the menu is open, the button's `onPointerDown` calls `e.nativeEvent.stopImmediatePropagation()` so the menu's outside listener does not close it before the click toggles it. **ColorMenu** (a Popover titled `Colors`): the 12 preset swatches (title = name, `on` for the current one) → set and close; `Any color` with `<input type=color>` (value lower-cased when it is a 6-digit hex, else `#000000`; output upper-cased), then the value upper-cased in a `hex` span; then a 2px `--line-soft` line and a `💡 Bob picks` item (class `item`) → close, then hand the value to Bob.
+- **whiteTextOn(hex)** (`contrast.ts`): true when white has a higher WCAG contrast ratio on a `#RRGGBB` color than `--ink` `#1F1A33`; anything else → false.
 - **BobPicksChip:** a chip `cat-bob`: bulb icon, `Bob picks`, a `×` (title `Pick it myself`) that turns Bob picks off; then the hint input (the Trait's Note; placeholder `hint, like something warm`; size clamp(len + 1, 14, 30); Enter blurs).
 - Every edit goes through `updateProject`.
 
 ### 9.3 Notes and the context menu (Overlays.tsx, menu.ts)
 
 - **BlockNote:** a sticky with a `×` (title `Delete Note` → `deleteNote`) and a textarea (placeholder `Note for Bob`) → `note`. **TraitNote:** an input (placeholder `note for Bob`, size clamp(len + 1, 8, 30), Enter blurs), with the same ⤢/⤡ long-text behavior. A Note that mounts empty takes focus without scrolling.
-- **openMenu(e, id):** ignored inside `input, textarea` (the browser menu stays); else prevent default, stop propagation, open the menu at the pointer. **ContextMenu** (portal): `role=menu`, left `min(x, innerWidth - 210)`, top `min(y, innerHeight - 8 - 32 * items)`; each item a `menuitem` button: close, then `updateProject(change, null)` / `act()` / `setEditing(edit)`. Closes on outside pointerdown or Escape; renders nothing if the id is gone.
+- **openMenu(e, id, items?):** ignored inside `input, textarea` (the browser menu stays); else prevent default, stop propagation, open the menu at the pointer. `items` replaces `menuItems(p, id)`: a right-click on the viewport outside any Block or Trait opens one item, Reset zoom (`home()`, the same as the Reset zoom button). **ContextMenu** (portal): `role=menu`, left `min(x, innerWidth - 210)`, top `min(y, innerHeight - 8 - 32 * items)`; each item a `menuitem` button: close, then `updateProject(change, null)` / `act()` / `setEditing(edit)`. Closes on outside pointerdown or Escape; renders nothing if the id is gone (unless `items` was given).
 - **menuItems(p, id)** in this order, each only when it applies: `Add Note` (sets `noteOn`) or `Delete Note` (when `note || noteOn`); `Edit Custom Block` (an Instance; `edit: inst`); `Duplicate` (when `canTrash` allows it); `Bring back removed parts (N)` (Instance with N removed; sets `removed = []`); `Use the Custom Block's version` (`hasOverride`; deletes `ov`); `Make Custom Block` (a Block where `canMakeCustom`); `Delete Trait` / `Delete Block` (when `canTrash`; `removeItem`).
 - `canMakeCustom`: not site/page/checkpoint, not locked, does not hold (itself or inside) an Instance or definition, and no ancestor is an Instance or definition.
 - `deleteNote(p, id)`: `note = ''`, `noteOn = false`.
@@ -639,9 +649,9 @@ Constants `MIN_ZOOM 0.3`, `MAX_ZOOM 2`, `CORNER 40`, `DOTS 24`. Refs: viewport, 
 
 ### 9.5 Tooltip and bobPicks
 
-- **Tooltip** (portal, `role=tooltip`, class `tip cat-<cat>`): window `pointerover`: the nearest `[data-tip]`; when it changes, hide; unless dragging, a press is pending, or a menu is open, show after 500ms with its rect. Hide on `pointerdown`, `contextmenu`, `wheel`, `keydown` (capture). Place 8px below with left edges lined up; above (8px) if no room; clamp inside the window with 8px margins. Content: icon + title (bold), text, and the loose line (italic hint) if any.
+- **Tooltip** (portal, `role=tooltip`, class `tip cat-<cat>`): window `pointerover`: the nearest `[data-tip]`; when it changes, hide; unless dragging, a press is pending, or a menu is open, show after 500ms with its rect. Hide on `pointerdown`, `contextmenu`, `wheel`, `keydown` (capture). Place 8px below with left edges lined up; above (8px, attribute `data-above`) if no room; clamp inside the window with 8px margins. The arrow's x (`--arrow`) = the item's left + min(width / 2, 20) − the tip's left, kept 12px inside the tip. Content: icon + title (bold), text, and the loose line (italic hint) if any.
 - **tipFor(p, key): Tip | null** with `Tip { icon; title; text; loose?; cat: Category | null }`; key `b:<id>`, `t:<id>`, `nb:<type>`, `nt:<type>`. `{where}` = `the Checkpoint` when a Checkpoint Block is on the Canvas, else `the Site`. `nb` → type icon, label, filled tooltip, category. `nt` → the Trait type's. `b`: Checkpoint Block → `{ icon:'checkpoint', title:'Checkpoint', text: its tooltip, cat: null }`; locked → `{ icon:'checkpoint', title:'Built page', text: BUILT_PAGE.tooltip, cat: null }`; Instance → `{ icon:'custom', title: definition name, text: filled type tooltip, cat:'my' }`; else the type's. `t` → the Trait type's. A gone id or the canvas → null. Loose line: walk up from the item to the Block directly on the Canvas (or the item itself); if that is on the Canvas and not site/checkpoint, `loose = filled LOOSE_IDEA_TOOLTIP`.
-- **bobPicksControl(type, value)**: `tellbob`, `letbobpick` → null; color → `bulb`; text kinds → `bulb` if `value.trim()` is empty, else null; everything else → `option`. **setBobPicks(p, id, on)**: on sets `bobPicks = true`; off deletes it. The value and Note stay.
+- **bobPicksControl(type, value)**: `tellbob`, `letbobpick` → null; text kinds → `bulb` if `value.trim()` is empty, else null; everything else → `option`. **setBobPicks(p, id, on)**: on sets `bobPicks = true`; off deletes it. The value and Note stay.
 
 ### 9.6 Palette.tsx
 
@@ -713,7 +723,7 @@ Only the Site or Checkpoint Block is checked; loose ideas never. Locked Pages an
 - `marksOf(ws)`: `Map<targetId, Warning[]>` in reading order (Warnings with no target mark nothing). `badgeOf(ws)` = `?` when the first is `look`, else `!`. `stopsOf(ws)` = Warnings with a target, first per `key`.
 - `MarksContext` = `{ marks, busy, open(id) }` (default: empty map, null, no-op). The Canvas computes `warnings(p)`, marks and stops with `useMemo` on the Project.
 - **Mark({ id })**: nothing if unmarked or busy; else `<button class=badge data-badge={id} title={texts joined '\n'}>` with the badge char → `open(id)`. The ring: `[data-bid]:has(> div > .badge), [data-tid]:has(> .badge) { box-shadow: 0 0 0 3px var(--alert) }`.
-- **Popover** (portal, `data-wpop`): left `max(8, min(x, innerWidth - 308))`, top clamped into the window. One row per Warning: its badge char, a `where` pill button only when `where` is not empty (title `Show it on the Canvas` → show), the text (bold), the todo, and for a definition problem `Comes from the Custom Block "<name>"`. Buttons: **Show** (show + close), **Pick one** (only on a Trait: close, then focus the pill's `select, input, textarea`), **Close**. Closes on pointerdown outside (not on a badge) or Escape. The Canvas renders it only while its id still has marks.
+- **Popover** (portal, `data-wpop`): left `max(8, min(x, innerWidth - 308))`, top clamped into the window. One row per Warning: its badge char, a `where` pill button only when `where` is not empty (title `Show it on the Canvas` → show), the text (bold), the todo, and for a definition problem `Comes from the Custom Block "<name>"`. Buttons: **Show** (show + close), **Pick one** (only on a Trait: close, then focus the pill's `button[aria-haspopup], input, textarea`), **Close**. Closes on pointerdown outside (not on a badge) or Escape. The Canvas renders it only while its id still has marks.
 - **Stepper({ count, clean, onGo })**: `clean` (no Warnings at all) → `<div class=ok>` with the `check` icon and `Nothing to check`; count 0 (only the target-less `nosite` Warning) → nothing; else `‹` (title Previous) `⚠ N to check` `›` (title Next).
 - **flash(el)**: animate `box-shadow` `0 0 0 6px var(--flash)` held to 40%, then to 0, over 1400ms (read `--flash` with `getComputedStyle`).
 
@@ -722,48 +732,56 @@ Only the Site or Checkpoint Block is checked; loose ideas never. Locked Pages an
 **Files:** `src/build.ts`, `src/slots/BuildButton.tsx`, `src/slots/BuildCard.tsx`, `src/slots/Build.module.css`. Behavior: PRD §4, §10. Look: DESIGN.md Build button and Build card.
 
 ```ts
-export type FailReason = 'time' | 'turns' | 'unreachable' | 'broken' | 'save'
+export type FailReason = 'time' | 'turns' | 'unreachable' | 'broken' | 'save' | 'limit' | 'start'
 export const FAILURE_LINES: Record<FailReason, string> = {
   time: 'Bob took too long, so this Build was stopped.',
   turns: 'Bob ran out of steps before finishing, so this Build was stopped.',
   unreachable: "Bob couldn't be reached. Check your connection and try again.",
   broken: "Bob's answer came back broken, so this Build was stopped.",
   save: "Bob's website couldn't be saved on this computer, so this Build was stopped.",
+  limit: "Scrabby's Build limit was reached, so this Build didn't start.",
+  start: "Something went wrong before Bob could start, so this Build didn't start.",
 }
 export interface BuildRun {
   n: number; state: 'running' | 'done' | 'failed'
   chips: { id: string; name: string; category: Category }[]
   lit: string[]; loose: number; skipped: string[]; reason?: FailReason
+  message?: string // shown instead of the failure line: a `limit`'s words, or why a Build didn't start
 }
 ```
 
 - Store `run` (`useBuild`, `getBuild`).
 - `requestBlocks(p: Pick<Project,'blocks'>, top)`: every Block under and including `top`, depth first, except locked Blocks with no Traits and no blank-free Note.
+- `progress(run)`: `{ done, working }`. Running: the lit ids that are chips, first-lit order, no duplicates; the last is `working`, the rest are `done`. Done: every chip `done`. Failed: none.
 - `nothingNew(p)`: the top is a Checkpoint Block and `requestBlocks` is empty.
 - `buildProblem(p)`: `instructionDocument(p).error` or null.
-- `runBuild(): Promise<string | undefined>` (returns a limit message, else undefined). New in this build: a module flag makes a second call while one runs return at once (the button is only disabled once `start` arrives).
-  1. `doc = instructionDocument(p)`; stop on error. `top`, `saved = await listCheckpoints(p.id)` (errors → `[]`), `n = saved.filter(c => c.blocks).length + 1`, chips = `requestBlocks(p, top)` mapped to `{ id, ...blockInfo(id, p, []) }` (§14).
-  2. `begin()` (once): `run.set({ n, state:'running', chips, lit: [], loose: canvas.children.length - 1, skipped: doc.skipped })`; `setStep('build')`.
-  3. For each event of `runAgent({ kind:'build', document: doc.document, files: p.files })`: `limit` → return its message (nothing changed, still on Plan); `start` → `begin()`; `block` → `begin()`, append the id to `lit`; `error` → `begin()`, set `state:'failed', reason`, return; `files` → `begin()`, then:
-     - `number = saved.length + 1`; `after = { ...e.files, ['.builds/build-' + n + '.md']: doc.document }`.
+- Store `starting` (`useStarting`): true from `runBuild()` (the confirm in `Build now?`, or Try again) until `begin()` or the end of the run; the Build buttons show `Starting…` meanwhile.
+- `runBuild(): Promise<void>`. A module flag `busy` makes a second call while one starts or runs return at once (the buttons are disabled meanwhile). Sets `starting`, runs the Build, then clears both. A deadline `START_MS = 15_000` (an AbortController aborted by a timer that `begin()` clears) covers everything before `start`. `notStarted(message?)` = `begin()` then `state:'failed', reason:'start', message`: every way out before `start` ends on a failed card.
+  1. `doc = instructionDocument(p)`; on error → `notStarted(doc.error)`. `top`, `saved` = `listCheckpoints(p.id)` (errors → `[]`) raced against the deadline, `n = saved.filter(c => c.blocks).length + 1`, chips = `requestBlocks(p, top)` mapped to `{ id, ...blockInfo(id, p, []) }` (§14). Anything thrown here (or the deadline) → log `The Build failed to start`, `notStarted()` (n stays 0, no chips).
+  2. `begin()` (once): clear the timer, `starting` false, `run.set({ n, state:'running', chips, lit: [], loose: canvas.children.length - 1, skipped: doc.skipped })`; `setStep('build')`.
+  3. For each event of `runAgent({ kind:'build', document: doc.document, files: p.files }, deadline signal)`: `error` before `begin()` → `notStarted(FAILURE_LINES[reason])` (the deadline aborts the fetch, which ends in `unreachable`); `limit` → `begin()`, set `state:'failed', reason:'limit', message`, return (nothing changed); `start` → `begin()`; `block` → `begin()`, append the id to `lit`; `error` → `begin()`, set `state:'failed', reason`, return; `files` → `begin()`, then:
+     - `number = saved.length + 1`; `after = guardImages({ ...e.files, ['.builds/build-' + n + '.md']: doc.document })`.
      - `addCheckpoint({ projectId, number, label: 'Checkpoint ' + number, from: top.type === 'site' ? null : p.checkpoint ?? saved.at(-1)?.number ?? null, before: p.files, after, blocks: builtBlocks(p, top.id), time: Date.now() })`; on an error log `Saving the Checkpoint failed`, set `state:'failed', reason:'save'` and return (nothing changed).
      - `updateProject(d => consume(d, top.id, after, number), null)`; `state:'done'`; `flashBlocks(lit)` (§13); after 900ms `setStep('try')`.
+  4. A throw anywhere in step 3 (reading the stream, say a browser without `TextDecoderStream`, or taking the files in) logs `The Build failed`, then before `begin()` → `notStarted()`, else `state:'failed', reason:'broken'`.
+- `guardImages(files)` (exported): a backup for sites built before `base.css`, or a `base.css` that lost the rule. When `style.css` exists and neither it nor `base.css` (when the files hold one), with comments removed, has a top-level `img, video { … max-width: 100% … }` rule (`img, video, svg` counts too; one that starts the file or follows a `;` or `}`, so one in a comment, in `@media` or behind another selector like `.gallery img` doesn't count), put `/* Pictures and videos never grow wider than their box */` + `img, video { max-width: 100%; height: auto; }` and a blank line at its top, after any leading `@charset`/`@import` statements (quoted strings and `(...)` groups may hold `;`), which must stay first; else return `files` as it is. `style.css` comes from Bob, so every regex here runs in linear time: the tokens of the lead-in never overlap, the block scan stops at `{` or `}`, and an unclosed comment runs to the end of the file.
 - `builtBlocks(p, top)`: `{ top: [top], blocks, traits, defs: clone of p.defs }` with clones of every Block and Trait under `top` and under every definition Block.
 - `consume(p, topId, files, checkpoint)` (exported): `pages` = the top's Page children by file. `html` = file paths ending `.html`. Order = the top's Page files that exist in `html` (in the top's order), then the other `html` files (in `files` order). Delete every Block and Trait inside the top and the top's Traits. For each file: reuse the id of the Page that had it (else `addBlock(p, 'page')` for a new id) and set `{ id, type:'page', name: old name or pageName(file), note:'', traits:[], children:[], file, locked:true }`. Replace the top with `{ id: topId, type:'checkpoint', name: top.name, note:'', traits:[], children, locked:true, pos: top.pos }`. `p.files = files`, `p.checkpoint = checkpoint`. `pageName(file)`: strip `.html`, the last path part, `-`/`_` runs → space, trim; `index` or empty → `Home`; else first letter upper-cased (`contact-us.html` → `Contact us`).
 - The Build applies to the Project as it is when it ends (an Undo pressed mid-Build is consumed too).
 
-**BuildButton:** reads the Project and the run. Greyed (class `greyed`) when `nothingNew`. Disabled while running; label `Building…` while running, else `Build`, with the 24px fill flag icon; `data-tour="build"`. Press: nothingNew → bubble `Nothing new to build. To redo a Build, open ` + a link button **Checkpoints** (→ `setPlanTab('checkpoints')`); `buildProblem` → bubble with it; `hasPending(p)` (§15) → the warning dialog (title `Build now?`, line `The Assistant has changes you haven't accepted. Building drops them.`, confirm `Build anyway`: `dropPending()` then build); else build. Build = `runBuild()`; a returned limit message shows in the bubble. The bubble (`role=status`) sits above the button (absolute, right 0, bottom 100% + 16px) with a tail; the button gets class `target` while it shows; it closes on the next click anywhere (listener added after the current click). The warning dialog is the `Warning` component from Checkpoints.tsx (§12).
+**BuildButton:** reads the Project and the run. Greyed (class `greyed`) when `nothingNew`. Disabled while starting or running; label `Starting…` while starting (a 20px white spinner in place of the flag), `Building…` while running, else `Build`, with the 24px fill flag icon; `data-tour="build"`. Press (a throw while reading the plan, from odd saved data → `console.error` and the bubble with `FAILURE_LINES.start`): nothingNew → bubble `Nothing new to build. To redo a Build, open ` + a link button **Checkpoints** (→ `setPlanTab('checkpoints')`); `buildProblem` → bubble with it; else the warning dialog (title `Build now?`, line `Bob builds your site from the plan and takes you to the Build step.`, confirm `Build`; when `hasPending(p)` (§15) it adds the line `The Assistant has changes you haven't accepted. Building drops them.` and the confirm is `Build anyway`, which runs `dropPending()` before the build). Build = `runBuild()` (a limit shows on the Build card, not in the bubble). The bubble (`role=status`) sits above the button (absolute, right 0, bottom 100% + 16px) with a tail; the button gets class `target` while it shows; it closes on the next click anywhere but the Build button, which sets its own bubble (listener added after the current click). While pressed, the button's `::before` (absolute, inset `-4px 0 0`) keeps its old top edge, so a press that starts in the top 4px still clicks. The warning dialog is the `Warning` component from Checkpoints.tsx (§12).
 
 **BuildCard:** under the title, a `BuildStage` (`aria-hidden`; DESIGN.md Build card, item 2): still with no run, looping while running, stopped on done or failed as DESIGN.md says; reduced motion keeps it still. No run → title `Nothing built yet`, the stage, and a big BuildButton. Else:
-- Title: running → spinner + `Bob is building your website` + `<BobBadge/>` at the right end; done → `✓ Build N done` and sub `Opening your website…`; failed → `!` + `Build N did not finish` and sub `Nothing changed: your code and Blocks are as they were.`; failed card has class `failed`.
-- Chips: each chip `cat-<category>`, class `lit` only when its id is lit and the Build did not fail.
-- Lines: `✓ Reading your Blocks (N Block(s)[, M loose idea(s) skipped])`; one `Building <name>` line per lit chip (always from `lit`, also on a failed card) (first-lit order, no duplicates; the last one shows a small spinner while running, others ✓); each skipped line with a `–`; the failure line (`!` + FAILURE_LINES[reason], class `failLine`).
-- Failed: **Try again** (Primary → `runBuild()`; a returned limit message shows as an extra `failLine` under the buttons) and **← Back to the Blocks** (ghost → Plan).
+- Title: running → spinner + `Bob is building your website` + `<BobBadge/>` at the right end; done → `✓ Build N done` and sub `Opening your website…`; failed → `!` + `Build N did not finish` (reason `limit` or `start`: `Build N did not start`; n 0: `Your Build did not start`) and sub `Nothing changed: your code and Blocks are as they were.`; failed card has class `failed`.
+- Chips: each chip `cat-<category>`, class `done` or `working` from `progress(run)`. More than 12 chips: a `fold` button (`aria-expanded`, starts open) with the fold chevron, `N Blocks · M done` (M = done count) and, while folded, the working chip; it toggles the chip list below it. The open list is at most 204px tall (about 5 rows) and scrolls; when the working chip changes (or the list opens) the list scrolls to center it.
+- Notes (a list, only when there is one): each skipped line, then `M loose idea(s) skipped` when M > 0, each with a `–`. Failed: the failure line (`!` + `message` or FAILURE_LINES[reason], class `failLine`).
+- Failed: **Try again** (Primary → `runBuild()`; while `starting`: disabled, a 14px white spinner + `Starting…`) and **← Back to the Blocks** (ghost → Plan).
 
 ## 12. Checkpoints
 
 **Files:** `src/checkpoints.ts`, `src/slots/Checkpoints.tsx`, `Checkpoints.module.css`. Behavior: PRD §4. Look: DESIGN.md Checkpoints, Menus.
 
+- Names: `checkpointTitle(p, n)` → `Checkpoint N · <name>` when `p.checkpointNames[n]` is set, else `Checkpoint N`; every place that names a Checkpoint uses it, so a name never goes missing anywhere. `withNames(p, text)` puts `checkpointTitle` in place of every `Checkpoint <digits>` in a saved text (a chat `line`, a code-only `label`), so those follow renames too. `renameCheckpoint(p, n, name)` (recipe, an Undo step): trim, cut to 40 characters, blank deletes the name.
 - `LoadMode = 'goBack' | 'edit'`. `sameFiles(a, b)`: same keys and texts. `holding(files, cps)`: the Checkpoint whose `after` or `before` equals `files`. `needsSave(files, cps)`: files non-empty and no `holding`.
 - `unbuilt(p)`: unbuilt items in the top, outermost only: for a Site Block its Traits and children; for a Checkpoint Block its own Traits, then walking into locked children: their Traits, and their unlocked children (not deeper).
 - `applyLoad(p, c, mode)` (recipe): `at = top.pos ?? {40,40}`; move each unbuilt item to the Canvas at `{ x: at.x + 760, y: at.y + i*70 }` with `dropItem`.
@@ -772,18 +790,20 @@ export interface BuildRun {
 - `restore(p, bb)` (private): map each id under `bb.top[0]` to itself, or to a fresh `b<next>`/`t<next>` if taken in `p`; copy Blocks (Traits, children, layout mapped) and Traits (an "on click" `page:x`/`popup:x` value is mapped too). Returns the new top id.
 - `loadCheckpoint(number, mode)`: `cps = await listCheckpoints`; find it (edit needs `blocks`); if `needsSave(p.files, cps)`: add `{ number: cps.length + 1, label: 'Before loading Checkpoint ' + number, from: p.checkpoint ?? null, before: p.files, after: p.files, blocks: null, time }`. `updateProject(d => applyLoad(d, c, mode), null)`. If `hasPending` → `dropPending('Code went back to Checkpoint ' + number)`. `flashBlocks([])`.
 - `warning(p, cps, c, mode)` → `{ title, lines, confirm }`:
+  - `Checkpoint N` below is `checkpointTitle(p, N)`, so it carries the name.
   - title: `Go back to Checkpoint N?` / `Edit the Blocks of Checkpoint N?`; confirm: `Go back` / `Edit its Blocks`.
-  - line 1: goBack `Your code goes back to how it was at Checkpoint N.`; edit with `from === null` `This remakes the website from scratch. Your code is cleared and the Blocks of Checkpoint N come back so you can change them.`; edit otherwise `Your code goes back to how it was before Checkpoint N's Build, and its Blocks come back so you can change them.`
+  - line 1: goBack `Your code goes back to how it was at Checkpoint N.`; edit with `from === null` `This remakes the website from scratch. Your code is cleared and the Blocks of Checkpoint N come back so you can change them.`; edit otherwise `Your code goes back to how it was before the Build of Checkpoint N, and its Blocks come back so you can change them.`
   - `The next Build may come out different.`
   - needsSave → `Your current code, with your hand edits, is saved first as a new Checkpoint, so you can come back to it.`; else if there is code → `Your current code is already saved as Checkpoint <holding number>.`
   - unbuilt items → `Blocks you have not built yet become loose ideas.`
   - `hasPending` → `The Assistant's unaccepted changes will be dropped.`
-- `gist(c)`: no blocks → `<label>: your code with its hand edits.`; `from === null` → `Built the site: N page(s).` (N = `.html` files in `after`); else `Added: <names>.` where names = walking from the top: an unlocked Block adds its name (not deeper); a locked one adds its name only if it has Traits or a Note, then walks its children; empty → `changes`.
-- `fromTag(c)`: none for code-only or number 1; `from === null` → `remade from scratch`; `from !== number - 1` → `from Checkpoint <from>`.
+- `gist(c, p)`: no blocks → `<withNames(p, label)>: your code with its hand edits.`; `from === null` → `Built the site: N page(s).` (N = `.html` files in `after`); else `Added: <names>.` where names = walking from the top: an unlocked Block adds its name (not deeper); a locked one adds its name only if it has Traits or a Note, then walks its children; empty → `changes`.
+- `fromTag(c, p)`: none for code-only or number 1; `from === null` → `remade from scratch`; `from !== number - 1` → `from <checkpointTitle(p, from)>`.
 - `buildOf(id, p, cps)`: `made(c)` = c has blocks and `requestBlocks(c.blocks, top)` includes id. Walk from `p.checkpoint` back through `from`; the first `made` wins; else the newest `made` in the list.
 
-**Checkpoints.tsx:** loads `listCheckpoints` on Project id, `p.checkpoint` and a reload counter. Empty list → `No Checkpoints yet. Every Build saves one here.` Entries newest first:
-- Title row: `Checkpoint N` (h3), the time (`toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })`), the from tag, `saved for you` (code-only; class `saved`), and on the current one (`p.checkpoint === number`, entry class `here`) `you are here` + (` + hand edits` when `p.files` differs from its `after`).
+**Checkpoints.tsx:** loads `listCheckpoints` on Project id, `p.checkpoint` and a reload counter. Empty list → a centered `div` (class `empty`): `<img src="/bob-head.svg" alt="">` (48px) above `No Checkpoints yet. Every Build saves one here.` Entries newest first:
+- Title row: `checkpointTitle(p, N)` (h3), right after it a rename button (the 14px fill `PencilSimple` icon, title `Rename`, aria-label `Rename Checkpoint N`), the time (`toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })`), the from tag, `saved for you` (code-only; class `saved`), and on the current one (`p.checkpoint === number`, entry class `here`) `you are here` + (` + hand edits` when `p.files` differs from its `after`).
+- Rename: the h3 becomes `Checkpoint N` followed by an input (autofocus, `maxLength` 40, aria-label `Name for Checkpoint N`, starting with the current name; the rename button hides meanwhile). Enter → `updateProject(d => renameCheckpoint(d, N, draft))` when the trimmed draft differs from the name; Escape or blur cancels. After Enter or Escape the focus goes back to the rename button.
 - Gist. Buttons: **Go back to this**; **Edit its Blocks** and **Show its Blocks** / **Hide its Blocks** (a link-style toggle, `aria-expanded`) only when it has blocks.
 - Open: a read-only tree `ul` of its Blocks from `blocks.top[0]`: each row icon (lock for locked, puzzle for Instances, else the type's) + name + file; class `cat-<cat>` (none → `built` for locked or site); click picks it. A picked row with code in the current files (`findBlockCode`) shows `</> See its code` (→ `seeItsCode(id)`, stops propagation).
 - From a Block chip: when `useCheckpointFocus()` is set and the list is loaded: open `buildOf(focus)`, pick that Block with `flash` (it scrolls to the center and flashes twice), clear the focus.
@@ -799,7 +819,7 @@ The Prototype runs on its own origin, so it cannot reach the app's IndexedDB. Th
 - **preview/index.html:** title `Scrabby Preview`, `<script type="module" src="/shell.ts">`.
 - **serve.ts** (pure, tested): `PreviewFiles = { projectId; files: Record<string,string>; assets: { path; blob }[] }`; `NO_FILE_TEXT = 'This page has no file yet.'`; HELPER = `<script src="/helper.js"></script>`; `injectHelper(html)`: right after the first `<head…>` tag (case-insensitive), else prepended. Types by extension: html `text/html`, css `text/css`, js `text/javascript`, json `application/json`, svg `image/svg+xml`, txt and md `text/plain`, else `text/plain`, each + `; charset=utf-8`. `toEntries(projectId, files, assets)`: key = `new URL('/preview/' + projectId + '/' + path, 'http://x').pathname` (encodes like a request); HTML → helper injected; Assets → `new Response(blob, { 'content-type': blob.type })`. `answer(pathname, lookup)`: not `/preview/<id>/…` → undefined; a trailing `/` → `index.html`; found → it; missing `.html` → the injected page `<!doctype html><meta charset="utf-8"><p style="font:16px sans-serif">This page has no file yet.</p>` with status 404; else `Not found` 404.
 - **sw.ts:** `install` → `skipWaiting()`; `activate` → `clients.claim()`. `message` `{ projectId, files, assets }`: chain onto `storing`: delete cache `preview`, open it, put every `toEntries` entry, then post `stored` on `e.ports[0]`; `waitUntil(storing)`; errors logged. `fetch`: same-origin `/preview/…` only → `respondWith(storing.then(() => answer(path, key => cache match)).then(r => r ?? fetch(request)))`.
-- **shell.ts:** `APP = import.meta.env.VITE_APP_ORIGIN || location.protocol + '//' + location.hostname + ':5173'`. `tell(preview, rest)` = `parent.postMessage({ preview, ...rest }, APP)`. Register `import.meta.env.DEV ? '/sw.ts' : '/sw.js'` with `{ type: 'module' }`, await `ready`; on `message` from `parent` with `e.origin === APP` and `data.preview === 'files'`: post `{ projectId, files, assets }` to the worker with a `MessageChannel` port, await `stored`, then `location.replace('/preview/' + projectId + '/' + path)`. Then `tell('ready')`. Any failure (no `serviceWorker`: `Service Workers are turned off here.`) → `tell('no-worker', { message })`.
+- **shell.ts:** `APP = import.meta.env.VITE_APP_ORIGIN || location.protocol + '//' + location.hostname + ':5173'`. `tell(preview, rest)` = `parent.postMessage({ preview, ...rest }, APP)`. Register `import.meta.env.DEV ? '/sw.ts' : '/sw.js'` with `{ type: 'module' }`, await `ready`; on `message` from `parent` with `e.origin === APP` and `data.preview === 'files'`: post `{ projectId, files, assets }` to the worker with a `MessageChannel` port, await `stored`, then `location.replace('/preview/' + projectId + '/' + path)`; no answer within 10 s → `tell('no-worker', { message: "The Service Worker didn't store the files within 10 s." })`. Then `tell('ready')`. Any failure (no `serviceWorker`: `Service Workers are turned off here.`) → `tell('no-worker', { message })`.
 - **helper.js** (plain script, in `preview/public/`): does nothing when not in a frame. Posts to `parent` with `'*'` (only a path or an error text): `page` with `location.pathname` on load; `error` `{ message, file: e.filename }` on `error`; `error` `{ message: String(reason?.message ?? reason) }` on `unhandledrejection`. On a `flash` message from `parent`, after DOMContentLoaded: every `[data-block="<CSS.escape(id)>"]` animates `outline: 4px solid #FFE14D; outline-offset: 3px` to `#FFE14D00` over 1500ms, `ease-in`.
 - **src/preview.ts:** `flashBlocks(ids)` stores ids for the next load and asks every mounted Preview to redraw; `previewHooks.askBobToFix` (set by the Assistant, §15); `onRedraw(fn)` (returns unsubscribe); `takeFlash()` (returns and clears).
 - **Preview.tsx:** `ORIGIN = import.meta.env.VITE_PREVIEW_ORIGIN || location.protocol + '//' + location.hostname + ':5174'`; `LIVE_DELAY = 400`.
@@ -808,10 +828,10 @@ The Prototype runs on its own origin, so it cannot reach the app's IndexedDB. Th
   - Redraw on mount and on every `flashBlocks`. Live: when the code differs from `sent` and not paused, redraw 400ms after the last change (only if still stale).
   - Messages (only from `ORIGIN` and the iframe's window): `ready` → post `{ preview:'files', projectId, files, assets, path }` to ORIGIN; `no-worker` → the error card; `error` → the error bar `{ message, file }` (file = the error's file as a Project path, else the current page); `page` → clear the error; if the path changed and the code is stale → redraw at that path; else set the page and post `{ preview:'flash', ids }` for the pending flash (once).
   - `fileOf(url)`: pathname without `/preview/<id>/`, URI-decoded; empty → `index.html`.
-  - Build count = Checkpoints with blocks (reloaded on Project id and code changes).
   - No files (before the first Build): no iframe; the page area shows the empty state (`Press Build to make your website.`), the pill reads `not built yet`.
-  - Address bar: ↻ (the `reload` icon; title `Reload the page with your latest code`; a 7px dot, aria-label `Your code has changed`, while paused with changes), the pill `<site slug> / <page>` (slug = name lower-cased, non-alphanumeric runs → `-`, trimmed, or `site`), `Build N` when N > 0, and `Pause live updates` with a `role=switch` checkbox (turning it off redraws). Paused strip: `Live updates are paused. Press ↻ to see your latest code.`
-  - Error bar (`role=alert`): `!`, bold `Something on this page isn't working`, the message (one line, ellipsis), **Ask Bob to fix it** → `previewHooks.askBobToFix(error)`.
+  - Address bar: ↻ (the `reload` icon; title `Reload the page with your latest code`; a 7px dot, aria-label `Your code has changed`, while paused with changes); once built, the full-size toggle (icon `full_size`, title `Show the website full size`; in full size icon `normal_size`, title `Back to normal size`); the pill `<site slug> / <page>` (slug = name lower-cased, non-alphanumeric runs → `-`, trimmed, or `site`), `checkpointTitle(p, p.checkpoint)` (§12) when `p.checkpoint` is set, and `Pause live updates` with a `role=switch` checkbox (turning it off redraws). Paused strip: `Live updates are paused. Press ↻ to see your latest code.`
+  - Error bar (`role=alert`): `!`, bold `Something on this page isn't working`, the message (one line, ellipsis), **Ask Bob to fix it** → leave full size, `previewHooks.askBobToFix(error)`.
+  - Full size: a `full` state (not saved). On, the root also gets class `full` (fixed 24px inside the window, z-index 46, under the show-around) and a `backdrop` (z-index 45) renders just before it; only a class changes, so the iframe stays loaded. Off: the toggle, a backdrop click, Escape (window `keydown`; keys pressed inside the website stay on its origin, so this works only while the app has focus) or **Ask Bob to fix it**.
   - No-worker card (`role=alert`): bold `The Preview can't start in this browser.`, `It needs a Service Worker, and the browser blocked it. Brave and strict privacy settings can do this. Try Chrome, or allow this site to store data.`, and the message small.
 
 ## 14. Code editor
@@ -841,11 +861,11 @@ The Prototype runs on its own origin, so it cannot reach the app's IndexedDB. Th
 
 **Files:** `src/assistant.ts`, `src/slots/Assistant.tsx`, `Assistant.module.css`. Behavior: PRD §5. Look: DESIGN.md Assistant.
 
-- Stores: `level` (`'simply'`; `useLevel`, `setLevel`); `reply` (`{ stopped } | null`; `useReplying`).
+- Stores: `level` (`'simply'`; `useLevel`, `setLevel`); `reply` (`{ stopped, asked, project, bob? } | null`: the question, its Project's id, and Bob's message time once `start` came; `useReply`).
 - FAILED lines (appended to Bob's text after a blank line): time `Bob took too long, so this answer was stopped. Try asking again.`; turns `Bob ran out of steps before finishing, so this answer was stopped. Try a smaller question.`; unreachable `Bob couldn't be reached. Check your connection and try again.`; broken `Bob's answer came back broken. Try asking again.`
 - Chat writes use `setProject` (never the undo history). Message time = `max(Date.now(), last time + 1)`.
-- `ask(text): Promise<string | undefined>` (returns a limit message): ignore while a reply runs. Take `files = p.files` (with `.builds/`), `messages` = chat + the new user message, without `line`s, last 10, only `{ role, text, time }`; `context = turnContext(p)`. Set the reply token. For each event: `limit` → clear the token, return the message (nothing added); `start` → add the user message and an empty Bob message (time + 1); `text` → append to Bob's text; `error` → append the FAILED line; `files` → `propose(files, e.files, summary)`; with a proposal, Bob's text loses everything from the last `Summary:` and gets the proposal; else it is trimmed. If the token was stopped: stop reading; Bob's text becomes its trimmed text or `Stopped.`. Finally clear the token if it is still ours. If no `start` came before an `error`, add the two messages first so the failure shows.
-- `turnContext(p)`: level; openFile = the editor's file if it exists, else the first file not under `.builds/`, else null; selection = `editorSelection.read() || null`; lastBuildCard = the run as text (`Build N is running` / `Build N done` / `Build N did not finish`, `Blocks: <names or none>`, skipped lines, failure line; joined `\n`) or null; library lines `assets/<file>: <kind>[, W×H px][, N s]`.
+- `ask(text): Promise<string | undefined>` (returns a limit message): ignore while a reply runs. Take `files = p.files` (with `.builds/`), `messages` = chat + the new user message, without `line`s, last 10, only `{ role, text, time }`; `context = turnContext(p)`. Set the reply token (`asked` = text, `project` = `p.id`). For each event: `limit` → clear the token, return the message (nothing added); `start` → add the user message and an empty Bob message (time + 1, kept as the token's `bob`); `text` → append to Bob's text; `error` → append the FAILED line; `files` → `propose(files, e.files, summary)`; with a proposal, Bob's text loses everything from the last `Summary:` and gets the proposal; else it is trimmed. If the open Project is no longer `p` (New Project, the demo): stop reading and write nothing. If the token was stopped: stop reading; Bob's text becomes its trimmed text or `Stopped.`. Finally clear the token if it is still ours. If no `start` came before an `error`, add the two messages first so the failure shows.
+- `turnContext(p)`: level; openFile = the editor's file if it exists, else the first file not under `.builds/`, else null; selection = `editorSelection.read() || null`; lastBuildCard = the run as text (`Build N is running` / `Build N done` / `Build N did not finish`, `Blocks: <names or none>`, skipped lines, failure line (a `limit`'s `run.message` when it has one); joined `\n`) or null; library lines `assets/<file>: <kind>[, W×H px][, N s]`.
 - `propose(sent, result, summary)`: files whose text changed or is new → `{ base: sent text, proposed }` (no `base` for new files); none → null; `total` = sum of `Chunk.build` chunk counts per file; `{ summary, files, total, accepted: 0, decided: 0 }`.
 - `cardState(pr, files)`: done → `accepted` (accepted = total) / `rejected` (0) / `partial`; a file whose current text ≠ `base` → `outOfDate`; `decided > 0` → `reviewing`; else `open`.
 - `hasPending(p)`: a reply is running, or a proposal not done. `openFiles(pr)`: files whose `base ?? ''` ≠ `proposed`.
@@ -857,7 +877,7 @@ The Prototype runs on its own origin, so it cannot reach the app's IndexedDB. Th
 - `changedBlocks(before, after)`: for each changed `.html` file, for each `changedLines(before, after)` line, the last `blockMarks` entry at or above it; unique ids. CSS/JS alone → none.
 - `previewHooks.askBobToFix = ({ message, file }) => ask('Something on ' + file + ' isn\'t working. The page says: "' + message + '". Can you fix it?')`; a limit message is added as a chat `line`.
 
-**Assistant.tsx:** title bar: `Bob` + `<BobBadge/>`; the `Explain:` picker (`role=radiogroup` aria-label `Explain`, three `role=radio` buttons `very simply`, `simply`, `in detail`, `aria-checked`); the chat (pinned to the bottom when it was within 8px of it); empty → `Ask Bob what a part of your code does, or ask for a change.`; messages: a `line` as a small centered paragraph; else a bubble (`user` / `bob`) with the text (plain text, `white-space: pre-wrap`) or three bouncing dots (`role=status`, aria-label `Bob is thinking…`) while the last Bob message is empty and a reply runs, and the diff card; the composer form (input placeholder `Ask about your code, or ask for a change`, aria-label `Message to Bob`; **Send** ghost, disabled while replying or blank). Send: text = the trimmed draft (blank → nothing); clear the input; re-pin the chat to the bottom; `ask(text)` (errors logged `The Assistant failed`); a returned limit message puts the text back and shows the limit speech bubble over the Send button (closes on the next click).
+**Assistant.tsx:** title bar: Bob's head (28px) + `Bob` + `<BobBadge/>`; the `Explain:` picker (`role=radiogroup` aria-label `Explain`, three `role=radio` buttons `very simply`, `simply`, `in detail`, `aria-checked`); the chat (pinned to the bottom when it was within 8px of it); empty (and nothing waiting) → Bob's head (48px) above `Ask Bob what a part of your code does, or ask for a change.`; messages: a `line` as a small centered paragraph (its text through `withNames(p, text)`, §12, so Checkpoint names show and follow renames); else a bubble (`user` / `bob`, Bob's with his 24px head beside it) with the text (plain text, `white-space: pre-wrap`) and the diff card; only a token for the open Project counts: the Bob message being written (the token's `bob`, no proposal yet) shows, while empty, the thinking state (`role=status`: three bouncing dots, then `Bob is thinking…`), else its text with three small bouncing dots under it (`aria-hidden`); a stopped token keeps this until the reply ends and `Stopped.` takes its place; while the token has no `bob` yet, its `asked` shows after the chat as a user bubble and a thinking Bob bubble (panel only, not saved); the composer form (input placeholder `Ask about your code, or ask for a change`, aria-label `Message to Bob`; **Send** ghost, disabled while replying or blank). Send: text = the trimmed draft (blank → nothing); clear the input; re-pin the chat to the bottom; `ask(text)` (errors logged `The Assistant failed`); a returned limit message puts the text back and shows the limit speech bubble over the Send button (closes on the next click).
 - **DiffCard:** `Out of date` tag (outOfDate); the summary; file names (mono) joined `, `; buttons by state: open → **Accept all** (accept style), **Reject all**, **Review** (→ `startReview(time, first open file)`); reviewing → `N of M changes accepted` + **Review**; partial → `N of M changes accepted`; accepted → `✓` `Accepted, in your code now`; rejected → `Rejected`; outOfDate → **Ask again** (disabled while replying) and **Dismiss** (text).
 
 ## 16. Library and Download
@@ -868,48 +888,27 @@ The Prototype runs on its own origin, so it cannot reach the app's IndexedDB. Th
 - `ACCEPT = 'image/png,image/jpeg,image/gif,image/webp,video/mp4,video/webm'`.
 - `measure(file, kind)`: image → `createImageBitmap` width/height (close it); video → a `<video preload=metadata>` on an object URL → `videoWidth`, `videoHeight`, `duration` (revoke the URL).
 - `upload(files)`: for each: `uploadKind` refusal → a problem line; measure failure → `` `${name} can't be opened. It may be damaged.` ``; else `updateProject(d => id = addAsset(d, name, { kind, mime, bytes, ...size }))`, then `putAsset`; if saving fails: log, `updateProject(removeAsset)`, problem `` `${name} couldn't be saved. The browser's storage may be full.` ``. Returns the problems.
-- View: heading `Library`, hint `Images and videos for this Project. Pick one inside an image or video Trait.`, **Upload** (Primary; clicks a hidden multiple file input; reset its value after picking). Problems box (`role=alert`) with a **Dismiss** text button. Empty → `Nothing here yet. Upload an image or a video.` Tiles (title `<file> · <size>`): the image (object URL of its Blob) or a 40px duotone image/video icon; the name; hover actions: rename (pencil, title `Rename`, aria-label `Rename <file>`) and delete (trash, title `Delete`). Delete also has aria-label `Delete <file>`. Rename: an input (autofocus, aria-label `New name for <file>`): Enter commits, Escape or blur cancels, typing clears the problem. Commit trims the draft; a non-blank draft with a `renameProblem` shows it under the field and stays open; a blank or unchanged name just closes the field; a new name asks `confirm('Rename <file>?\nCode that references assets/<file> won't be updated and will break. You can ask the Assistant to fix the references.')` then `renameAsset`. Delete: `confirm(deleteWarning)`, then `removeAsset` and `deleteAsset` (Blob). Storage line at the bottom: `<used> of <quota> browser storage used` from `navigator.storage.estimate()`. Object URLs are revoked when the tiles reload.
+- View: heading `Library`, hint `Images and videos for this Project. Pick one inside an image or video Trait.`, **Upload** (Primary; clicks a hidden multiple file input; reset its value after picking). Problems box (`role=alert`) with a **Dismiss** text button. Empty → a centered `div` (class `empty`): `<img src="/bob-head.svg" alt="">` (48px) above `Nothing here yet. Upload an image or a video.` Tiles (a CSS grid, `repeat(auto-fill, minmax(clamp(168px, 16cqi, 260px), 1fr))` with the panel as an inline-size container; square tiles, the image in a 3:2 box) (title `<file> · <size>`): the image (object URL of its Blob) or a 40px duotone image/video icon; the name; hover actions: rename (pencil, title `Rename`, aria-label `Rename <file>`) and delete (trash, title `Delete`). Delete also has aria-label `Delete <file>`. Rename: an input (autofocus, aria-label `New name for <file>`): Enter commits, Escape or blur cancels, typing clears the problem. Commit trims the draft; a non-blank draft with a `renameProblem` shows it under the field and stays open; a blank or unchanged name just closes the field; a new name asks `confirm('Rename <file>?\nCode that references assets/<file> won't be updated and will break. You can ask the Assistant to fix the references.')` then `renameAsset`. Delete: `confirm(deleteWarning)`, then `removeAsset` and `deleteAsset` (Blob). Storage line at the bottom: `<used> of <quota> browser storage used` from `navigator.storage.estimate()`. Object URLs are revoked when the tiles reload.
 
 **download.ts:**
-- `zipDownload(project: Pick<Project, 'name' | 'files'>, assets: { file: string; data: Uint8Array }[]): Uint8Array` with fflate `zipSync`: every file not under `.builds/` (as `strToU8`); every Asset at `assets/<file>` stored uncompressed (`[data, { level: 0 }]`); and the **Bob kit**: `AGENTS.md` (below) and `.bob/skills/<name>/SKILL.md` for `code-rules`, `behavior`, `content`, `visual-style` (imported with `?raw` from `../skills/<name>/SKILL.md`).
-- Kit `AGENTS.md` text (exact; `<name>` is the Project name; the plan parts are the `.builds/build-N.md` files in N order, or the single line `No Build yet.`):
-
-```markdown
-# <name>
-
-A website made with Scrabby. Bob built it from a plan of Blocks and Traits. The plan Bob read for each Build is at the end of this file.
-
-## Rules for Bob
-
-- Plain HTML, CSS and JavaScript: one `.html` file per page, one shared `style.css` and `script.js`, images and videos in `assets/`. No build step, no npm, no frameworks.
-- Keep every `data-block="…"` attribute and every `/* block … */` comment. They tie the code to the Blocks it came from.
-- Change only what is asked. Keep all other code as it is, including the user's own edits.
-- Follow the Skills in `.bob/skills/`: code rules, behavior, content and visual style.
-
-## The plan
-
-### Build <N>
-
-<the text of .builds/build-N.md>
-```
-
+- `zipDownload(project: Pick<Project, 'files'>, assets: { file: string; data: Uint8Array }[]): Uint8Array` with fflate `zipSync`: every file not under `.builds/` (as `strToU8`); every Asset at `assets/<file>` stored uncompressed (`[data, { level: 0 }]`).
 - `downloadCode(project)`: read each Asset Blob (`getAsset`; a missing one is left out with a `console.warn`), build the zip Blob (`application/zip`), download it as `${name.replace(/[^\p{L}\p{N} _-]+/gu, '').trim() || 'my-site'}.zip`, revoke the object URL after 60s.
 
 ## 17. Onboarding and demo
 
 **Files:** `src/onboarding.ts`, `src/shell/Onboarding.tsx`, `Onboarding.module.css`, `src/fixtures/dev.ts`. Behavior: PRD §8, §9. Look: DESIGN.md Speech bubble, Menus.
 
-- `isEmptyProject(p)`: at most 2 Blocks (canvas + Site), no Traits, no Assets, no files, no chat.
-- `replaceProject(project, checkpoints = [])`: `clearAll()`; for each Asset named in `DEMO_PHOTOS`, draw its placeholder (`OffscreenCanvas` 1200×800, fill its color, `#3A2A30` bold 96px sans-serif label centered at y 430, PNG), set `bytes`, `putAsset`; add the Checkpoints; `clearHistory()`; `setProject`; `setEditing(null)`; Canvas tab; Plan.
-- `loadDemo()` = `replaceProject(demoProject())`; `newProject()` = `replaceProject(emptyProject())` (errors logged `Loading the demo failed` / `Starting a new Project failed`).
+- `isEmptyProject(p)`: at most 2 Blocks (canvas + Site), no Traits, no Assets, no files, no chat, and the name still `NEW_NAME` (a rename counts as work).
+- `replaceProject(project, checkpoints = [])`: first fetch every Asset named in `DEMO_PHOTOS` from `/demo/<file>` (a response that is not OK or not an image throws before anything is cleared, so the saved Project stays; the dev server answers a missing file with the app's HTML page); `clearAll()`; for each photo set `bytes` to the Blob's size, `putAsset`; add the Checkpoints; `clearHistory()`; `setProject`; `setEditing(null)`; Canvas tab; Plan.
+- `loadDemo()` = `replaceProject(demoProject())`, then `once('scrabby.tour.plan')` (marks it seen) and `startTour('plan')`, every time; `newProject()` = `replaceProject(emptyProject())` (errors logged `Loading the demo failed` / `Starting a new Project failed`; a failed demo starts no tour). Both set `replacingStore` (boolean) while they run, and do nothing when one is already running.
 - Ask store (`'demo' | 'new' | null`): `askDemo()` loads at once when `isEmptyProject`, else asks; `askNewProject()` always asks; `closeAsk()`.
-- **ReplaceWarning** (a fixed backdrop + modal; Escape closes): demo → title `Load the demo?`, text `This replaces your current Project, Blocks and all. Download code first to keep a copy of the website's code.`, go `Load the demo`; new → `Start a new Project?`, `Only one Project is saved, so this one will be replaced, Blocks and all. Download code first to keep a copy of the website's code.`, `Start a new Project`. Buttons: **Download code** (Secondary), **Cancel** (Text), the go button (Primary, autofocus: close, then run).
-- **DemoButton** (exported): `Try the demo: Maya's bake sale` → `askDemo`.
+- **ReplaceWarning** (a fixed backdrop + modal; Escape closes; while the Greeting shows, the backdrop also gets `center` and the modal is centered on screen over the card): demo → title `Load the demo?`, text `This replaces your current Project, Blocks and all. Download code first to keep a copy of the website's code.`, go `Load the demo`; new → `Start a new Project?`, `Only one Project is saved, so this one will be replaced, Blocks and all. Download code first to keep a copy of the website's code.`, `Start a new Project`. Buttons: **Download code** (Secondary), **Cancel** (Text), the go button (Primary, autofocus: close, then run).
+- **Greeting** (PRD §9): `greetingStore` starts `true`, so it shows on every page load (App mounts after the saved Project loads); once closed, never again in that page load. It keeps the Project it found. The replace backdrop plus class `center` (grid, centered; `inert` while a replace warning is open on top) holding the card (`role=dialog`, `aria-modal`, labelled by the wordmark): the logo (`<img src="/bob.svg" alt="">` 160px tall, hopping once, then `Scrabby`), `<h1>` `Ideas are best blocked out.`, `<p>` `Snap your idea together. Bob builds it for real.`, then the buttons. When the found Project `isEmptyProject`: **Take me to the Demo** (class `demo`) → `askDemo`, and **Start my own site** (Secondary) → leave, then `firstTour()`. Otherwise: **Continue “<name>”** (class `demo`; a long name ends in `…`) → leave, no tour; **Take me to the Demo** (Secondary) → `askDemo`; **Start a new site** (Secondary) → `askNewProject`. Focus goes to the first button on open and whenever a warning on top closes. Every button is disabled while `replacingStore` is true or the card is leaving. When the Project changes (the demo or a new Project is in place), the card leaves, then runs `firstTour()` if the new Project is empty; a failed replace leaves the card up. Escape, with no warning open and nothing loading = Start my own site when empty, else Continue; a backdrop click does nothing. Leaving: with `data-leaving` on the backdrop, it fades and the card shrinks; once every animation under the backdrop (`getAnimations({ subtree: true })`) has settled, it closes and the action runs, so with none running (reduced motion turns them off) that is at once.
 - **Tours** (`TOURS`, texts in PRD §9): plan → targets `palette`, `canvas`, `build`, `steps`; try → `preview`, `assistant`. `startTour(which)` (plan also opens the Canvas tab), `nextBubble()`, `endTour()`. `once(key)`: true the first time (localStorage; true every time when storage throws).
-- The first-visit plan tour (`once('scrabby.tour.plan')`) starts on the first visit; the try tour (`once('scrabby.tour.try')`) the first time Try & tweak opens.
-- **SpeechBubble({ target, text, children })**: a ring (fixed, 3px `--bob` outline offset 3px, copying the target's rect and border radius) and the bubble (`role=dialog`, aria-label `Tip`; tour bubbles carry Bob, `<img src="/bob.svg" alt="">` 74px tall, on the corner away from the target), both hidden while the target is missing; re-placed after every render, on resize, and on a Step or tab change (it subscribes to the UI store) with `placeBubble`; `data-side` and `--tail` set on the bubble. Tour footer: `i of N`, **Skip** (text), **Next** / **Got it** (Primary, autofocus). Tip: target `[data-bid="<id>"]`, text `Right-click a Block or Trait for more.`, **Got it**.
+- The first-visit plan tour, `firstTour()` (`once('scrabby.tour.plan')` → `startTour('plan')`), runs from the Greeting (Start my own site, or a new Project in place). `<Tour/>` renders only once the Greeting is gone, so the demo's tour shows after the card leaves; the try tour (`once('scrabby.tour.try')`) the first time Try & tweak opens.
+- **SpeechBubble({ target, text, clearOfBlocks, children })**: a ring (fixed, 3px `--bob` outline offset 3px, copying the target's rect and border radius; a target with no radius whose first child fills it, like the palette and Canvas wrappers, takes that child's radius, and so on down) and the bubble (`role=dialog`, aria-label `Tip`; tour bubbles carry Bob, `<img src="/bob.svg" alt="">` 74px tall, on the corner away from the target), both hidden while the target is missing; re-placed after every render, on resize, and on a Step or tab change (it subscribes to the UI store) with `placeBubble`; `data-side` and `--tail` set on the bubble. Tour bubbles pass `clearOfBlocks`: `keepClearOf(targetRect, canvasRect, the rects of the [data-bid] elements inside [data-tour="canvas"], innerWidth, up)` goes to `placeBubble` as `avoid` (nothing when there is no Canvas), where `up` = minus Bob's `offsetTop` (how far he reaches above the bubble; offsetTop so his hop doesn't move it). `keepClearOf` cuts each Block to the Canvas rect (empty ones dropped), adds `{0, 0, W, canvas.top}` (menu bar, step bar, tabs) when `target.top >= canvas.top - 1`, and adds `up` to every box's bottom. Tour footer: `i of N`, **Skip** (text), **Next** / **Got it** (Primary, autofocus). Tip: target `[data-bid="<id>"]`, text `Right-click a Block or Trait for more.`, **Got it**.
 - `droppedBlock(id)`: when no tour runs and `once('scrabby.tip.rightClick')`, show the tip on that Block.
-- `placeBubble(r, w, h, W, H)` (GAP 14, EDGE 8): x/y centered on the target and clamped to `[EDGE, size - EDGE - w|h]`; `along(c, from, size) = clamp(c - from, 20, size - 20)`. A target wider than W/2 and taller than H/2 → `{ side:'inside', x, y: r.top + 24, tail: 0 }`. Else right if `r.right + GAP + w <= W - EDGE` → `{ side:'right', x: r.right + GAP, y, tail: along(cy, y, h) }`; else left if `r.left - GAP - w >= EDGE` → `{ side:'left', x: r.left - GAP - w, y, tail: along(cy, y, h) }`; else below if `r.bottom + GAP + h <= H - EDGE` → `{ side:'below', x, y: r.bottom + GAP, tail: along(cx, x, w) }`; else above if `r.top - GAP - h >= EDGE` → `{ side:'above', x, y: r.top - GAP - h, tail: along(cx, x, w) }`; else inside.
+- `placeBubble(r, w, h, W, H, avoid = [])` (GAP 14, EDGE 8): x/y centered on the target and clamped to `[EDGE, size - EDGE - w|h]`; `along(c, from, size) = clamp(c - from, 20, size - 20)`. A target wider than W/2 and taller than H/2 → `{ side:'inside', x, y: r.top + 24, tail: 0 }`. Else right if `r.right + GAP + w <= W - EDGE` → `{ side:'right', x: r.right + GAP, y, tail: along(cy, y, h) }`; else left if `r.left - GAP - w >= EDGE` → `{ side:'left', x: r.left - GAP - w, y, tail: along(cy, y, h) }`; else below if `r.bottom + GAP + h <= H - EDGE` → `{ side:'below', x, y: r.bottom + GAP, tail: along(cx, x, w) }`; else above if `r.top - GAP - h >= EDGE` → `{ side:'above', x, y: r.top - GAP - h, tail: along(cx, x, w) }`; else inside. Then, for a side placement that overlaps a box in `avoid`, keep clear (right/left shown; below/above are the same with x and y swapped): slide to the free y nearest the current one among each box's `top - GAP - h` and `bottom + GAP` (clamped to `[EDGE, H - EDGE - h]`), with `tail: along(cy, y, h)`; else step outward to the nearest free x among each box's `right + GAP` (right side; `left - GAP - w` on the left) that lies further out and keeps the bubble inside `[EDGE, W - EDGE - w]`; else stay put. Inside ignores `avoid`.
 - **dev.ts:** `FIXTURES = { demo: 'Demo plan (spec §7)', built: 'Built site (2 Checkpoints)' }`; `loadFixture(name)` → `replaceProject` with `demoProject()` or `builtSite()`.
 
 ## 18. Where the build differs from DESIGN.md, and look details DESIGN.md leaves out
@@ -933,41 +932,44 @@ DESIGN.md's look was redone on 2026-09-26 (D-Q14 to D-Q27: Grape, Bob blue, Nuni
 **Look details not in DESIGN.md** (use exactly; every other look value comes from DESIGN.md):
 - **Step bar:** step button disabled cursor default; `.back` hover border `--brand`.
 - **Plan tab panel:** flex, `--surface`, 2px `--line`, a 3px `--line` bottom edge, radius `0 var(--r-panel) var(--r-panel) var(--r-panel)`, overflow hidden, padding `--gap`, gap `--gap`. Tab icon color `--muted` (selected `--brand`).
-- **Palette:** column buttons: flex column, align center, gap 4px. The list: overflow auto; `h4` margin 14px 0 8px. Palette Block: flex, gap 6px, width max-content, margin 0 0 8px, cursor grab, position relative, the mouth a `::after` bar (left 10px, right 10px, bottom 5px, height 5px, radius 3px, `--c4`). Palette Trait: padding-right 12px, margin 0 6px 8px 0. While trashing, column and list `--trash`. My Blocks hint margin 8px 0 12px, `--fs-sm`, `--hint`; rows flex, gap 6px.
+- **Palette:** the palette: 2px `--line-soft` border, radius `--r-panel`, overflow hidden; the list's divider is its left border. Column buttons: flex column, align center, gap 4px. The list: overflow auto; `h4` margin 14px 0 8px. Palette Block: flex, gap 6px, width max-content, margin 0 0 8px, cursor grab, position relative, the mouth a `::after` bar (left 10px, right 10px, bottom 5px, height 5px, radius 3px, `--c4`). Palette Trait: padding-right 12px, margin 0 6px 8px 0. While trashing, column and list `--trash`. My Blocks hint margin 8px 0 12px, `--fs-sm`, `--hint`; rows flex, gap 6px.
 - **Canvas:** viewport `background: var(--ws) radial-gradient(circle, var(--ws-dot) 1.6px, transparent 1.8px) 0 0 / 24px 24px`, radius `--r-inside`, overflow hidden. Zoom stack absolute right 20px, bottom 96px, z-index 5, flex column, gap 8px. Edit bar absolute top/left/right 0, z-index 6, flex gap 10px; Done margin-left auto.
 - **Block:** `.site > .empty` min-height 120px, width auto, min-width 150px, 2px dashed `--muted`, radius `--r-inside`; `.site > .inside`, `.checkpoint > .inside`: no background, no inner shade, padding 0; `.lockedPage > .inside`: no background, no inner shade. Empty hint: flex 1, flex column, centered, gap 8px, padding 0 16px. `drop Blocks or Traits here`: `--hint` italic weight 600, padding 2px. `.traits` align-items flex-start, margin 4px 0, hidden when empty. `.inside` align-items flex-start, margin-top 4px. `.row`/`.col` flex (column for col), gap `--gap`, align flex-start. `--ink: #1F1A33` is re-set on `.traits`, `.inside`, sticky, chips, badges, fold and Trait Note (a dark Custom Block color turns only its own header text white). Header: white-space nowrap, padding 3px 0. Header press: `translateY(var(--edge))` while the pointer is down on it, not during a drag.
-- **Trait:** `.pill:has(textarea)` radius 18px, align flex-start, padding-top/bottom 5px. Text field focus: `--focus`. Big textarea: 280px, min-height 44px, padding 4px 10px, no resize, `field-sizing: content`. Small buttons (⤢ ⤡ ▾): white, no border, `--ink`, radius `--r-pill`, padding 1px 6px, `--fs-sm`, weight 900, hover `--c4`. Select: `appearance: none`, the caret as an inline SVG data URL (a 9×6 triangle `M0 0h9L4.5 6z` in `#1F1A33`) at right 9px center; options black on white, weight 600. `.warn`: `--alert-bg` fill, 1.5px `--alert` border. Color button: no border or fill, padding 0 6px 0 0, weight 900 `--ink`, gap 6px. Color menu: fixed, z-index 30, the DESIGN.md context menu look; title padding 4px 6px 6px; swatch grid 6 columns of 26px, gap 6px, padding 4px 6px 8px; Any color row padding 2px 6px 4px, gap 8px; color input 44×26px, 2px `--line`, radius 8px.
+- **Trait:** `.pill:has(textarea)` radius 18px, align flex-start, padding-top/bottom 5px. Text field focus: `--focus`. Big textarea: 280px, min-height 44px, padding 4px 10px, no resize, `field-sizing: content`. Small buttons (⤢ ⤡ ▾): white, no border, `--ink`, radius `--r-pill`, padding 1px 6px, `--fs-sm`, weight 900, hover `--c4`. Select button: `appearance: none`, the caret as an inline SVG data URL (a 9×6 triangle `M0 0h9L4.5 6z` in `#1F1A33`) at right 9px center; `--focus` on focus; hover `--surface` fill. `.warn` (select and list item): `--alert-bg` fill, 1.5px `--alert` border. Color chip: no border, padding 3px 9px 3px 10px, radius `--r-pill`, a 1.5px `#0003` ring, weight 900, gap 6px, the caret a 9×6 `::after` (`clip-path` triangle, `currentColor`); `onDark` white text; focus-visible adds `--focus` to the ring. `.hex`: `--font-mono` weight 500 (the only loaded weight). Menu (dropdown list and color menu): fixed, z-index 30, the DESIGN.md context menu look, max-height `100vh - 16px` scrolling, no wrap, pops in from 96% scale over `--t-quick` from the top left (none under `prefers-reduced-motion`); title padding 4px 6px 6px; items the context menu item look (hover and focus: `--brand-tint` fill, `--brand` text), full width, the check icon pushed right; the line 2px, margin 4px 6px; swatch grid 6 columns of 26px, gap 6px, padding 4px 6px 8px; Any color row padding 2px 6px 4px, gap 8px; color input 44×26px, 2px `--line`, radius 8px.
 - **Dragging:** ghost `--drop-gap`, radius `--r-block` (pills `--r-pill`, inline-block); avatar fixed, z-index 50, no pointer events, `filter: var(--shadow-drag)`, scaled 1.03 on top of the zoom; drop line fixed, z-index 20, `--drop`, radius 3px, `box-shadow: 0 0 0 2px #fff`; `.over` outline 3px `--drop-over` offset 2px; `.lifted` display none.
-- **Overlays:** folded chips margin-top 4px. Loose: opacity .85, `saturate(.75)`, full on hover. Sticky × at top 4px right 6px, `--note-text` at 60%, 14px. Trait Note input radius `--r-pill`; its big textarea radius 12px. Context menu item hover and focus: `--brand-tint` fill, `--brand` text. Tooltip: fixed, z-index 40, no pointer events, left border `5px solid var(--c3, var(--muted))`; title gap 6px.
+- **Overlays:** folded chips margin-top 4px. Loose: opacity .85, `saturate(.75)`, full on hover. Sticky × at top 4px right 6px, `--note-text` at 60%, 14px. Trait Note input radius `--r-pill`; its big textarea radius 12px. Context menu item hover and focus: `--brand-tint` fill, `--brand` text. Tooltip: fixed, z-index 40, no pointer events, `--ink` fill, white text (the sentence at 85%), radius 10px, padding 7px 10px, max-width 240px; the arrow an 8px square turned 45° at `top: -4px` (`bottom: -4px` with `data-above`), `left: calc(var(--arrow) - 4px)`; icon `var(--c1, var(--idle))`; loose line `--idle`, margin-top 2px; title gap 6px. No fade under `prefers-reduced-motion` (the context menu's pop too).
 - **Warnings:** badge line-height 20px; on a sticker margin-left −3px. Popover fixed, z-index 40, flex column gap 8px; items flex gap 8px; buttons row padding-left 28px, margin-top −2px. Stepper and ok pill absolute top 12px right 12px, z-index 5; ok gap 6px.
-- **Build:** button inline-flex, align center; disabled opacity .6; greyed `--placeholder` with a `--muted` bottom edge. Card chip transition over `--t-pop` with `--spring`. Lines flex, gap 10px. Actions flex, gap 6px, margin-top 6px. Spinner 1s linear spin. Build stage: position relative; its pieces absolute inside the 236px base; Bob absolute, right 26px, bottom 10px.
+- **Build:** button inline-flex, align center; disabled opacity .6; greyed `--placeholder` with a `--muted` bottom edge. Card chip transition over `--t-pop` with `--spring`. Notes and the failure line flex, gap 10px; the working chip breathes (1.2s loop); the fold drawer animates `grid-template-rows` 0fr → 1fr over `--t-settle`; its chip list scrolls smoothly (instantly under reduced motion). Actions flex, gap 6px, margin-top 6px. Spinner 1s linear spin. Build stage: position relative; its bricks absolute inside the 360×152px base (`clip-path: inset(-20px -8px -8px)`, so falling bricks show only below the caption), animated per brick with the Web Animations API (an 11s loop, cancelled when the state changes); the failed base tips off with a CSS animation; Bob absolute, right 26px, bottom 10px.
 - **Checkpoints:** panel flex column, scrolls. Title row flex wrap, baseline. Link button: no border, padding 5px 6px, `--text`, weight 700, underline on hover. Tree: no bullets, nested lists indented 18px, margin-top 10px; rows inline-flex gap 6px, margin 3px 0, padding 3px 10px, `--c1`, 2px `--c3`, a 2px `--c3` bottom edge, radius `--r-inside`, weight 900 `--ink`, pointer; built rows `--idle` with 2px dashed `--muted` and no bottom edge; file `--fs-sm` weight 600 `--hint`; picked outline 3px `--brand` offset 3px; flash `@keyframes flash { 50% { box-shadow: 0 0 0 6px var(--flash) } }` 1.4s twice. Dialog: the DESIGN.md Menus modal as a native `<dialog>`: margin 100px auto auto, width 480px (max `100% - 32px`), no padding, no border, radius `--r-card`, overflow hidden, `box-shadow: 0 6px 0 #0000002e`; `::backdrop` `--brand` at 88%; title 56px, centered, white 18px weight 900 on `--brand`; body padding 24px; paragraphs margin 0 0 10px; buttons margin-top 16px, gap 8px, right.
 - **Library:** panel flex column gap 12px, scrolls. Head flex space-between. Problems: `--alert-bg`, 2px `--alert`, radius `--r-inside`, padding 8px 12px. Empty `--muted`. Grid flex wrap; tile padding 6px, flex column centered gap 4px, position relative; the duotone icon's `opacity="0.2"` path filled `--idle` at opacity 1. Rename input `--fs-sm`, 2px `--line`, radius 8px, padding 1px 6px. Problem `--fs-sm` `--alert-dark`. Actions absolute top 4px right 4px, gap 2px, visible on tile hover or focus-within; buttons 24px, `--surface`, 2px `--line`, radius 8px, 14px fill icons. Storage line margin-top auto, `--fs-sm` `--hint`.
 - **Preview:** frame wrapper 2px `--line-soft`, radius `--r-inside`, overflow hidden; page area white, iframe no border; ↻ dot absolute top 2px right 2px; error bar absolute at the bottom of the page area; message flex 1, one line, ellipsis. No-worker card margin 16px, padding 12px 14px, `--alert-bg`, 2px `--alert`, radius `--r-panel`.
 - **Code editor:** root flex column, `--ed-bg`, radius `--r-panel`, overflow hidden, `box-shadow: 0 3px 0 #0000002e`; tabs row scrolls sideways; empty state centered; flash `@keyframes flash { 0%, 50% { background: var(--ed-flash) } }` 1.5s; chip margin-left 12px, line-height 1.4.
 - **Assistant:** panel radius `--r-panel`, overflow hidden; segment dividers 2px `--line`; bubbles white-space pre-wrap, `overflow-wrap: anywhere`; line paragraph centered `--fs-sm` `--hint`; card files mono `--fs-sm`; Out of date tag margin-bottom 4px; composer input `--ink`.
-- **Onboarding:** bubble fixed, z-index 50, width max-content; ring z-index 49; footer flex end, gap 8px, margin-top 10px; count margin-right auto; the tour's Bob absolute, no pointer events. Replace backdrop fixed, z-index 100, `color-mix(in srgb, var(--brand) 88%, transparent)`; modal absolute top 100px, centered, width 480px, the DESIGN.md Menus modal; body line-height 1.45, paragraphs margin 0 0 20px. Demo button: block, margin-top 24px, nowrap.
+- **Onboarding:** bubble fixed, z-index 50, width max-content; ring z-index 49; footer flex end, gap 8px, margin-top 10px; count margin-right auto; the tour's Bob absolute, no pointer events. Replace backdrop fixed, z-index 100, `color-mix(in srgb, var(--brand) 88%, transparent)`; modal absolute top 100px, centered, width 480px, the DESIGN.md Menus modal (`.center > .modal` is `position: static`, so over the Greeting it sits in the middle); body line-height 1.45, paragraphs margin 0 0 20px. Greeting card: width 560px (max 100% − 32px), padding 32px 40px 36px, `--surface`, radius `--r-card`, shadow `0 6px 0 #0000002e`, centered text, pops in like the modal; logo flex, baseline, centered, gap 8px; wordmark 64px weight 900, letter-spacing −0.01em, line-height 1, `--brand`; slogan margin 24px 0 8px, 28px weight 900 `--ink`; pitch margin 0 0 28px, `--fs-lg` weight 700; buttons in a centered column, gap 12px. Leaving: backdrop `opacity` to 0, card `scale(.9)`, both `--t-pop` `--ease`. Demo button (`demo`, also Continue): max-width 100%, overflow hidden, ellipsis, nowrap, `--brand`, white weight 900 16px, radius `--r-btn`, padding 12px 24px, 4px `--brand-dark` bottom edge. Disabled `demo` and Secondary: opacity .5, default cursor, no press.
 
 ## 19. Fixtures
 
 **File:** `src/fixtures/fixtures.ts`. Test data and the demo. Build them in exactly this order so the ids match Appendix A.
 
-`DEMO_PHOTOS` (placeholders until real photos; §17 draws them): `cupcakes.png` "Cupcakes" `#F8BBD0`, `layer-cake.png` "Layer cake" `#FFE066`, `cookies.png` "Cookies" `#FFB74D`, `bake-stall.png` "Bake stall" `#A8E6CF`.
+`DEMO_PHOTOS` (real photos in `public/demo/`, credits in `public/demo/CREDITS.md`; each a 1200×800 JPEG under 250 KB; §17 fetches them): `cupcakes.jpg`, `layer-cake.jpg`, `cookies.jpg`, `bake-stall.jpg`, `lemon-drizzle.jpg`, `brownie.jpg`.
 
 **demoProject()** ("Maya's bake sale", PRD §7). `T(type, value?, extra?)` = `addTrait` then assign extra; `B(type, name, traits = [], children = [])` = `addBlock` then set traits and children (arguments are evaluated first, so inner Traits and Blocks get lower ids). Steps:
-1. `p = emptyProject()` (Site `b1`); `p.name = "Maya's bake sale"`; `p.assets` = the 4 photos as `{ id: 'a1'…'a4', file, kind:'image', mime:'image/png', bytes:0, width:1200, height:800 }`; `p.next.a = 5`.
+1. `p = emptyProject()` (Site `b1`); `p.name = "Maya's bake sale"`; `p.assets` = the 6 photos as `{ id: 'a1'…'a6', file, kind:'image', mime:'image/jpeg', bytes:0, width:1200, height:800 }`; `p.next.a = DEMO_PHOTOS.length + 1` (7).
 2. Site: name `Maya's bake sale`, traits `[T('color','#F8BBD0'), T('vibe','playful'), T('font','friendly')]`.
 3. `home = B('page','Home')`, `menu = B('page','Menu')`, `quiz = B('page','Quiz')`; Site children `[home, menu, quiz]`.
-4. Definitions (off the Canvas): `menuButton = B('button','Menu',[T('onclick','page:'+menu)])`; `quizButton = B('button','Quiz',[T('onclick','page:'+quiz)])`; `topBar = B('navbar','Top bar',[],[menuButton, quizButton])` with layout `{d:'col',k:[{d:'row',k:[menuButton, quizButton]}]}`; `bottom = B('footer','Bottom',[],[B('text', undefined)])`. `p.defs.d1 = { id:'d1', blockId: topBar, color:{h:345,s:90,l:82} }`, `d2` = bottom with `{h:15,s:90,l:82}`; set `defines`; `p.next.d = 3`.
+4. Definitions (off the Canvas): `menuButton = B('button','Menu',[T('onclick','page:'+menu)])`; `quizButton = B('button','Quiz',[T('onclick','page:'+quiz)])`; `topBar = B('navbar','Top bar',[T('position','stays on top when scrolling')],[menuButton, quizButton])` with layout `{d:'col',k:[{d:'row',k:[menuButton, quizButton]}]}`; `bottom = B('footer','Bottom',[],[B('text',undefined,[T('text','Made by Maya, age 11')])])`. `p.defs.d1 = { id:'d1', blockId: topBar, color:{h:345,s:90,l:82} }`, `d2` = bottom with `{h:15,s:90,l:82}`; set `defines`; `p.next.d = 3`.
 5. `withBarAndBottom(content) = [makeInstance(p,'d1'), ...content, makeInstance(p,'d2')]` (the Instance for d1 is made first).
-6. `order = B('popup','Order',[],[B('form','Order form',[],[B('button',undefined,[T('onclick','submits (fake)')])])])`; `orderButton = B('button','Order',[T('onclick','popup:'+order)])`; `photo = B('image',undefined,[T('image','a1')])`; `hero = B('hero','Big welcome',[],[B('text',undefined,[T('text','Fresh cakes every Saturday')]), photo, orderButton])`; home children += `withBarAndBottom([hero, order])`.
-7. `card = B('card',undefined,[T('image','',{bobPicks:true})])`; `cakes = B('cardgrid','Cakes',[T('fakedata','6 cakes with prices')],[card])` with layout `{d:'col',k:[{d:'row',k:[card]}]}`; menu children += `withBarAndBottom([cakes])`.
-8. `answer = B('button',undefined,[T('onclick','checks an answer')])`; `cupcake = B('section','Which cupcake are you?',[T('tellbob','3 questions, then show which cupcake you are')],[answer])`; quiz children += `withBarAndBottom([cupcake])`.
+6. `orderForm = B('form','Order form',[],[B('button',undefined,[T('onclick','submits (fake)')])])` with Note `name, which cake, pickup time`; `order = B('popup','Order',[],[orderForm])`; `orderButton = B('button','Order',[T('onclick','popup:'+order)])`; `photo = B('image',undefined,[T('image','a1'), T('image','a4'), T('purpose','slideshow')])`; `headline = B('text',undefined,[T('text','Fresh cakes every Saturday')])`; `hero = B('hero','Big welcome',[T('size','full width')],[headline, photo, orderButton])` with layout `{d:'col',k:[headline,{d:'row',k:[photo, orderButton]}]}`; `cookies = B('image',undefined,[T('image','a3')])`; `halfPrice = B('text',undefined,[T('text','Cookies are half price!')])`; `panel = B('box',undefined,[],[cookies, halfPrice])`; `nextSale = B('section','Next sale',[T('purpose','countdown')],[panel])`; home children += `withBarAndBottom([hero, order, nextSale])`, with layout `{d:'col',k:[its Top bar, {d:'row',k:[hero, order]}, {d:'row',k:[nextSale, its Bottom]}]}`.
+7. `card = B('card',undefined,[T('image','',{bobPicks:true}), T('onclick','adds to cart (fake)')])`; `cakes = B('cardgrid','Cakes',[T('fakedata','6 cakes with prices'), T('purpose','filter / sort (fake)')],[card])` with layout `{d:'col',k:[{d:'row',k:[card]}]}`; menu children += `withBarAndBottom([cakes])`.
+8. `answer = B('button',undefined,[T('onclick','checks an answer')])`; `cupcake = B('section','Which cupcake are you?',[T('tellbob','3 questions, then show which cupcake you are'), T('letbobpick','the colors')],[answer])`; quiz children += `withBarAndBottom([cupcake])`.
+9. Site layout `{d:'col',k:[{d:'row',k:[home, menu, quiz]}]}`: the three Pages side by side keep the plan short on the Canvas.
+
+The demo uses every Block type and every Trait type except `sound` (a stretch Trait) and `video`.
 
 It must show no Warnings, and its Build 1 document must equal Appendix A.
 
 **builtSite(): { project, checkpoints }** — the demo after two Builds:
-1. Build the demo as above (keep the ids: site, home, menu, quiz, hero, photo, orderButton, order, cakes, card, cupcake, answer, homeBar = Home's first child, homeBottom = Home's last child).
+1. Build the demo as above (keep the ids: site, home, menu, quiz, hero, photo, orderButton, order, nextSale, panel, cakes, card, cupcake, answer, homeBar = Home's first child, homeBottom = Home's last child).
 2. `hours = addBlock(p,'section','Opening hours')` with a text Trait `Saturdays 9 till 1, at the school gate`.
 3. Files, `files(withHours)`: `index.html`, `menu.html`, `quiz.html`, `style.css`, `script.js`. Each page:
 
@@ -988,7 +990,7 @@ It must show no Warnings, and its Build 1 document must equal Appendix A.
   </nav>
 {body}
   <footer class="bottom" data-block="{page's Bottom Instance}">
-    <p data-block="{its Textbox}">Made with love by Maya. Every Saturday, 9 till 1.</p>
+    <p data-block="{its Textbox}">Made by Maya, age 11</p>
   </footer>
   <script src="script.js"></script>
 </body>
@@ -1001,7 +1003,10 @@ It must show no Warnings, and its Build 1 document must equal Appendix A.
   const homeBody = (withHours: boolean) => `  <main>
     <section class="hero" data-block="${d.hero}">
       <h1 data-block="${ids(d.hero)[0]}">Fresh cakes every Saturday</h1>
-      <img data-block="${d.photo}" src="assets/cupcakes.png" alt="A tray of pink cupcakes">
+      <div class="slides" data-block="${d.photo}">
+        <img src="assets/cupcakes.jpg" alt="A tray of pink cupcakes">
+        <img src="assets/bake-stall.jpg" alt="Our bake stall" hidden>
+      </div>
       <button class="big" data-block="${d.orderButton}" data-open="order">Order</button>
     </section>${withHours ? `
     <section class="hours" data-block="${hours}">
@@ -1018,14 +1023,24 @@ It must show no Warnings, and its Build 1 document must equal Appendix A.
         <p class="thanks" hidden>Thanks! Your order is in.</p>
       </form>
     </div>
+    <section class="next-sale" data-block="${d.nextSale}">
+      <h2>Next sale in <span id="countdown"></span></h2>
+      <div class="panel" data-block="${d.panel}">
+        <img data-block="${ids(d.panel)[0]}" src="assets/cookies.jpg" alt="A plate of cookies">
+        <p data-block="${ids(d.panel)[1]}">Cookies are half price!</p>
+      </div>
+    </section>
   </main>`
-  const cakes = [['Pink cupcake', '£1.50'], ['Lemon drizzle', '£2.00'], ['Chocolate slice', '£2.50'], ['Carrot cake', '£2.00'], ['Victoria sponge', '£3.00'], ['Brownie', '£1.80']]
+  const cakes = [['Pink cupcake', '£1.50', 'cupcakes'], ['Lemon drizzle', '£2.00', 'lemon-drizzle'], ['Chocolate slice', '£2.50', 'brownie'], ['Carrot cake', '£2.00', 'layer-cake'], ['Victoria sponge', '£3.00', 'layer-cake'], ['Brownie', '£1.80', 'brownie']]
   const menuBody = `  <main>
     <h1>Our cakes</h1>
+    <p class="sort" data-block="${d.cakes}">Sort by price: <button data-sort="up">Cheapest</button> <button data-sort="down">Priciest</button></p>
+    <p id="cart">Cart: 0</p>
     <div class="grid" data-block="${d.cakes}">
-${cakes.map(([n, price], i) => `      <article class="card" data-block="${d.card}">
-        <img src="assets/${['cupcakes', 'layer-cake', 'cookies', 'bake-stall'][i % 4]}.png" alt="${n}">
+${cakes.map(([n, price, photo]) => `      <article class="card" data-block="${d.card}">
+        <img src="assets/${photo}.jpg" alt="${n}">
         <h3>${n}</h3><p>${price}</p>
+        <button class="add">Add to cart</button>
       </article>`).join('\n')}
     </div>
   </main>`
@@ -1038,19 +1053,24 @@ ${cakes.map(([n, price], i) => `      <article class="card" data-block="${d.card
       <button data-block="${d.answer}" id="again" hidden>Try again</button>
     </section>
   </main>`
-  const css = (withHours: boolean) => `/* block ${d.site} */
+  const css = (withHours: boolean) => `/* Pictures and videos never grow wider than their box */
+img, video { max-width: 100%; height: auto; }
+
+/* block ${d.site} */
 body { margin: 0; font-family: "Nunito", sans-serif; background: #FFF5F8; color: #3A2A30; }
 main { max-width: 960px; margin: 0 auto; padding: 24px; }
 button { font: inherit; background: #E91E63; color: white; border: 0; border-radius: 999px; padding: 10px 20px; cursor: pointer; }
 
 /* block ${d.homeBar} */
-.top-bar { display: flex; gap: 20px; align-items: center; padding: 14px 24px; background: #F8BBD0; }
+.top-bar { position: sticky; top: 0; display: flex; gap: 20px; align-items: center; padding: 14px 24px; background: #F8BBD0; }
 .top-bar a { color: #3A2A30; font-weight: bold; text-decoration: none; }
 .top-bar .logo { margin-right: auto; font-size: 20px; }
 
 /* block ${d.hero} */
 .hero { text-align: center; padding: 32px; background: white; border-radius: 24px; }
+.hero { width: 100%; box-sizing: border-box; }
 .hero img { width: 100%; max-width: 480px; border-radius: 16px; display: block; margin: 16px auto; }
+.hero img[hidden] { display: none; }
 
 /* block ${d.order} */
 .popup { position: fixed; inset: 0; background: #0006; display: grid; place-items: center; }
@@ -1058,7 +1078,13 @@ button { font: inherit; background: #E91E63; color: white; border: 0; border-rad
 .popup form { background: white; padding: 24px; border-radius: 16px; display: grid; gap: 12px; min-width: 280px; position: relative; }
 .popup .close { position: absolute; top: 8px; right: 8px; padding: 4px 10px; }
 
+/* block ${d.nextSale} */
+.next-sale { margin-top: 24px; padding: 16px; background: white; border-radius: 16px; text-align: center; }
+.panel { display: flex; gap: 16px; align-items: center; justify-content: center; }
+.panel img { width: 160px; border-radius: 12px; }
+
 /* block ${d.cakes} */
+.sort { text-align: center; }
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .card { background: white; border-radius: 16px; padding: 12px; text-align: center; }
 .card img { width: 100%; border-radius: 12px; }
@@ -1083,6 +1109,39 @@ document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click
 document.querySelectorAll('.popup form').forEach(f => f.addEventListener('submit', e => {
   e.preventDefault()
   f.querySelector('.thanks').hidden = false
+}))
+
+/* block ${d.photo} */
+const slides = document.querySelectorAll('.slides img')
+let slide = 0
+if (slides.length) setInterval(() => {
+  slides[slide].hidden = true
+  slide = (slide + 1) % slides.length
+  slides[slide].hidden = false
+}, 3000)
+
+/* block ${d.nextSale} */
+const countdown = document.getElementById('countdown')
+const tick = () => {
+  const next = new Date()
+  next.setDate(next.getDate() + ((6 - next.getDay() + 7) % 7))
+  next.setHours(9, 0, 0, 0)
+  if (next < new Date()) next.setDate(next.getDate() + 7)
+  const h = Math.floor((next - new Date()) / 3600000)
+  countdown.textContent = Math.floor(h / 24) + ' days ' + (h % 24) + ' hours'
+}
+if (countdown) { tick(); setInterval(tick, 60000) }
+
+/* block ${d.cakes} */
+let cart = 0
+document.querySelectorAll('.add').forEach(b => b.addEventListener('click', () => {
+  document.getElementById('cart').textContent = 'Cart: ' + ++cart
+}))
+document.querySelectorAll('[data-sort]').forEach(b => b.addEventListener('click', () => {
+  const grid = document.querySelector('.grid')
+  const price = c => parseFloat(c.querySelector('p').textContent.slice(1))
+  const sign = b.dataset.sort === 'up' ? 1 : -1
+  ;[...grid.children].sort((x, y) => sign * (price(x) - price(y))).forEach(c => grid.append(c))
 }))
 
 /* block ${d.cupcake} */
@@ -1140,24 +1199,26 @@ if (quiz) {
 
 | Test file | Cases |
 |---|---|
-| `src/model/project.test.ts` | makeInstance copies with `from` links, name "Product card 1"; resolve follows definition changes (value + bobPicks, nested name); keeps overridden fields; keeps the Instance's own name; adds new definition parts, drops deleted ones; keeps only-here parts and removed parts gone; resolveAll numbers a second Instance "Product card 2"; addBlock page files (§4 example); applyChange records `ov` (value, note) and leaves the old Project untouched; Bob picks counts as a value change; a deleted part goes to `removed`; a part dragged out is unlinked; makeCustomBlock swaps the Block for Instance 1 in children and layout, keeps a loose Block's pos, first colors 345 then 15, `newCustomBlock` is a box "My block"; the demo's Top bar follows definition renames except the one an Instance changed; the Instance's own name is never an override; `hasOverride`. |
+| `src/model/project.test.ts` | makeInstance copies with `from` links, name "Product card 1"; resolve follows definition changes (value + bobPicks, nested name); keeps overridden fields; keeps the Instance's own name; adds new definition parts, drops deleted ones; keeps only-here parts and removed parts gone; resolveAll numbers a second Instance "Product card 2"; addBlock page files (§4 example); applyChange records `ov` (value, note) and leaves the old Project untouched; Bob picks counts as a value change; a deleted part goes to `removed`; a part dragged out is unlinked; makeCustomBlock swaps the Block for Instance 1 in children and layout, keeps a loose Block's pos, first colors 345 then 15, `newCustomBlock` is a box "My block"; the demo's Top bar follows definition renames except the one an Instance changed; the Instance's own name is never an override; `hasOverride`; the Project name renames the Site, and after a Build the Checkpoint Block, wins over the old name a Checkpoint load brings back, and a Project saved with a renamed Site takes its name on the first edit. |
 | `src/canvas/tree.test.ts` | new Block into a Page; beside in a column splits into a row (`{d:'col',k:[{d:'row',k:[a,c]},b]}`), rowBefore; moving out to the Canvas closes the cell and sets pos, moving back clears pos; Traits at an index and between Blocks; canDrop rules (Site/Page/leaf/itself/Instance in Instance); the Checkpoint Block moves only on the Canvas; a Built page reorders only inside its Checkpoint Block and stays locked; canTrash never on Site/Checkpoint/Built page/definition; removeItem deletes everything inside; onClickOptions for the demo's Order button (exact list: pick one, go to page › Home, › Menu, › Quiz, open popup › Order, then the 7 actions without "plays a sound"); loose Pages never listed and a deleted target shows missing; newInstance drop names "Top bar 4"; Custom Blocks never inside Custom Blocks. |
+| `src/canvas/drag.test.ts` | `aimStep`: same aim keeps without calling `held`; held keeps (a target, and trash); no hold without a current aim; a Block waits (new spot, and none); a Trait takes at once; trash on and off at once |
 | `src/canvas/target.test.ts` | Scene: Site (0,0,400,400) › Home (10,40,390,390) › Hero (20,80,380,200) with pills (30,100,90,128) and (100,100,160,128), Footer (20,210,380,300). `text` at (200,140) → `{id:hero, slot:null}`; at (25,140) → left of hero in Home; at (200,195) → below hero; at (200,205) → rowBefore footer; a `page` at (200,140) → `{id:site, slot:{where:'above', ref:home}}`; a Trait at (120,110) → tIdx 1, at (300,150) → tIdx 2; (600,600) → null. |
 | `src/canvas/menu.test.ts` | Block items `Add Note, Duplicate, Make Custom Block, Delete Block`; Trait `Add Note, Duplicate, Delete Trait`; Site, Checkpoint Block, Built page → `Add Note` only; Add/Delete Note; Duplicate a Block with its insides right after it; a Page copy gets its own file; a loose copy +30/+30; Trait duplicate and delete; Make Custom Block availability; definition → `Add Note`; Instance → `Add Note, Edit Custom Block, Duplicate, Delete Block`, plus Bring back removed parts (1) and Use the Custom Block's version when they apply. |
 | `src/canvas/marks.test.ts`, `tooltip.test.ts`, `bobPicks.test.ts` | Demo has no marks; deleting Quiz marks both Top bar Quiz links "!" with one stop; a new empty Page holds `lonepage, emptypage` with "?"; no Site marks nothing. Tooltips: palette texts, "the Site" / "the Checkpoint", loose lines, Checkpoint and Built page tips (`cat: null`), a gone id → null. Bob picks controls per type; setBobPicks keeps value and hint. |
+| `src/canvas/contrast.test.ts` | `#111111` and navy → white text; white, sunny yellow and pure yellow `#FFFF00` → `--ink`; lower-case hex works; `''` and `navy` → false. |
 | `src/instructions/warnings.test.ts` | Demo and built site have none; nosite; nopage; deadpage on both Top bar Instances sharing one key and `def:'d1'`; an overridden part counts alone; deadpopup; popup on another Page → deadpopup + lonepopup; noaction (Bob picks → only lonepopup); noasset for image/video/sound; deletedasset; lonepage; emptypage cleared by an empty let Bob pick or a Note; emptyvalue texts; cleared by a Trait Note or a tell Bob; "Bob skips it" never cleared; empty tell Bob always marked, empty let Bob pick never; where paths (`Home › Big welcome › Order`, `Home › Order`); only an empty let Bob pick above covers a Popup; loose ideas never marked; the Checkpoint Block's new items checked. |
 | `src/instructions/document.test.ts` | Stop with no Site/Page; header and the Build 2 extra line; Trait lines with preset names; on click lines; `go to missing page` plus its Skipped line; skipped items left out, one line per key; two items → two lines; Bob picks and empty → `you choose` with the Note; Notes, tell Bob, let Bob pick; Instances tagged and definitions listed once; the Library section; a renamed Page keeps its file; loose ideas never sent; Build 2 document shape. Snapshot: the demo's Build 1 document equals Appendix A. |
-| `api/agent.test.ts` | With a fake `Model` returning scripted replies: a Build creates files, lights each id once, ends with files; view (list, numbered, range, missing); insert (line 1 and 0); str_replace no match / 2 matches; every write to `.builds/` refused; the four Skills in the system message; the Build user message = document, then files, then the ending; 40 rounds → turns (41 model calls); time cap (`ms: 20`) → time; a throwing model → unreachable; unknown tool or missing argument → broken; finish `length`/`content_filter` → broken; an empty reply → broken; an Assistant turn yields text per round and the summary; the last 10 messages and the context in the system message; a failed write lights nothing; summary after `Summary:`; chat starts on a user message; `agentHandler`: GET returns the label, 405, 400, `start` first; limits: the 11th Build in an hour from one browser → 429 with `Try again in 60 minutes.`, the 41st Build of the day from any browser → the everyone message, `AGENT_LIMITS=off` skips them. |
-| `src/agent.test.ts` | readAgentStream reads the server's events; joins messages split across chunks; a stream ending early or a 500 → unreachable; a 429 from runAgent (mock `fetch`) → one `limit` event. |
-| `src/build.test.ts` | Build 1: sends document and empty files, saves Checkpoint 1 (`from: null`, `.builds/build-1.md`), Site → Checkpoint Block with 3 locked pages, loose ideas stay, card `done`, flash ids, Try & tweak after 900ms and not before; a limit event → nothing changes, step stays Plan, the message is returned; a failed Build changes nothing and stays on Build; nothingNew; Build 3 on the built site keeps the hand edit, `from: 2`, adds a Built page for `contact.html`. |
-| `src/checkpoints.test.ts` | Go back (code, Checkpoint Block, Built page ids kept, unbuilt → loose, Library and defs unchanged); "Before loading Checkpoint 1" saved once; Edit its Blocks (code `before`, request Blocks back unlocked); Edit on Checkpoint 1 clears code and brings the Site back; fresh ids when taken; gist, fromTag, buildOf, the warning text. |
+| `api/agent.test.ts` | With a fake `Model` returning scripted replies: a Build creates files, lights each id once, ends with files; view (list, numbered, range, missing); insert (line 1 and 0); str_replace no match / 2 matches; every write to `.builds/` refused; the five Skills in the system message; Build 1 gets `base.css` in its files and its `files` event; the Build user message = document, then files, then the ending; 40 rounds → turns (41 model calls); time cap (`ms: 20`) → time; a throwing model → unreachable; unknown tool or missing argument → broken; finish `length`/`content_filter` → broken; an empty reply → broken; an Assistant turn yields text per round and the summary; the last 10 messages and the context in the system message; a failed write lights nothing; summary after `Summary:`; chat starts on a user message; `agentHandler`: GET returns the label, 405, 400, `start` first; limits: the 11th Build in an hour from one browser → 429 with `Try again in 60 minutes.`, the 41st Build of the day from any browser → the everyone message, `AGENT_LIMITS=off` skips them; a repeated `x-scrabby-run` → 409 and doesn't count (also with limits off); a Build ending in `error` gives its hour back. |
+| `src/agent.test.ts` | readAgentStream reads the server's events; joins messages split across chunks; a stream ending early or a 500 → unreachable; a 429 from runAgent (mock `fetch`) → one `limit` event; every run sends a new `x-scrabby-run`. |
+| `src/build.test.ts` | Build 1: sends document and empty files, saves Checkpoint 1 (`from: null`, `.builds/build-1.md`), Site → Checkpoint Block with 3 locked pages, loose ideas stay, card `done`, flash ids, Try & tweak after 900ms and not before; a limit event → nothing changes, a failed card on Build with reason `limit` and the message; a plan problem → a failed card (reason `start`, its words), no request; no event within 15s (fake timers) → still Plan at 14.999s, then a failed card with the unreachable line; a Checkpoint read that never settles → a failed card after 15s, no request; a stream that throws → a failed card, reason `start` before `start` and `broken` after; a failed Build changes nothing and stays on Build; progress (working = newest lit chip, the earlier ones done; all done on done, none on failed); guardImages (adds the rule once; leaves a guarded (also `img, video, svg`), compact or missing style.css alone; leaves style.css alone when the real `skills/base.css` is in the files, and adds the rule when `base.css` has none; adds it when the only rule is commented out, in @media or behind `.gallery`; puts it after leading @charset/@import, even with `;` in their URLs, and a `/* block */` mark stays on its rule; stays under 50ms on backtracking bait: 40 `url(a)` with no `;`, unclosed comments, 20,000 `;img,video{`, `;img,video` and 200,000 spaces); nothingNew; Build 3 on the built site keeps the hand edit, `from: 2`, adds a Built page for `contact.html`. |
+| `src/checkpoints.test.ts` | Go back (code, Checkpoint Block, Built page ids kept, unbuilt → loose, Library and defs unchanged); "Before loading Checkpoint 1" saved once; Edit its Blocks (code `before`, request Blocks back unlocked); Edit on Checkpoint 1 clears code and brings the Site back; fresh ids when taken; gist, fromTag, buildOf, the warning text; names: `checkpointTitle`, `renameCheckpoint` (trim, 40 characters, blank deletes), `withNames` (saved texts, `Checkpoint 12` untouched), a named gist, tag and warning. |
 | `src/assistant.test.ts` | A turn sends 10 messages without lines, level, open file, Library, `.builds/`, never Blocks; streams into one Bob message; a diff card with summary (`total: 2` for a changed and a new file); a failed turn; a limit adds no messages and returns the text; Accept all (no Checkpoint; Undo takes it back; chat stays); Reject all; Out of date then Dismiss; Review decisions → `reviewing` then `partial`; dropPending with the line; a running reply is pending and one reply at a time; loading a Checkpoint drops it; changedBlocks. |
 | `src/code/code.test.ts`, `preview/serve.test.ts` | changedLines (examples + the 4 hours lines + none on menu.html + all lines without base); blockMarks; findBlockCode (HTML first, CSS comment fallback); blockInfo (from Checkpoints, Built page on Canvas, Instances `my`). Serve: helper first in head; no head; folder → index.html; CSS/JS types; Asset Blob; missing page text with helper and html type; other missing 404; other paths → undefined. |
-| `src/store.test.ts`, `src/history.test.ts`, `src/model/library.test.ts`, `src/download.test.ts`, `src/onboarding.test.ts`, `src/fixtures/fixtures.test.ts` | A no-undo change leaves Undo for the last edit. History order, redo cleared, key merging, a new step after undo, the limit. Library: addAsset names, clashes, uploadKind (types, SVG refused text, 30 MB text), rename + problems, deleteWarning texts. Zip: code at the top, Assets under `assets/`, no `.builds/`, the kit's `AGENTS.md` (Project name, plan per Build) and the 4 `.bob/skills/*/SKILL.md`. Demo shows no Warnings and has 4–6 photos; isEmptyProject; placeBubble cases (§17 numbers: `{0,100,300,700}`, 280×100 in 1366×768 → right x 314 y 350 tail 50; `{1200,680,1350,740}` → left x 906; a full-width bar → below y 104; `{300,150,W,H}` → inside y 174; `{10,740,60,766}` → right, y 660, tail 80). Fixtures: the demo tree, page files, asset ids; built site: 3 linked pages + CSS + JS, Checkpoint Block with Built pages, 2 Checkpoints whose Blocks hold every mark id (more than 20 marks), nothing unreachable. |
+| `src/store.test.ts`, `src/history.test.ts`, `src/model/library.test.ts`, `src/download.test.ts`, `src/onboarding.test.ts`, `src/fixtures/fixtures.test.ts` | A no-undo change leaves Undo for the last edit. `fillBlankName` puts back "My website" in the typing's step, so Undo gives the name before typing. History order, redo cleared, key merging, a new step after undo, the limit. Library: addAsset names, clashes, uploadKind (types, SVG refused text, 30 MB text), rename + problems, deleteWarning texts. Zip: code at the top, Assets under `assets/`, no `.builds/`, nothing else. Demo shows no Warnings and has 4–6 photos; isEmptyProject; placeBubble cases (§17 numbers: `{0,100,300,700}`, 280×100 in 1366×768 → right x 314 y 350 tail 50; `{1200,680,1350,740}` → left x 906; a full-width bar → below y 104; `{300,150,W,H}` → inside y 174; `{10,740,60,766}` → right, y 660, tail 80; that panel with a Block `{320,300,700,460}` → right x 314 y 474 tail 20; with `{320,0,700,768}` → x 714 y 350; with `{310,0,W,H}` → stays x 314 y 350; the bar with `{500,100,900,300}` → below x 206 y 104 tail 260; inside ignores Blocks; keepClearOf with the Canvas `{310,150,1366,768}`, Blocks `{320,100,700,400}` and `{320,800,700,900}`, W 1366, up 64: for the palette `{0,150,300,700}` → `{320,150,700,464}` and `{0,0,1366,214}`; for the step bar `{0,56,1366,90}` → only `{320,150,700,464}`). Fixtures: the demo tree, page files, asset ids; built site: 3 linked pages + CSS + JS, Checkpoint Block with Built pages, 2 Checkpoints whose Blocks hold every mark id (more than 20 marks), nothing unreachable. |
 
 ## 20a. Console messages (exact)
 
-`Saving the Project failed`, `Loading the Project failed` (§6); `Saving the Checkpoint failed`, `The Build failed to run` (BuildButton and BuildCard catch of `runBuild`) (§11); `Loading the Checkpoints failed` (Checkpoints.tsx, CodeEditor.tsx), `Loading the Checkpoint failed` (§12); `Reading the Library failed` (Preview.tsx) (§13); `The Assistant failed` (Assistant.tsx, askBobToFix) (§15); `Saving an Asset failed`, `Deleting an Asset failed` (then reload the tiles), `Loading the Library failed` (§16); `Download code failed` (§7); `Loading the demo failed`, `Starting a new Project failed` (§17); `[agent] the model call failed:` (§5).
+`Saving the Project failed`, `Loading the Project failed` (§6); `Saving the Checkpoint failed`, `The Build failed to start` (runBuild, before `start`), `The Build failed to run` (BuildButton and BuildCard catch of `runBuild`) (§11); `Loading the Checkpoints failed` (Checkpoints.tsx, CodeEditor.tsx), `Loading the Checkpoint failed` (§12); `Reading the Library failed` (Preview.tsx) (§13); `The Assistant failed` (Assistant.tsx, askBobToFix) (§15); `Saving an Asset failed`, `Deleting an Asset failed` (then reload the tiles), `Loading the Library failed` (§16); `Download code failed` (§7); `Loading the demo failed`, `Starting a new Project failed` (§17); `[agent] the model call failed:` (§5).
 
 ## 21. Known limits (keep; mark each in code with a `ponytail:` comment)
 
@@ -1170,7 +1231,6 @@ if (quiz) {
 - Loaded Checkpoints put loose ideas in one column, which may overlap other loose ideas.
 - Library rename and delete use the native `confirm()`.
 - The code editor reads Checkpoints once per visit to Try & tweak.
-- Demo photos are drawn placeholders.
 - A deleted Asset's Blob goes at once, so an Undo brings back a broken tile.
 - Usage limits live in the running function's memory: approximate, reset on a cold start, one map entry per browser.
 - Warnings are checked only on the Canvas, so the Custom Block edit view shows none.
@@ -1195,6 +1255,7 @@ if (quiz) {
 - Textbox: Words: a heading, paragraph or label, whichever fits.
 - Frame: One picture. With no image Trait, a plain placeholder box labelled with the Block's name; a Library Asset only under "let Bob pick".
 - Button: Something a visitor clicks.
+- Panel: Groups what's inside; has no meaning of its own.
 
 ## Site "Maya's bake sale" #b1
 
@@ -1204,69 +1265,93 @@ if (quiz) {
 
 ### Page "Home" (index.html) #b2
 
-- Navbar "Top bar 1" (Instance of "Top bar") #b17
-  - Button "Menu" #b18
+- Navbar "Top bar 1" (Instance of "Top bar") #b21
+  - position (where it sits inside its parent): stays on top when scrolling
+  - Button "Menu" #b22
     - on click (when a visitor clicks this Block): go to "Menu" page (menu.html) #b3
-  - Button "Quiz" #b19
+  - Button "Quiz" #b23
     - on click (when a visitor clicks this Block): go to "Quiz" page (quiz.html) #b4
 - Hero "Big welcome" #b16
+  - size (room it takes in its parent; "full screen" fills the window): full width
   - Textbox "Textbox" #b15
     - text (exact words to show, as written): "Fresh cakes every Saturday"
   - Frame "Frame" #b14
-    - image (show this picture): assets/cupcakes.png
+    - image (show this picture): assets/cupcakes.jpg
+    - image (show this picture): assets/bake-stall.jpg
+    - purpose (what this Block does by itself, no click needed): slideshow
   - Button "Order" #b13
     - on click (when a visitor clicks this Block): open "Order" popup #b12
 - Popup "Order" #b12
   - Form "Order form" #b11
+    - Note: "name, which cake, pickup time"
     - Button "Button" #b10
       - on click (when a visitor clicks this Block): submits (fake)
-- Footer "Bottom 1" (Instance of "Bottom") #b20
-  - Textbox "Textbox" #b21
+- Section "Next sale" #b20
+  - purpose (what this Block does by itself, no click needed): countdown
+  - Panel "Panel" #b19
+    - Frame "Frame" #b17
+      - image (show this picture): assets/cookies.jpg
+    - Textbox "Textbox" #b18
+      - text (exact words to show, as written): "Cookies are half price!"
+- Footer "Bottom 1" (Instance of "Bottom") #b24
+  - Textbox "Textbox" #b25
+    - text (exact words to show, as written): "Made by Maya, age 11"
 
 ### Page "Menu" (menu.html) #b3
 
-- Navbar "Top bar 2" (Instance of "Top bar") #b24
-  - Button "Menu" #b25
+- Navbar "Top bar 2" (Instance of "Top bar") #b28
+  - position (where it sits inside its parent): stays on top when scrolling
+  - Button "Menu" #b29
     - on click (when a visitor clicks this Block): go to "Menu" page (menu.html) #b3
-  - Button "Quiz" #b26
+  - Button "Quiz" #b30
     - on click (when a visitor clicks this Block): go to "Quiz" page (quiz.html) #b4
-- Card grid "Cakes" #b23
+- Card grid "Cakes" #b27
   - fake data (fill with made-up content as described): "6 cakes with prices"
-  - Card "Card" #b22
+  - purpose (what this Block does by itself, no click needed): filter / sort (fake)
+  - Card "Card" #b26
     - image (show this picture): you choose
-- Footer "Bottom 2" (Instance of "Bottom") #b27
-  - Textbox "Textbox" #b28
+    - on click (when a visitor clicks this Block): adds to cart (fake)
+- Footer "Bottom 2" (Instance of "Bottom") #b31
+  - Textbox "Textbox" #b32
+    - text (exact words to show, as written): "Made by Maya, age 11"
 
 ### Page "Quiz" (quiz.html) #b4
 
-- Navbar "Top bar 3" (Instance of "Top bar") #b31
-  - Button "Menu" #b32
+- Navbar "Top bar 3" (Instance of "Top bar") #b35
+  - position (where it sits inside its parent): stays on top when scrolling
+  - Button "Menu" #b36
     - on click (when a visitor clicks this Block): go to "Menu" page (menu.html) #b3
-  - Button "Quiz" #b33
+  - Button "Quiz" #b37
     - on click (when a visitor clicks this Block): go to "Quiz" page (quiz.html) #b4
-- Section "Which cupcake are you?" #b30
+- Section "Which cupcake are you?" #b34
   - The user says: "3 questions, then show which cupcake you are"
-  - Button "Button" #b29
+  - You choose: the colors
+  - Button "Button" #b33
     - on click (when a visitor clicks this Block): checks an answer
-- Footer "Bottom 3" (Instance of "Bottom") #b34
-  - Textbox "Textbox" #b35
+- Footer "Bottom 3" (Instance of "Bottom") #b38
+  - Textbox "Textbox" #b39
+    - text (exact words to show, as written): "Made by Maya, age 11"
 
 ## Custom Blocks
 
 - Navbar "Top bar"
+  - position (where it sits inside its parent): stays on top when scrolling
   - Button "Menu"
     - on click (when a visitor clicks this Block): go to "Menu" page (menu.html) #b3
   - Button "Quiz"
     - on click (when a visitor clicks this Block): go to "Quiz" page (quiz.html) #b4
 - Footer "Bottom"
   - Textbox "Textbox"
+    - text (exact words to show, as written): "Made by Maya, age 11"
 
 ## Library
 
-- assets/cupcakes.png: image, 1200×800 px, used by a Trait
-- assets/layer-cake.png: image, 1200×800 px
-- assets/cookies.png: image, 1200×800 px
-- assets/bake-stall.png: image, 1200×800 px
+- assets/cupcakes.jpg: image, 1200×800 px, used by a Trait
+- assets/layer-cake.jpg: image, 1200×800 px
+- assets/cookies.jpg: image, 1200×800 px, used by a Trait
+- assets/bake-stall.jpg: image, 1200×800 px, used by a Trait
+- assets/lemon-drizzle.jpg: image, 1200×800 px
+- assets/brownie.jpg: image, 1200×800 px
 ```
 
 (The document ends with one newline after the last Library line.)

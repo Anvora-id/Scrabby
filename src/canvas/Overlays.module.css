@@ -109,19 +109,31 @@
 .tip {
   position: fixed;
   z-index: 40;
-  max-width: 260px;
-  padding: 9px 12px;
-  background: var(--surface);
-  border: 2px solid var(--line);
-  border-left: 5px solid var(--c3);
-  border-radius: 14px;
+  max-width: 240px;
+  padding: 7px 10px;
+  background: var(--ink);
+  border-radius: 10px;
   box-shadow: var(--shadow-menu);
+  color: var(--surface);
   pointer-events: none;
   animation: tipFade var(--t-quick) ease;
 }
 
-.tipMuted {
-  border-left-color: var(--muted);
+/* The arrow: a turned square half-hidden under the card, on the side facing the item. */
+.tip::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: calc(var(--arrow, 16px) - 4px);
+  width: 8px;
+  height: 8px;
+  background: inherit;
+  transform: rotate(45deg);
+}
+
+.tip[data-above]::before {
+  top: auto;
+  bottom: -4px;
 }
 
 @keyframes tipFade {
@@ -129,25 +141,37 @@
   to   { opacity: 1; }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .tip,
+  .ctxMenu {
+    animation: none;
+  }
+}
+
 .tipTitle {
   display: flex;
   align-items: center;
   gap: 6px;
   font-weight: 900;
-  color: var(--ink);
+}
+
+/* The category's sticker color; Checkpoint and Built page have none. */
+.tipTitle svg {
+  color: var(--c1, var(--idle));
 }
 
 .tipText {
   font-size: var(--fs);
   font-weight: 600;
-  color: var(--text);
+  color: color-mix(in srgb, var(--surface) 85%, transparent);
   line-height: 1.4;
 }
 
 .tipLoose {
+  margin-top: 2px;
   font-size: var(--fs-sm);
   font-style: italic;
-  color: var(--hint);
+  color: var(--idle);
 }
 
 /* Block sticky note */

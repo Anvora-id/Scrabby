@@ -18,21 +18,58 @@
 
 .placed {
   position: absolute;
+  width: max-content; /* else it shrinks to the Canvas's width and squeezes rows */
 }
 
-.avatar {
+/* body > outranks the copied element's own classes: a palette Block's position: relative
+   loads later and would drop the copy into the page flow, below the screen. */
+body > .avatar {
   position: fixed;
   z-index: 50;
+  box-sizing: border-box;
+  margin: 0;
   pointer-events: none;
   filter: var(--shadow-drag);
   transform-origin: 0 0;
-  scale: 1.03;
+  /* --lift is 1.03, capped at 8px for big Blocks (set when the drag starts) */
+  scale: var(--lift, 1.03);
   transition: scale var(--t-quick);
 }
 
 @starting-style {
-  .avatar {
+  body > .avatar {
     scale: 1;
+  }
+}
+
+/* let go where nothing takes it, or on the palette to delete it */
+body > .avatar.gone {
+  opacity: 0;
+  scale: 0.9;
+  transition: opacity var(--t-quick) var(--ease), scale var(--t-quick) var(--ease);
+}
+
+/* a moved item's copy flies back to its spot */
+body > .avatar.back {
+  scale: 1;
+  transition: left var(--t-quick) var(--ease), top var(--t-quick) var(--ease),
+    scale var(--t-quick) var(--ease), transform var(--t-quick) var(--ease);
+}
+
+/* the item waits in its spot until its copy is back */
+.waiting {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body > .avatar,
+  body > .avatar.back {
+    transition: none;
+  }
+
+  body > .avatar.gone {
+    scale: var(--lift, 1.03);
+    transition: opacity var(--t-quick) var(--ease);
   }
 }
 

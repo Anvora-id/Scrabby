@@ -24,7 +24,12 @@ async function start(): Promise<void> {
       fail(err)
       return
     }
-    stored.then(() => location.replace('/preview/' + projectId + '/' + path))
+    // A worker that never answers would leave the Preview blank for good.
+    const late = setTimeout(() => fail(new Error("The Service Worker didn't store the files within 10 s.")), 10_000)
+    stored.then(() => {
+      clearTimeout(late)
+      location.replace('/preview/' + projectId + '/' + path)
+    })
   })
   // helper.js is a static file and can't read VITE_APP_ORIGIN; the Prototype pages share this frame's sessionStorage.
   sessionStorage.setItem('scrabby-app-origin', APP)

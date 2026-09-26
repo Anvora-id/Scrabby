@@ -24,11 +24,21 @@
 .projectName {
   margin-left: 10px;
   background: rgba(255, 255, 255, 0.15);
+  border: none;
   border-radius: 10px;
   padding: 6px 12px;
+  font-family: var(--font);
   font-weight: var(--w-bold);
   font-size: var(--fs-md);
   color: #fff;
+}
+
+.projectName:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.projectName:focus {
+  outline: 2px solid #fff;
 }
 
 .menuBtn {
