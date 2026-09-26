@@ -8,7 +8,7 @@ import type { Pending } from '../canvas/drag.ts'
 import { targetAt } from '../canvas/target.ts'
 import type { DragRects } from '../canvas/target.ts'
 import { canDrop, canTrash, dropItem, isTraitItem, parentMap, removeItem, repairLayout } from '../canvas/tree.ts'
-import type { Drop } from '../canvas/tree.ts'
+import type { DragItem, Drop } from '../canvas/tree.ts'
 import BlockView from '../canvas/BlockView.tsx'
 import TraitPill from '../canvas/TraitPill.tsx'
 import { ContextMenu, Tooltip } from '../canvas/Overlays.tsx'
@@ -18,7 +18,6 @@ import { warnings } from '../instructions/warnings.ts'
 import styles from '../canvas/Canvas.module.css'
 import parts from '../canvas/parts.module.css'
 import { droppedBlock } from '../onboarding.ts'
-import { DemoButton } from '../shell/Onboarding.tsx'
 
 const MIN_ZOOM = 0.3
 const MAX_ZOOM = 2
@@ -233,6 +232,8 @@ export default function Canvas() {
       el.querySelectorAll<HTMLInputElement>('input, textarea, select').forEach((f, i) => { fields[i].value = f.value })
       a.classList.add(styles.avatar)
       a.classList.remove(parts.over)
+      // Keeps the size it had where it was grabbed, e.g. a palette Trait's wider padding.
+      a.style.width = `${el.offsetWidth}px`
       if (worldRef.current?.contains(el)) a.style.transform = `scale(${view.current.z})`
       document.body.append(a)
       avatar.current = a
@@ -261,22 +262,66 @@ export default function Canvas() {
       if (JSON.stringify(next) !== JSON.stringify({ target: d.target, trash: d.trash })) setDrag({ ...d, ...next })
     }
 
-    function end(e: PointerEvent) {
+    // Adds cls, then calls done once the transitions or animations it starts have ended (at once if reduced motion starts none).
+    function play(el: HTMLElement, cls: string, done: () => void) {
+      el.classList.add(cls)
+      Promise.allSettled(el.getAnimations().map(x => x.finished)).then(done)
+    }
+
+    // Where nothing takes it, a new item's copy fades away and a moved item's copy flies back to its spot.
+    function putBack(a: HTMLElement, item: DragItem) {
+      if (item.kind !== 'block' && item.kind !== 'trait') return play(a, styles.gone, () => a.remove())
+      // The next frame comes after the render that shows the item in its spot again.
+      requestAnimationFrame(() => {
+        const el = itemEl(item.id)
+        if (!el) return play(a, styles.gone, () => a.remove())
+        const r = el.getBoundingClientRect()
+        el.classList.add(styles.waiting)
+        a.style.left = `${r.left}px`
+        a.style.top = `${r.top}px`
+        a.style.transform = `scale(${view.current.z})`
+        play(a, styles.back, () => { a.remove(); el.classList.remove(styles.waiting) })
+      })
+    }
+
+    function land(id: string) {
+      requestAnimationFrame(() => {
+        const el = itemEl(id)
+        if (el) play(el, styles.landed, () => el.classList.remove(styles.landed))
+      })
+    }
+
+    // Ends the drag and hands back what was dragged and its copy; null when nothing was dragged.
+    function stop() {
       takePending()
       const d = getDrag()
-      if (!d) return
-      avatar.current?.remove()
+      if (!d) return null
+      const a = avatar.current!
       avatar.current = null
       document.body.style.userSelect = ''
       rects.current = null
       setDrag(null)
-      if (e.type === 'pointercancel') return
-      const { item, target, trash } = d
+      return { d, a }
+    }
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return
+      const s = stop()
+      if (s) putBack(s.a, s.d.item)
+    }
+
+    function end(e: PointerEvent) {
+      const s = stop()
+      if (!s) return
+      const { d: { item, target, trash }, a } = s
+      if (e.type === 'pointercancel') return putBack(a, item)
       if (trash) {
+        play(a, styles.gone, () => a.remove())
         if (item.kind === 'block' || item.kind === 'trait') updateProject(q => removeItem(q, item.id))
         return
       }
-      if (!target) return
+      if (!target) return putBack(a, item)
+      a.remove()
       const to: Drop = { ...target }
       if (target.id === 'canvas') {
         const r = viewportRef.current!.getBoundingClientRect(), v = view.current
@@ -288,20 +333,27 @@ export default function Canvas() {
       const p = getProject()
       const dry = structuredClone(p)
       dropItem(dry, item, to)
-      if (shape(dry) === shape(p)) return
+      // Back on its own spot: it still lands, but nothing is saved.
+      if (shape(dry) === shape(p)) {
+        if ('id' in item) land(item.id)
+        return
+      }
       let newId = ''
       updateProject(q => { newId = dropItem(q, item, to) })
       setBusy(newId)
+      land(newId)
       if (item.kind === 'newBlock') droppedBlock(newId)
     }
 
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', end)
     window.addEventListener('pointercancel', end)
+    window.addEventListener('keydown', onKey)
     return () => {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', end)
       window.removeEventListener('pointercancel', end)
+      window.removeEventListener('keydown', onKey)
     }
   }, [])
 
@@ -354,7 +406,6 @@ export default function Canvas() {
             {canvas.children.map((id, i) => (
               <div key={id} className={styles.placed} style={at(p.blocks[id]?.pos, i)}>
                 <BlockView p={p} id={id} />
-                {p.blocks[id]?.type === 'site' && !p.blocks[id].children.length && <DemoButton />}
               </div>
             ))}
             {canvas.traits.map((id, i) => (
