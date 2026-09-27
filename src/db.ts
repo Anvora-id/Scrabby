@@ -85,9 +85,13 @@ export async function listAssets(projectId: string): Promise<AssetBlob[]> {
   return db.getAllFromIndex('assets', 'projectId', projectId)
 }
 
-export async function deleteAsset(projectId: string, id: string): Promise<void> {
+/** Deletes the Blobs of Assets the Project no longer lists. */
+export async function pruneAssets(p: Project): Promise<void> {
+  const keep = new Set(p.assets.map(a => a.id))
   const db = await getDb()
-  await db.delete('assets', [projectId, id])
+  for (const b of await db.getAllFromIndex('assets', 'projectId', p.id)) {
+    if (!keep.has(b.id)) await db.delete('assets', [p.id, b.id])
+  }
 }
 
 // re-export Asset type for consumers that import from db

@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { applyChange, emptyProject, NEW_NAME } from './model/project.ts'
 import type { Project } from './model/types.ts'
 import { createHistory } from './history.ts'
-import { loadLatestProject, saveProject } from './db.ts'
+import { loadLatestProject, pruneAssets, saveProject } from './db.ts'
 
 export type Step = 'plan' | 'build' | 'try'
 export type PlanTab = 'canvas' | 'library' | 'checkpoints'
@@ -92,6 +92,8 @@ export async function startStore(): Promise<void> {
   }
   if (saved) {
     projectStore.set(saved)
+    // A deleted Asset keeps its Blob until the next page load, so Undo can bring it back whole.
+    pruneAssets(saved).catch(e => console.error('Cleaning the Library failed', e))
   } else {
     setProject(projectStore.get())
   }

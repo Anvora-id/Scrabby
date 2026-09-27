@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('./db.ts', () => ({
   loadLatestProject: vi.fn().mockResolvedValue(undefined),
   saveProject: vi.fn().mockResolvedValue(undefined),
+  pruneAssets: vi.fn().mockResolvedValue(undefined),
   clearAll: vi.fn().mockResolvedValue(undefined),
 }))
 
