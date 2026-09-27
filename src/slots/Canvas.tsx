@@ -23,7 +23,7 @@ const MIN_ZOOM = 0.3
 const MAX_ZOOM = 2
 const CORNER = 40
 const DOTS = 24
-const DWELL = 250 // ms the pointer rests on a spot before a Block's gap moves there
+const DWELL = 75 // ms the pointer rests on a spot before a Block's gap moves there
 const HOLD = [[12, 0], [-12, 0], [0, 12], [0, -12]] // a chosen spot holds while any of these nudges still picks it
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n))
@@ -381,11 +381,14 @@ export default function Canvas() {
     }
 
     // Ends the drag and hands back what was dragged, its copy and the element it was grabbed from; null when nothing was dragged.
+    // A release before the gap has moved still aims at the spot under the pointer, not the old gap.
     function takeDrag() {
       takePending()
+      const next = dwell.current?.next
       stopDwell()
-      const d = getDrag()
-      if (!d) return null
+      const drag = getDrag()
+      if (!drag) return null
+      const d = next ? { ...drag, ...next } : drag
       snap()
       const a = avatar.current!, el = source.current!
       avatar.current = source.current = null
