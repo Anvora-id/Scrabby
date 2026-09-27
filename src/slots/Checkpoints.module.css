@@ -62,10 +62,19 @@
   transition: transform 250ms var(--spring), box-shadow 250ms var(--spring);
 }
 
+.danger {
+  background: var(--alert);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--alert) 70%, #000);
+}
+
 .primary:active {
   transform: translateY(2px);
   box-shadow: 0 1px 0 var(--brand-dark);
   transition-duration: var(--t-press);
+}
+
+.danger:active {
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--alert) 70%, #000);
 }
 
 .text {

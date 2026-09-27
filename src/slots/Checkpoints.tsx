@@ -173,9 +173,9 @@ export default function Checkpoints() {
   )
 }
 
-interface WarningProps { title: string; lines: string[]; confirm: string; onCancel: () => void; onConfirm: () => void }
+interface WarningProps { title: string; lines: string[]; confirm: string; danger?: boolean; onCancel: () => void; onConfirm: () => void }
 
-export function Warning({ title, lines, confirm, onCancel, onConfirm }: WarningProps) {
+export function Warning({ title, lines, confirm, danger, onCancel, onConfirm }: WarningProps) {
   const ref = useRef<HTMLDialogElement>(null)
   useEffect(() => { ref.current?.showModal() }, [])
   return (
@@ -185,7 +185,7 @@ export function Warning({ title, lines, confirm, onCancel, onConfirm }: WarningP
         {lines.map(l => <p key={l}>{l}</p>)}
         <div className={styles.buttons}>
           <button className={styles.text} onClick={onCancel}>Cancel</button>
-          <button className={styles.primary} onClick={onConfirm} autoFocus>{confirm}</button>
+          <button className={cx(styles.primary, danger && styles.danger)} onClick={onConfirm} autoFocus>{confirm}</button>
         </div>
       </div>
     </dialog>

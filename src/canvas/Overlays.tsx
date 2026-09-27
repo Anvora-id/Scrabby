@@ -9,6 +9,7 @@ import { menuItems } from './menu.ts'
 import type { MenuItem } from './menu.ts'
 import { tipFor } from './tooltip.ts'
 import { cx } from './cx.ts'
+import { Warning } from '../slots/Checkpoints.tsx'
 import styles from './Overlays.module.css'
 import parts from './parts.module.css'
 
@@ -57,6 +58,7 @@ function useMenuState(): MenuState | null {
 export function ContextMenu({ p }: { p: Project }) {
   const state = useMenuState()
   const ref = useRef<HTMLDivElement>(null)
+  const [ask, setAsk] = useState<MenuItem | null>(null)
 
   useEffect(() => {
     if (!state) return
@@ -72,6 +74,22 @@ export function ContextMenu({ p }: { p: Project }) {
     }
   }, [state])
 
+  const run = (item: MenuItem) => {
+    if (item.change) updateProject(item.change, null)
+    else if (item.act) item.act()
+    else if (item.edit) setEditing(item.edit)
+  }
+
+  if (ask?.warn) return (
+    <Warning
+      {...ask.warn}
+      confirm={ask.label}
+      danger
+      onCancel={() => setAsk(null)}
+      onConfirm={() => { setAsk(null); run(ask) }}
+    />
+  )
+
   if (!state) return null
   const { id, x, y } = state
   if (!state.items && !p.blocks[id] && !p.traits[id]) return null
@@ -86,12 +104,11 @@ export function ContextMenu({ p }: { p: Project }) {
         <button
           key={item.label}
           role="menuitem"
-          className={styles.ctxItem}
+          className={cx(styles.ctxItem, item.label.startsWith('Delete') && styles.ctxDelete)}
           onClick={() => {
             setMenuState(null)
-            if (item.change) updateProject(item.change, null)
-            else if (item.act) item.act()
-            else if (item.edit) setEditing(item.edit)
+            if (item.warn) setAsk(item)
+            else run(item)
           }}
         >
           {item.label}

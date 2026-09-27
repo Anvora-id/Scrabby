@@ -9,6 +9,7 @@ export interface MenuItem {
   change?: (p: Project) => void
   act?: () => void
   edit?: string
+  warn?: { title: string; lines: string[] } // asked before `change` runs
 }
 
 export function deleteNote(p: Project, id: string): void {
@@ -141,6 +142,20 @@ export function menuItems(p: Project, id: string): MenuItem[] {
     // Delete Block (when canTrash)
     if (canTrash(p, { kind: 'block', id })) {
       items.push({ label: 'Delete Block', change: q => removeItem(q, id) })
+    }
+
+    // A Built page takes its file with it, or the next Build brings the page back from the code.
+    if (b.locked && b.type === 'page') {
+      const lines = [
+        `Its code, ${b.file}, is deleted from your website. Links to it from other pages will lead nowhere.`,
+        'Your Checkpoints keep their code, so you can go back to one that still has this page.',
+      ]
+      if (b.children.length || b.traits.length) lines.splice(1, 0, 'The Blocks and Traits you put on it are deleted too.')
+      items.push({
+        label: 'Delete Page',
+        warn: { title: `Delete the Built page "${b.name}"?`, lines },
+        change: q => { if (b.file) delete q.files[b.file]; removeItem(q, id) },
+      })
     }
   } else if (t) {
     // Trait: Duplicate
