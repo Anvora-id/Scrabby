@@ -146,7 +146,7 @@ function ListMenu({ at, title, value, options, onPick, onClose }: {
   return (
     <Popover at={at} title={title} onClose={onClose}>
       <div ref={ref} role="listbox" aria-label={title} onKeyDown={onKeyDown}>
-        {options.map(item)}
+        <div className={styles.options}>{options.map(item)}</div>
         <div className={styles.split} aria-hidden />
         {item({ value: BOB_PICKS, label: '💡 Bob picks' })}
         {item({ value: CUSTOM, label: 'custom…' })}
