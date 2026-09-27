@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://scrabby-two.vercel.app"><img alt="Live app" src="https://img.shields.io/badge/Live%20app-scrabby--two.vercel.app-6B4EFF?style=flat-square"></a>
-  <a href="LICENSE"><img alt="License: Apache 2.0" src="https://img.shields.io/badge/License-Apache%202.0-4B31D1?style=flat-square"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-4B31D1?style=flat-square"></a>
   <img alt="lablab.ai IBM Bob 2.0 Hackathon" src="https://img.shields.io/badge/lablab.ai-IBM%20Bob%202.0%20Hackathon-1F1A33?style=flat-square">
   <img alt="Built with IBM Bob" src="https://img.shields.io/badge/Built%20with-IBM%20Bob-315DFB?style=flat-square">
 </p>
@@ -140,7 +140,7 @@ Scrabby is built by the Anvora.id team.
 
 ## License and acknowledgements
 
-Scrabby is released under the [Apache License 2.0](LICENSE).
+Scrabby is released under the [MIT License](LICENSE).
 
 - Built for the IBM Bob 2.0 Hackathon, hosted by lablab.ai. Thank you to lablab.ai and IBM for the challenge and for Bob.
 - The demo photos come from Unsplash. Each photographer is credited in [public/demo/CREDITS.md](public/demo/CREDITS.md).
