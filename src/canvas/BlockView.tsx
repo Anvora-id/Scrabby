@@ -96,7 +96,9 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
             <span className={styles.type}>
               <Icon weight="fill" size={16} />
               {b.inst ? p.blocks[def?.blockId ?? '']?.name : b.defines ? 'Custom Block'
-                : checkpoint ? `Site (${p.checkpoint ? checkpointTitle(p, p.checkpoint) : 'Checkpoint'})` : type.label}
+                // A restored or saved Checkpoint from before the first Build leaves a Site Block, so it names the Checkpoint too.
+                : (checkpoint || site) && p.checkpoint ? `Site (${checkpointTitle(p, p.checkpoint)})`
+                : checkpoint ? 'Site (Checkpoint)' : type.label}
             </span>
             {/* The Site's name is the Project name (applyChange copies it onto the Site or Checkpoint Block) */}
             <TextField className={styles.name} value={b.name} onChange={v => updateProject(d => {
