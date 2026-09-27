@@ -432,7 +432,13 @@ describe('withFallback', () => {
     expect(events.filter((e) => e.type === 'model')).toEqual([{ type: 'model', label: 'Gemini' }])
     expect(events[1]).toEqual({ type: 'model', label: 'Gemini' })
     expect(primary.got).toHaveLength(failAt + 1)
-    expect(fallback.got[0]).toEqual(primary.got[failAt])
+    // Same messages, but each of Bob's steps carries Gemini's placeholder signature on its first call.
+    const skip = { google: { thought_signature: 'skip_thought_signature_validator' } }
+    expect(fallback.got[0]).toEqual(
+      primary.got[failAt].map((m) =>
+        m.role === 'assistant' && m.tool_calls?.length ? { ...m, tool_calls: [{ ...m.tool_calls[0], extra_content: skip }, ...m.tool_calls.slice(1)] } : m,
+      ),
+    )
     expect(fallback.got).toHaveLength(2)
     const last = events[events.length - 1]
     expect(last.type === 'files' && Object.keys(last.files).sort()).toEqual(

@@ -148,7 +148,7 @@ export default defineConfig({
 | `AGENT_AUTH_SCHEME` | `Apikey` | Sent as `authorization: <scheme> <key>`. `Bearer` for other providers. |
 | `AGENT_MODEL` | `premium` | The model id. |
 | `AGENT_HEADERS` | `{}` | Optional JSON object of extra request headers (for example a `User-Agent` or a team-id header the endpoint asks for). |
-| `AGENT_REASONING_EFFORT` | `low` | Sent as `reasoning_effort` with every request to the main model. |
+| `AGENT_REASONING_EFFORT` | `low` | Sent as `reasoning_effort` with every request, to the main model and the fallback. Never `minimal`: `gemini-3.8-flash` rejects it. |
 | `AGENT_LABEL` | `IBM Bob` | The name on the Bob badge. |
 | `AGENT_LIMITS` | on | `off` turns the usage limits off (local dev only). |
 | `FALLBACK_API_KEY` | none | Turns the fallback model on (§5.2 `withFallback`). Server only (Vercel: Sensitive). |
@@ -400,7 +400,12 @@ A stream is: `start`, then any `text`/`block` (and at most one `model`), then ex
 Constants: `MAX_ROUNDS = 40`, `MAX_MS = 240_000`. Exports: `MAX_ROUNDS`, `MAX_MS`, types `ChatMsg`, `ToolCall`, `ModelReply`, `Model`, type `ModelConfig`, functions `runLoop`, `primaryConfig`, `fallbackConfig`, `openAiModel`, `withFallback`, `bobModel`, `createLimits`, `agentHandler`, and `export default { fetch: agentHandler(bobModel) }` (Vercel's web handler shape; the dev plugin calls `default.fetch`).
 
 ```ts
-export type ToolCall = { id: string; type: 'function'; function: { name: string; arguments: string } }
+export type ToolCall = {
+  id: string
+  type: 'function'
+  function: { name: string; arguments: string }
+  extra_content?: { google?: { thought_signature?: string } }
+}
 export type ChatMsg =
   | { role: 'system' | 'user'; content: string }
   | { role: 'assistant'; content: string | null; tool_calls?: ToolCall[] }
@@ -472,7 +477,7 @@ LEVELS:
    7. `stop.throwIfAborted()`.
 3. catch: if `signal?.aborted` → return silently (the client left). reason = Broken ? `broken` : `timeout.aborted` ? `time` : `unreachable`. Log `[agent] the model call failed:` + message when unreachable. Yield `{ type:'error', reason }`.
 
-**ModelConfig** = `{ baseUrl, apiKey, authScheme, model, headers, reasoning? }` (all strings; `headers` is JSON; only `primaryConfig()` sets `reasoning`, from `AGENT_REASONING_EFFORT`). `primaryConfig()` reads the `AGENT_*` variables, `fallbackConfig()` the `FALLBACK_*` ones (`null` when `FALLBACK_API_KEY` is unset), each with its §1 default.
+**ModelConfig** = `{ baseUrl, apiKey, authScheme, model, headers, reasoning? }` (all strings; `headers` is JSON; both set `reasoning` from `AGENT_REASONING_EFFORT`, so Gemini does not think at its default and run out of `max_tokens` mid-file). `primaryConfig()` reads the `AGENT_*` variables, `fallbackConfig()` the `FALLBACK_*` ones (`null` when `FALLBACK_API_KEY` is unset), each with its §1 default.
 
 **openAiModel(cfg): Model**:
 - POST `${cfg.baseUrl}/chat/completions` (strip one trailing `/` from the base), headers `content-type: application/json`, `authorization: ${cfg.authScheme} ${cfg.apiKey}`, plus `JSON.parse(cfg.headers)`; body `{ model: cfg.model, messages, tools: TOOLS, tool_choice: 'auto', reasoning_effort: cfg.reasoning, max_tokens: 16_000 }` (with thinking on and no `max_tokens`, the Bob endpoint cuts replies at 5,120 tokens, and one whole page won't fit; an unset `reasoning` is left out); `signal`.
@@ -480,7 +485,7 @@ LEVELS:
 - `choice = json.choices?.[0]`. No choice → `{ content: null, tool_calls: [], finish: null }` (→ broken). `content` = `message.content` when it is a string; when it is an array, join the `text` of its parts; else null. `tool_calls = message.tool_calls ?? []`. `finish = choice.finish_reason ?? null`.
 - Never log the key or the headers.
 
-**withFallback(primary: Model, fallback: Model | null, label: string, onSwitch: (label: string) => void): Model**: calls `primary` until a call throws. If the throw is not an abort (`signal.aborted` false) and `fallback` is set: `console.error('[agent] Bob failed, switching to <label>:', message)`, call `onSwitch(label)` once, retry the same call on `fallback`, and use `fallback` for every later call of this run. Without a fallback, rethrow (→ `unreachable`). A `broken`, `turns` or `time` result never switches.
+**withFallback(primary: Model, fallback: Model | null, label: string, onSwitch: (label: string) => void): Model**: calls `primary` until a call throws. If the throw is not an abort (`signal.aborted` false) and `fallback` is set: `console.error('[agent] Bob failed, switching to <label>:', message)`, call `onSwitch(label)` once, set `tool_calls[0].extra_content = { google: { thought_signature: 'skip_thought_signature_validator' } }` on every assistant message of the call that has tool calls (Gemini 3 answers 400 when a step earlier in the run has no thought signature, and Bob's steps never have one), retry the same call on `fallback`, and use `fallback` for every later call of this run. Without a fallback, rethrow (→ `unreachable`). A `broken`, `turns` or `time` result never switches.
 
 **bobModel(onSwitch = () => {}): Model** (reads env on every call, so one per request): `withFallback(openAiModel(primaryConfig()), fallbackConfig() && openAiModel(fallbackConfig()), FALLBACK_LABEL || 'Gemini', onSwitch)`.
 
