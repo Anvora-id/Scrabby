@@ -149,7 +149,7 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
                 <div className={styles.emptyHint}>
                   Drag a Page into your Site to start.
                 </div>
-              ) : b.locked && b.type === 'page' && <span className={styles.dropHint}>drop Blocks or Traits here</span>}
+              ) : b.locked && b.type === 'page' && b.traits.length === 0 && <span className={styles.dropHint}>drop Blocks or Traits here</span>}
             </div>
           )}
         </>
