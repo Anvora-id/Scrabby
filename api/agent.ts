@@ -344,6 +344,11 @@ export function createLimits() {
   }
 }
 
+// Antivirus web shields (Kaspersky, say) hold a quiet stream back until more bytes follow, so `start` would reach
+// the browser only with Bob's first reply, after the Build's start deadline. A blank line each second lets every
+// event through at once; readers skip blank lines.
+const HEARTBEAT_MS = 1_000
+
 export function agentHandler(model: (onSwitch: (label: string) => void) => Model, limits = createLimits()) {
   return async (request: Request): Promise<Response> => {
     if (request.method === 'GET') return Response.json({ model: process.env.AGENT_LABEL || 'IBM Bob' })
@@ -371,24 +376,48 @@ export function agentHandler(model: (onSwitch: (label: string) => void) => Model
     let stream!: ReadableStreamDefaultController<Uint8Array>
     // The model event goes out at once, while runLoop still waits on the fallback's reply.
     const onSwitch = (label: string) => send(stream, { type: 'model', label })
+    let files = false
     const events = (async function* (): AsyncGenerator<AgentEvent> {
-      yield { type: 'start' }
-      for await (const event of runLoop(req, model(onSwitch), { signal: request.signal })) {
-        if (event.type === 'error') giveBack()
-        yield event
+      try {
+        yield { type: 'start' }
+        for await (const event of runLoop(req, model(onSwitch), { signal: request.signal })) {
+          if (event.type === 'files') files = true
+          yield event
+        }
+      } finally {
+        // A Build that ends without files (an error, or the client left) gives its hour back.
+        if (!files) giveBack()
       }
     })()
+    let beat: ReturnType<typeof setInterval> | undefined
+    // The client left or cancelled the stream: stop the heartbeat and end the run, so nothing keeps a timer alive.
+    const end = () => {
+      clearInterval(beat)
+      return events.return(undefined)
+    }
+    request.signal.addEventListener('abort', end, { once: true })
     const body = new ReadableStream<Uint8Array>({
       start(controller) {
         stream = controller
+        // Never outlives the run: runLoop stops at MAX_MS, so the cap only backs up a stream that was never closed.
+        const until = Date.now() + MAX_MS + 10_000
+        beat = setInterval(() => {
+          if (Date.now() > until) return clearInterval(beat)
+          try {
+            controller.enqueue(encoder.encode('\n\n'))
+          } catch {
+            clearInterval(beat) // the stream closed or failed
+          }
+        }, HEARTBEAT_MS)
       },
       async pull(controller) {
         const { done, value } = await events.next()
-        if (done) controller.close()
-        else send(controller, value)
+        if (!done) return send(controller, value)
+        clearInterval(beat)
+        controller.close()
       },
       async cancel() {
-        await events.return(undefined)
+        await end()
       },
     })
     return new Response(body, { headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' } })

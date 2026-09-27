@@ -324,6 +324,50 @@ describe('agentHandler', () => {
     for (let i = 0; i < 10; i++) expect(await (await handler(post(build()))).text()).toContain('"type":"files"')
     expect((await handler(post(build()))).status).toBe(429)
   })
+
+  describe('with a heartbeat', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('a quiet run sends a blank line each second after start, and stops its timer when the run ends', async () => {
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+      let answer!: (reply: ModelReply) => void
+      const model: Model = () => new Promise<ModelReply>((resolve) => (answer = resolve))
+      const res = await agentHandler(() => model)(post(build()))
+      const reader = res.body!.pipeThrough(new TextDecoderStream()).getReader()
+      expect((await reader.read()).value).toBe('data: {"type":"start"}\n\n')
+      vi.advanceTimersByTime(1000)
+      expect((await reader.read()).value).toBe('\n\n')
+      answer(say('Done.'))
+      let rest = ''
+      for (let r = await reader.read(); !r.done; r = await reader.read()) rest += r.value
+      expect(rest).toContain('"type":"files"')
+      expect(vi.getTimerCount()).toBe(0)
+    })
+
+    it('a Build the client leaves gives its hour back and stops its timer', async () => {
+      delete process.env.AGENT_LIMITS
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+      // Like fetch with the request's signal: it only settles when the client leaves, or has left already.
+      const model: Model = ({ signal }) =>
+        new Promise<ModelReply>((_, fail) => {
+          if (signal.aborted) return fail(signal.reason)
+          signal.addEventListener('abort', () => fail(signal.reason))
+        })
+      const handler = agentHandler(() => model, createLimits())
+      for (let i = 0; i < 12; i++) {
+        const leave = new AbortController()
+        const res = await handler(new Request(post(build()), { signal: leave.signal }))
+        expect(res.status).toBe(200)
+        const reader = res.body!.getReader()
+        await reader.read() // start
+        leave.abort()
+        while (!(await reader.read()).done);
+      }
+      expect(vi.getTimerCount()).toBe(0)
+    })
+  })
 })
 
 describe('createLimits', () => {
