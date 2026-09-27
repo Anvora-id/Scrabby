@@ -58,6 +58,8 @@ async function replaceOnce(project: import('./model/types.ts').Project, failed: 
 export async function loadDemo(): Promise<void> {
   if (!await replaceOnce(demoProject(), 'Loading the demo failed')) return
   once('scrabby.tour.plan') // seen now, so a later first-visit check doesn't repeat it
+  // The demo is the guided walk, so its later tours show again too.
+  try { LATER_TOURS.forEach(k => localStorage.removeItem(k)) } catch { /* no storage: once() is always true anyway */ }
   startTour('plan')
 }
 
@@ -89,18 +91,30 @@ export function closeAsk(): void { askStore.set(null) }
 
 // ── tours and the tip ─────────────────────────────────────────────────────────
 
-export type TourName = 'plan' | 'try'
+export type TourName = 'plan' | 'try' | 'checkpoints' | 'built'
+
+const LATER_TOURS = ['scrabby.tour.try', 'scrabby.tour.checkpoints', 'scrabby.tour.built']
 
 export const TOURS: Record<TourName, { target: string; text: string }[]> = {
   plan: [
     { target: 'palette', text: 'These are your Blocks and Traits. Drag one onto the Canvas to use it.' },
-    { target: 'canvas', text: "This is your plan. Put Blocks inside Blocks, and drop a Trait into the Block it describes. Where things sit doesn't matter." },
+    { target: 'canvas', text: "This is your plan. Stack Blocks inside Blocks to shape your site. Drop a Trait on a Block to style it or change what it does." },
     { target: 'build', text: 'When your plan is ready, press Build. Bob turns it into a real website.' },
-    { target: 'steps', text: 'You move through three steps: Plan, Build, Try & tweak. You can come back to Plan any time.' },
+    { target: 'steps', text: 'You move through three steps, Plan, Build and Try & tweak. You can come back to Plan any time.' },
   ],
   try: [
-    { target: 'preview', text: 'This is your website. Click around: links, buttons and forms work.' },
+    { target: 'preview', text: 'This is your website, running live. Click around and try its links, buttons and forms.' },
     { target: 'assistant', text: 'Ask Bob about the code, or ask for a change. You decide whether to keep each change.' },
+    { target: 'back', text: 'Go back to the Plan step to change your plan. Your earlier versions stay in the Checkpoints tab.' },
+  ],
+  checkpoints: [
+    { target: 'checkpoints', text: 'These are your Checkpoints, saved versions of your Blocks and code. Every Build saves one. Restore puts everything back the way it was.' },
+    { target: 'save', text: 'Save one yourself before you try something big.' },
+  ],
+  built: [
+    { target: 'checkpointBlock', text: 'Bob built your site, so your Blocks left the Canvas. The Site is now your website as Bob built it, with a locked Page for each page.' },
+    { target: 'lockedPage', text: 'To change your site, drop Blocks or Traits into a locked Page, or new Pages into the Site. Then press Build again.' },
+    { target: 'checkpointsTab', text: 'Your old Blocks are safe in Checkpoints. Open it to look at them or restore them.' },
   ],
 }
 
@@ -151,6 +165,11 @@ const EDGE = 8
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi)
 // The tail keeps off the bubble's rounded corners (18px radius, plus the tail's 12px half width).
 const along = (c: number, from: number, size: number) => clamp(c - from, 30, size - 30)
+// The tail's reach along the bubble overlaps the middle half of the target's span, so the tail points at it, not at its edge.
+const reaches = (from: number, size: number, lo: number, hi: number) => {
+  const m = (hi - lo) / 4
+  return from + 30 <= hi - m && from + size - 30 >= lo + m
+}
 const nearest = (vs: number[], to: number) => vs.sort((a, b) => Math.abs(a - to) - Math.abs(b - to))[0]
 const flip = (b: Box): Box => ({ left: b.top, top: b.left, right: b.bottom, bottom: b.right })
 
@@ -172,40 +191,44 @@ export function keepClearOf(target: Box, canvas: Box, blocks: Box[], W: number, 
   return boxes.map(b => ({ ...b, bottom: b.bottom + up }))
 }
 
-/** `avoid`: boxes a side placement keeps clear of when it can (see keepClearOf). */
-export function placeBubble(r: Box, w: number, h: number, W: number, H: number, avoid: Box[] = []): Placement {
-  const p = place(r, w, h, W, H)
+/**
+ * `avoid`: boxes a side placement keeps clear of when it can (see keepClearOf).
+ * `up`: how far Bob reaches above the bubble, kept on screen too.
+ */
+export function placeBubble(r: Box, w: number, h: number, W: number, H: number, avoid: Box[] = [], up = 0): Placement {
+  const p = place(r, w, h, W, H, EDGE + up)
   if (p.side === 'inside') return p
-  if (p.side === 'right' || p.side === 'left') return clearOf(p, r, w, h, W, H, avoid)
+  if (p.side === 'right' || p.side === 'left') return clearOf(p, r, w, h, W, H, avoid, EDGE, EDGE + up)
   // Below and above are right and left with x and y swapped.
-  const q = clearOf({ ...p, side: p.side === 'below' ? 'right' : 'left', x: p.y, y: p.x }, flip(r), h, w, H, W, avoid.map(flip))
+  const q = clearOf({ ...p, side: p.side === 'below' ? 'right' : 'left', x: p.y, y: p.x }, flip(r), h, w, H, W, avoid.map(flip), EDGE + up, EDGE)
   return { ...q, side: p.side, x: q.y, y: q.x }
 }
 
 // Right or left of the target: slide up or down to the nearest free spot, else step outward
-// past what's in the way; with nowhere free, stay put.
-function clearOf(p: Placement, r: Box, w: number, h: number, W: number, H: number, avoid: Box[]): Placement {
+// past what's in the way; with nowhere free, stay put. `minX`/`minY`: the lowest x and y the bubble may take.
+function clearOf(p: Placement, r: Box, w: number, h: number, W: number, H: number, avoid: Box[], minX: number, minY: number): Placement {
   const free = (x: number, y: number) => !avoid.some(b => x < b.right && x + w > b.left && y < b.bottom && y + h > b.top)
   if (free(p.x, p.y)) return p
-  const ys = avoid.flatMap(b => [b.top - GAP - h, b.bottom + GAP]).map(v => clamp(v, EDGE, H - EDGE - h))
-  const y = nearest(ys.filter(v => free(p.x, v)), p.y)
+  const ys = avoid.flatMap(b => [b.top - GAP - h, b.bottom + GAP]).map(v => clamp(v, minY, H - EDGE - h))
+  const y = nearest(ys.filter(v => free(p.x, v) && reaches(v, h, r.top, r.bottom)), p.y)
   if (y !== undefined) return { ...p, y, tail: along((r.top + r.bottom) / 2, y, h) }
   const out = p.side === 'right' ? 1 : -1
   const xs = avoid.map(b => (out > 0 ? b.right + GAP : b.left - GAP - w))
-  const x = nearest(xs.filter(v => (v - p.x) * out > 0 && v >= EDGE && v <= W - EDGE - w && free(v, p.y)), p.x)
+  const x = nearest(xs.filter(v => (v - p.x) * out > 0 && v >= minX && v <= W - EDGE - w && free(v, p.y)), p.x)
   return x === undefined ? p : { ...p, x }
 }
 
-function place(r: Box, w: number, h: number, W: number, H: number): Placement {
+function place(r: Box, w: number, h: number, W: number, H: number, top: number): Placement {
   const cx = (r.left + r.right) / 2
   const cy = (r.top + r.bottom) / 2
   const x = clamp(cx - w / 2, EDGE, W - EDGE - w)
-  const y = clamp(cy - h / 2, EDGE, H - EDGE - h)
+  const y = clamp(cy - h / 2, top, H - EDGE - h)
   const inside: Placement = { side: 'inside', x, y: r.top + 24, tail: 0 }
   if (r.right - r.left > W / 2 && r.bottom - r.top > H / 2) return inside
-  if (r.right + GAP + w <= W - EDGE) return { side: 'right', x: r.right + GAP, y, tail: along(cy, y, h) }
-  if (r.left - GAP - w >= EDGE) return { side: 'left', x: r.left - GAP - w, y, tail: along(cy, y, h) }
-  if (r.bottom + GAP + h <= H - EDGE) return { side: 'below', x, y: r.bottom + GAP, tail: along(cx, x, w) }
-  if (r.top - GAP - h >= EDGE) return { side: 'above', x, y: r.top - GAP - h, tail: along(cx, x, w) }
+  const sideways = reaches(y, h, r.top, r.bottom)
+  if (sideways && r.right + GAP + w <= W - EDGE) return { side: 'right', x: r.right + GAP, y, tail: along(cy, y, h) }
+  if (sideways && r.left - GAP - w >= EDGE) return { side: 'left', x: r.left - GAP - w, y, tail: along(cy, y, h) }
+  if (reaches(x, w, r.left, r.right) && r.bottom + GAP + h <= H - EDGE) return { side: 'below', x, y: r.bottom + GAP, tail: along(cx, x, w) }
+  if (reaches(x, w, r.left, r.right) && r.top - GAP - h >= top) return { side: 'above', x, y: r.top - GAP - h, tail: along(cx, x, w) }
   return inside
 }

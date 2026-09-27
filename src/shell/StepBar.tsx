@@ -42,6 +42,7 @@ export default function StepBar() {
       {ui.step === 'try' && (
         <button
           className={`${styles.back} ${styles.ghost}`}
+          data-tour="back"
           onClick={() => setStep('plan')}
         >
           ← Back to the Blocks

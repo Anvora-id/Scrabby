@@ -318,7 +318,7 @@
   transform-origin: 50% 0;
   fill: var(--surface);
   stroke: var(--bob);
-  stroke-width: 2.5px;
+  stroke-width: var(--edge, 2.5px);
 }
 
 [data-side='below'] .tail { top: 0; transform: rotate(180deg); }
@@ -336,7 +336,7 @@
   animation: hop 450ms var(--spring);
 }
 
-.bubble[data-side='left'] .bob {
+.bubble[data-bob='left'] .bob {
   right: auto;
   left: 10px;
 }

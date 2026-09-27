@@ -34,6 +34,7 @@ function PlanStep() {
               role="tab"
               aria-selected={selected}
               className={styles.tab}
+              data-tour={`${tab.id}Tab`}
               style={{ zIndex: selected ? 3 : 2 - i }}
               onClick={() => setPlanTab(tab.id)}
             >

@@ -213,12 +213,21 @@ The judges open the link cold, so the first visit has to work without help.
 - **Short show-around:** speech bubbles, one at a time, with Next and Skip. Replay it from **Show me around** in the menu bar. The words:
   - Plan, first visit:
     1. Palette: "These are your Blocks and Traits. Drag one onto the Canvas to use it."
-    2. Canvas: "This is your plan. Put Blocks inside Blocks, and drop a Trait into the Block it describes. Where things sit doesn't matter."
+    2. Canvas: "This is your plan. Stack Blocks inside Blocks to shape your site. Drop a Trait on a Block to style it or change what it does."
     3. Build button: "When your plan is ready, press Build. Bob turns it into a real website."
-    4. Step bar: "You move through three steps: Plan, Build, Try & tweak. You can come back to Plan any time."
+    4. Step bar: "You move through three steps, Plan, Build and Try & tweak. You can come back to Plan any time."
   - Try & tweak, the first time it opens:
-    5. Preview: "This is your website. Click around: links, buttons and forms work."
+    5. Preview: "This is your website, running live. Click around and try its links, buttons and forms."
     6. Assistant: "Ask Bob about the code, or ask for a change. You decide whether to keep each change." (Left out if the Assistant is dropped.)
+    7. Back to the Blocks: "Go back to the Plan step to change your plan. Your earlier versions stay in the Checkpoints tab."
+  - Checkpoints, the first time the tab opens:
+    8. Checkpoints panel: "These are your Checkpoints, saved versions of your Blocks and code. Every Build saves one. Restore puts everything back the way it was."
+    9. Save Checkpoint: "Save one yourself before you try something big."
+  - Back on the Canvas from Try & tweak after a Build, the first time (a Build moves the Blocks into the Checkpoint, which can look like they vanished):
+    10. Checkpoint Block: "Bob built your site, so your Blocks left the Canvas. The Site is now your website as Bob built it, with a locked Page for each page."
+    11. A locked Page: "To change your site, drop Blocks or Traits into a locked Page, or new Pages into the Site. Then press Build again."
+    12. Checkpoints tab: "Your old Blocks are safe in Checkpoints. Open it to look at them or restore them."
+  - Loading the demo shows the Try & tweak, Checkpoints and after-Build tours again, so the demo walks through all of them.
 - **Empty Canvas hint:** "Drag a Page into your Site to start."
 - **One-time tip:** "Right-click a Block or Trait for more." Right-click is the only way to reach Notes, Duplicate and Delete.
 - **New Project:** a menu-bar button that starts an empty Project, after a warning, because only one Project is saved:

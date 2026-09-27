@@ -12,12 +12,19 @@ import { Warning } from './Warning.tsx'
 import styles from './Onboarding.module.css'
 
 export default function Onboarding() {
-  const { step } = useUi()
+  const { step, planTab } = useUi()
   const greet = greetingStore.use()
+  const prevStep = useRef(step)
 
   useEffect(() => {
+    const from = prevStep.current
+    prevStep.current = step
     if (step === 'try' && once('scrabby.tour.try')) startTour('try')
-  }, [step])
+    if (step === 'plan' && planTab === 'checkpoints' && once('scrabby.tour.checkpoints')) startTour('checkpoints')
+    // Back from Try & tweak to a built Canvas: the Blocks have gone into the Checkpoint Block.
+    const built = getProject().blocks.canvas.children.some(id => getProject().blocks[id]?.type === 'checkpoint')
+    if (step === 'plan' && from === 'try' && planTab === 'canvas' && built && once('scrabby.tour.built')) startTour('built')
+  }, [step, planTab])
 
   // A tour started behind the greeting (the demo's) shows once the greeting has gone.
   return (
@@ -236,13 +243,11 @@ function radiusOf(el: Element): string {
   return Math.abs(a.width - b.width) < 1 && Math.abs(a.height - b.height) < 1 ? radiusOf(c) : r
 }
 
-// offsetTop, not the drawn position, so Bob's hop doesn't move the bubble.
-function tourAvoid(target: Box, bubble: HTMLElement): Box[] {
+function tourAvoid(target: Box, up: number): Box[] {
   const canvas = document.querySelector('[data-tour="canvas"]')?.getBoundingClientRect()
   if (!canvas) return []
   const blocks = [...document.querySelectorAll('[data-tour="canvas"] [data-bid]')].map(e => e.getBoundingClientRect())
-  const bob = bubble.querySelector<HTMLElement>(`.${styles.bob}`)
-  return keepClearOf(target, canvas, blocks, window.innerWidth, bob ? -bob.offsetTop : 0)
+  return keepClearOf(target, canvas, blocks, window.innerWidth, up)
 }
 
 function SpeechBubble({ target, text, clearOfBlocks, children }: {
@@ -273,12 +278,19 @@ function SpeechBubble({ target, text, clearOfBlocks, children }: {
       left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height + edge}px`,
       borderRadius: radiusOf(el),
     })
-    const avoid = clearOfBlocks ? tourAvoid(box, b) : []
-    const p = placeBubble(box, b.offsetWidth, b.offsetHeight, window.innerWidth, window.innerHeight, avoid)
+    // How far Bob reaches above the bubble: offsetTop, not the drawn position, so his hop doesn't move it.
+    const bob = b.querySelector<HTMLElement>(`.${styles.bob}`)
+    const up = bob ? -bob.offsetTop : 0
+    const avoid = clearOfBlocks ? tourAvoid(box, up) : []
+    const p = placeBubble(box, b.offsetWidth, b.offsetHeight, window.innerWidth, window.innerHeight, avoid, up)
     b.style.left = `${p.x}px`
     b.style.top = `${p.y}px`
     b.style.setProperty('--tail', `${p.tail}px`)
     b.dataset.side = p.side
+    // Bob stands on the top corner away from the target: the left one beside it on the left, or above or below it on the right.
+    b.dataset.bob = p.side === 'left' || ((p.side === 'below' || p.side === 'above') && p.tail > b.offsetWidth / 2) ? 'left' : 'right'
+    // Borders snap to whole device pixels and SVG strokes don't, so the tail copies the border it joins.
+    b.style.setProperty('--edge', getComputedStyle(b).borderTopWidth)
   })
 
   return (

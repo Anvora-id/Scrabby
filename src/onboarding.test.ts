@@ -64,8 +64,20 @@ describe('placeBubble', () => {
     expect(p.tail).toBe(0)
   })
 
+  it('keeps Bob on screen near the top edge', () => {
+    expect(placeBubble(box(1200, 20, 1350, 200), 280, 100, W, H, [], 64)).toMatchObject({ side: 'left', y: 72 })
+  })
+
   it('clamps y and the tail near the bottom edge', () => {
-    expect(placeBubble(box(10, 740, 60, 766), 280, 100, W, H)).toMatchObject({ side: 'right', y: 660, tail: 70 })
+    expect(placeBubble(box(10, 700, 60, 766), 280, 100, W, H)).toMatchObject({ side: 'right', y: 660, tail: 70 })
+  })
+
+  it('goes above a small target at the bottom edge, where a side tail could not reach it', () => {
+    expect(placeBubble(box(10, 740, 60, 766), 280, 100, W, H)).toEqual({ side: 'above', x: 8, y: 624, tail: 30 })
+  })
+
+  it('goes below a small button in the top corner when Bob pushes the bubble down past it', () => {
+    expect(placeBubble(box(1230, 53, 1358, 85), 280, 170, W, H, [], 64)).toEqual({ side: 'below', x: 1078, y: 101, tail: 216 })
   })
 
   it('slides along its side to the nearest spot clear of a Block', () => {
