@@ -96,10 +96,11 @@ export async function listAssets(projectId: string): Promise<AssetBlob[]> {
   return db.getAllFromIndex('assets', 'projectId', projectId)
 }
 
-/** Deletes the Blobs of Assets the Project no longer lists. */
+/** Deletes the Blobs of Assets that neither the Project nor any of its Checkpoints lists, so a restore finds its pictures. */
 export async function pruneAssets(p: Project): Promise<void> {
-  const keep = new Set(p.assets.map(a => a.id))
   const db = await getDb()
+  const cps = await db.getAllFromIndex('checkpoints', 'projectId', p.id)
+  const keep = new Set([p, ...cps.map(c => c.canvas)].flatMap(x => x.assets.map(a => a.id)))
   for (const b of await db.getAllFromIndex('assets', 'projectId', p.id)) {
     if (!keep.has(b.id)) await db.delete('assets', [p.id, b.id])
   }
