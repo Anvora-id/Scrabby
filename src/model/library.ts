@@ -90,8 +90,8 @@ export function removeAsset(p: Project, id: string): void {
   p.assets = p.assets.filter(a => a.id !== id)
 }
 
+/** The Delete modal's text, under its title "Delete <file>?". */
 export function deleteWarning(p: Project, id: string): string {
-  const asset = p.assets.find(a => a.id === id)!
   const users: string[] = []
   for (const b of Object.values(p.blocks)) {
     for (const tid of b.traits) {
@@ -103,7 +103,7 @@ export function deleteWarning(p: Project, id: string): string {
   }
   if (users.length > 0) {
     const n = users.length
-    return `Delete ${asset.file}? ${n} Trait${n > 1 ? 's' : ''} (${users.join(', ')}) and any code using it will break. You can ask the Assistant to fix the references.`
+    return `${n} Trait${n > 1 ? 's' : ''} (${users.join(', ')}) and any code using it will break. You can ask the Assistant to fix the references.`
   }
-  return `Delete ${asset.file}? Any code using it will break. You can ask the Assistant to fix the references.`
+  return 'Any code using it will break. You can ask the Assistant to fix the references.'
 }

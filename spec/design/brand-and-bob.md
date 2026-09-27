@@ -16,4 +16,4 @@
   | Greeting | The logo, Bob 160px tall, at the top of the greeting card ([Screen layout](#screen-layout)) |
   | Empty Library and Checkpoints | Head, 48px, above the empty line, as in the empty chat ([Library](#library), [Checkpoints](#checkpoints)) |
 
-- **Logo** = Bob's full figure + the **wordmark** "Scrabby" in Nunito 900, letter-spacing −.01em, gap 8px, figure bottom-aligned with the text's baseline. The logo is for the app, video, deck and cover. The favicon is `bob-head.svg`.
+- **Logo** = Bob's full figure + the **wordmark** "Scrabby" in Nunito 900, letter-spacing −.01em, gap 8px, figure bottom-aligned with the text's baseline (on the greeting card the wordmark is centered on Bob's middle instead, [Screen layout](#screen-layout)). The logo is for the app, video, deck and cover. The favicon is `bob-head.svg`.

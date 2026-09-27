@@ -9,6 +9,7 @@ import { findBlockCode } from '../code/code.ts'
 import { clearCheckpointFocus, seeItsCode, useCheckpointFocus } from '../code/navigation.ts'
 import { getProject, setPlanTab, updateProject, useProject } from '../store.ts'
 import { cx } from '../canvas/cx.ts'
+import { Warning } from '../shell/Warning.tsx'
 import styles from './Checkpoints.module.css'
 
 interface Picked { n: number; id: string; flash?: boolean }
@@ -164,30 +165,12 @@ export default function Checkpoints() {
       })}
       {ask && (
         <Warning
+          icon={ICONS.tab_checkpoints}
           {...warning(p, cps, ask.c, ask.mode)}
           onCancel={() => setAsk(null)}
           onConfirm={() => confirm(ask.c, ask.mode)}
         />
       )}
     </div>
-  )
-}
-
-interface WarningProps { title: string; lines: string[]; confirm: string; onCancel: () => void; onConfirm: () => void }
-
-export function Warning({ title, lines, confirm, onCancel, onConfirm }: WarningProps) {
-  const ref = useRef<HTMLDialogElement>(null)
-  useEffect(() => { ref.current?.showModal() }, [])
-  return (
-    <dialog ref={ref} className={styles.dialog} onClose={onCancel}>
-      <h2>{title}</h2>
-      <div className={styles.body}>
-        {lines.map(l => <p key={l}>{l}</p>)}
-        <div className={styles.buttons}>
-          <button className={styles.text} onClick={onCancel}>Cancel</button>
-          <button className={styles.primary} onClick={onConfirm} autoFocus>{confirm}</button>
-        </div>
-      </div>
-    </dialog>
   )
 }

@@ -1,0 +1,155 @@
+/* The DESIGN.md Menus modal. A native dialog is centered by the browser's own margin: auto. */
+.dialog {
+  width: 520px;
+  max-width: calc(100% - 32px);
+  padding: 0;
+  border: none;
+  border-radius: var(--r-card);
+  overflow: hidden;
+  box-shadow: 0 6px 0 #0000002e;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  font-weight: var(--w-body);
+  line-height: 1.45;
+}
+
+.dialog[open] {
+  animation: pop var(--t-pop) var(--spring);
+}
+
+.dialog::backdrop {
+  background: color-mix(in srgb, var(--brand) 88%, transparent);
+  animation: fade var(--t-quick) var(--ease);
+}
+
+/* The Grape lid: a 4px darker bottom edge, like the menu bar's. */
+.head {
+  margin: 0;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 28px 14px;
+  background: var(--brand);
+  box-shadow: inset 0 -4px 0 var(--brand-dark);
+  color: #fff;
+  font-size: 18px;
+  font-weight: var(--w-heavy);
+  line-height: 1.25;
+}
+
+.head svg {
+  flex: none;
+}
+
+.body {
+  padding: 28px;
+}
+
+.body p {
+  margin: 0 0 10px;
+}
+
+/* Bento: the buttons fill the bottom row as equal tiles. */
+.buttons {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.buttons button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: var(--r-btn);
+  font: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: transform 250ms var(--spring), box-shadow 250ms var(--spring), border-color var(--t-quick);
+}
+
+.buttons button:active {
+  transition-duration: var(--t-press);
+}
+
+.primary {
+  background: var(--brand);
+  color: #fff;
+  font-weight: var(--w-heavy);
+  border: none;
+  box-shadow: 0 3px 0 var(--brand-dark);
+}
+
+.primary:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--brand-dark);
+}
+
+.primary:focus-visible {
+  outline: none;
+  box-shadow: 0 3px 0 var(--brand-dark), var(--focus);
+}
+
+.secondary {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: var(--w-bold);
+  border: 2px solid var(--line);
+  box-shadow: 0 2px 0 var(--line);
+}
+
+.secondary:hover {
+  border-color: var(--brand);
+}
+
+.secondary:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--line);
+}
+
+.secondary:focus-visible {
+  outline: none;
+  box-shadow: 0 2px 0 var(--line), var(--focus);
+}
+
+/* Tomato-tinted, for a confirm that throws something away. White text never goes on tomato. */
+.danger {
+  background: var(--alert-bg);
+  color: var(--ink);
+  font-weight: var(--w-heavy);
+  border: 2px solid var(--alert);
+  box-shadow: 0 2px 0 var(--alert);
+}
+
+.danger:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--alert);
+}
+
+.danger:focus-visible {
+  outline: none;
+  box-shadow: 0 2px 0 var(--alert), var(--focus);
+}
+
+@keyframes pop {
+  from { transform: scale(.9); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog[open],
+  .dialog::backdrop {
+    animation: none;
+  }
+
+  .buttons button:active {
+    transform: none;
+  }
+}

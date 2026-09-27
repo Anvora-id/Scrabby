@@ -150,7 +150,7 @@ describe('deleteWarning', () => {
     const p = emptyProject()
     addAsset(p, 'photo.png', { kind: 'image', mime: 'image/png', bytes: 100 })
     const msg = deleteWarning(p, 'a1')
-    expect(msg).toBe('Delete photo.png? Any code using it will break. You can ask the Assistant to fix the references.')
+    expect(msg).toBe('Any code using it will break. You can ask the Assistant to fix the references.')
   })
 
   it('with 1 user: Trait count and name', () => {
@@ -163,7 +163,6 @@ describe('deleteWarning', () => {
     p.blocks[siteId].traits.push(t1)
     const msg = deleteWarning(p, 'a1')
     expect(msg).toContain('1 Trait (My website › image)')
-    expect(msg).toContain('Delete photo.png?')
   })
 
   it('with 2 users: plural Traits', () => {
