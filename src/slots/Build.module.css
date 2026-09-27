@@ -273,10 +273,15 @@
   background: var(--c4);
 }
 
-/* A failed Build: the whole pile tips over and slides out of view. */
-.stage-failed .base {
-  transform-origin: bottom right;
-  animation: tipOff 600ms var(--ease) forwards;
+/* A failed Build: the bricks still standing fall into a heap (BuildStage lays them), unclipped so they can land beside
+   the base; every other brick is hidden. The fallen bricks drain out of the stage's bottom edge when Bob starts again. */
+.stage-failed .base,
+.base.draining {
+  clip-path: none;
+}
+
+.stage-failed .brick {
+  opacity: 0;
 }
 
 .bob {
@@ -308,11 +313,6 @@
   15% { transform: scale(1.06, .93); }
   50% { transform: translateY(-24px); }
   80% { transform: scale(1.04, .95); }
-}
-
-@keyframes tipOff {
-  30% { transform: rotate(6deg); }
-  100% { transform: translate(140px, 260px) rotate(18deg); }
 }
 
 /* Chips */
@@ -546,11 +546,8 @@
     transition: none;
     transform: none;
   }
-  .bubble, .spinner, .buttonSpinner, .stage .bob, .stage-failed .base {
+  .bubble, .spinner, .buttonSpinner, .stage .bob {
     animation: none;
-  }
-  .stage-failed .base {
-    visibility: hidden;
   }
   .chip, .chevron, .drawer {
     transition: none;
