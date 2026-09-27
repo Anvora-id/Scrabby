@@ -127,7 +127,7 @@ export default function BuildCard() {
         <h2 className={styles.title}>
           {run.state === 'running' && <><span className={styles.spinner} /><span className={styles.bobTitle}>Bob is building your website</span><span className={styles.end}><BobBadge /></span></>}
           {run.state === 'done' && <><span className={styles.doneMark}>✓</span>Build {run.n} done</>}
-          {failed && <><span className={cx(styles.bang, styles.bigBang)}>!</span>{run.n ? `Build ${run.n}` : 'Your Build'} {run.reason === 'limit' || run.reason === 'start' ? 'did not start' : 'did not finish'}</>}
+          {failed && <><span className={cx(styles.bang, styles.bigBang)}>!</span>{run.n ? `Build ${run.n}` : 'Your Build'} {run.reason === 'limit' || run.reason === 'start' || run.reason === 'save' ? 'did not start' : 'did not finish'}</>}
         </h2>
         {run.state === 'done' && <p className={styles.sub}>Opening your website…</p>}
         {failed && <p className={styles.sub}>Nothing changed: your code and Blocks are as they were.</p>}

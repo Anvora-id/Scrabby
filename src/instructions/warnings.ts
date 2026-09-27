@@ -13,7 +13,7 @@ export interface Warning {
   def?: string; source?: string
 }
 
-export function topBlock(p: Project): Block | undefined {
+export function topBlock(p: Pick<Project, 'blocks'>): Block | undefined {
   return p.blocks.canvas.children.map(id => p.blocks[id]).find(b => b?.type === 'site' || b?.type === 'checkpoint')
 }
 

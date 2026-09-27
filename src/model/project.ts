@@ -1,5 +1,5 @@
 import { BLOCK_TYPES, TRAIT_TYPES } from './catalogue.ts'
-import type { Block, Layout, Project, Trait } from './types.ts'
+import type { Block, Checkpoint, CheckpointCanvas, Files, Layout, Project, Trait } from './types.ts'
 import type { BlockType, TraitType } from './types.ts'
 
 // ── id helpers ───────────────────────────────────────────────────────────────
@@ -412,4 +412,22 @@ export function canvasBlocks(p: Project): Block[] {
   }
   for (const cid of p.blocks['canvas'].children) visit(cid)
   return result
+}
+
+// What a Checkpoint keeps besides the code. The name, chat and id counters stay as they are on a restore.
+export function canvasOf(p: Project): CheckpointCanvas {
+  return structuredClone({ blocks: p.blocks, traits: p.traits, defs: p.defs, assets: p.assets })
+}
+
+// ponytail: a JSON compare, so the same Blocks written in another key order count as a change; a deep-equal if that ever shows
+const key = (files: Files, canvas: Checkpoint['canvas']) => JSON.stringify([files, canvas])
+
+// The Checkpoint that holds exactly this code and Canvas, positions included.
+export function holding(p: Project, cps: Checkpoint[]): Checkpoint | undefined {
+  const k = key(p.files, { blocks: p.blocks, traits: p.traits, defs: p.defs, assets: p.assets })
+  return cps.find(c => key(c.files, c.canvas) === k)
+}
+
+export function makeCheckpoint(p: Project, number: number, saved?: string): Checkpoint {
+  return { projectId: p.id, number, saved, from: p.checkpoint, files: structuredClone(p.files), canvas: canvasOf(p), time: Date.now() }
 }

@@ -175,13 +175,10 @@ export default function CodeEditor() {
     let live = true
     listCheckpoints(project.id).then(c => { if (live) setCheckpoints(c) }, e => console.error('Reading Checkpoints failed', e))
     return () => { live = false }
-  }, [project.id])
+  }, [project.id, project.checkpoint])
 
-  const base = useMemo(() => {
-    let newest: Checkpoint | undefined
-    for (const c of checkpoints) if (c.blocks && (!newest || c.number > newest.number)) newest = c
-    return newest?.before
-  }, [checkpoints])
+  // Change bars show what changed since the Checkpoint the Project is on: after a Build, what Bob wrote.
+  const base = useMemo(() => checkpoints.find(c => c.number === project.checkpoint)?.files, [checkpoints, project.checkpoint])
 
   const track = (v: EditorView | null) => {
     view.current = v

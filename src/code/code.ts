@@ -45,7 +45,7 @@ export function blockInfo(id: string, project: Project, checkpoints: Checkpoint[
   if (!b) {
     let newest = -Infinity
     for (const c of checkpoints) {
-      const found = c.blocks?.blocks[id]
+      const found = c.canvas.blocks[id]
       if (found && c.number > newest) { newest = c.number; b = found }
     }
   }

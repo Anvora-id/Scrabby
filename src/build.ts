@@ -1,10 +1,9 @@
 import type { Category } from './model/catalogue.ts'
-import type { Block, BuiltBlocks, Files, Project } from './model/types.ts'
-import { addBlock } from './model/project.ts'
+import type { Block, Files, Project } from './model/types.ts'
+import { addBlock, holding, makeCheckpoint } from './model/project.ts'
 import { instructionDocument } from './instructions/document.ts'
 import { topBlock } from './instructions/warnings.ts'
 import { blockInfo } from './code/code.ts'
-import { builtBlocks as cloneBlocks } from './fixtures/fixtures.ts'
 import { addCheckpoint, listCheckpoints } from './db.ts'
 import { runAgent } from './agent.ts'
 import { flashBlocks } from './preview.ts'
@@ -16,7 +15,7 @@ export const FAILURE_LINES: Record<FailReason, string> = {
   turns: 'Bob ran out of steps before finishing, so this Build was stopped.',
   unreachable: "Bob couldn't be reached. Check your connection and try again.",
   broken: "Bob's answer came back broken, so this Build was stopped.",
-  save: "Bob's website couldn't be saved on this computer, so this Build was stopped.",
+  save: "The Checkpoint couldn't be saved on this computer, so this Build didn't start.",
   limit: "Scrabby's Build limit was reached, so this Build didn't start.",
   start: "Something went wrong before Bob could start, so this Build didn't start.",
 }
@@ -113,15 +112,30 @@ async function build(): Promise<void> {
       new Promise<never>((_, fail) => stop.signal.addEventListener('abort', () => fail(new Error('Reading the Checkpoints took too long')))),
     ])
     const chips = requestBlocks(p, top).map(b => ({ id: b.id, ...blockInfo(b.id, p, [])! }))
-    base = { ...base, n: saved.filter(c => c.blocks).length + 1, chips, skipped: doc.skipped }
-    return { doc, top, saved }
+    // Nothing changed since a Checkpoint (a Try again, say): build from that one instead of saving a copy.
+    const held = holding(p, saved)
+    const from = held ?? makeCheckpoint(p, saved.length + 1)
+    base = { ...base, n: saved.filter(c => !c.saved && c.number < from.number).length + 1, chips, skipped: doc.skipped }
+    return { doc, top, from, fresh: !held }
   })().catch((e: unknown) => {
     console.error('The Build failed to start', e)
     return undefined
   })
   if (typeof ready !== 'object') return notStarted(ready)
-  const { doc, top, saved } = ready
+  const { doc, top, from, fresh } = ready
   const { n } = base
+
+  // Saved before Bob starts, so a Build can always be undone by restoring it. It stays when the Build fails.
+  if (fresh) {
+    try {
+      await addCheckpoint(from)
+    } catch (err) {
+      console.error('Saving the Checkpoint failed', err)
+      begin()
+      set({ state: 'failed', reason: 'save' })
+      return
+    }
+  }
 
   // A throw while Bob's answer is read or taken in (a browser without TextDecoderStream, say) still ends on a card.
   try {
@@ -140,21 +154,8 @@ async function build(): Promise<void> {
         return
       }
       if (e.type === 'files') {
-        const number = saved.length + 1
         const after = guardImages({ ...e.files, ['.builds/build-' + n + '.md']: doc.document })
-        try {
-          await addCheckpoint({
-            projectId: p.id, number, label: 'Checkpoint ' + number,
-            from: top.type === 'site' ? null : p.checkpoint ?? saved.at(-1)?.number ?? null,
-            before: p.files, after, blocks: builtBlocks(p, top.id), time: Date.now(),
-          })
-        } catch (err) {
-          // Without its Checkpoint the Project must not move on, or a reload finds no Checkpoint N.
-          console.error('Saving the Checkpoint failed', err)
-          set({ state: 'failed', reason: 'save' })
-          return
-        }
-        updateProject(d => consume(d, top.id, after, number), null)
+        updateProject(d => consume(d, top.id, after, from.number), null)
         set({ state: 'done' })
         flashBlocks(run.get()!.lit)
         setTimeout(() => setStep('try'), 900)
@@ -190,10 +191,6 @@ export function guardImages(files: Files): Files {
   if (css === undefined || guarded(css) || guarded(files['base.css'])) return files
   const lead = css.match(LEADING)![0]
   return { ...files, 'style.css': (lead ? lead + '\n\n' : '') + GUARD + '\n\n' + css.slice(lead.length).replace(/^\s+/, '') }
-}
-
-export function builtBlocks(p: Project, top: string): BuiltBlocks {
-  return cloneBlocks(p, [top])
 }
 
 export function consume(p: Project, topId: string, files: Files, checkpoint: number): void {
