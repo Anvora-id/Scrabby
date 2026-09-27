@@ -21,18 +21,18 @@ describe('changedLines', () => {
   })
 
   it('finds the 4 Opening hours lines of the last Build', () => {
-    const text = cp2.after['index.html']
-    const found = changedLines(cp2.before['index.html'], text).map(n => text.split('\n')[n - 1].trim())
+    const text = project.files['index.html']
+    const found = changedLines(cp2.files['index.html'], text).map(n => text.split('\n')[n - 1].trim())
     expect(found).toEqual(['<section class="hours" data-block="' + hoursId() + '">', '<h2>Opening hours</h2>', '<p>Saturdays 9 till 1, at the school gate</p>', '</section>'])
   })
 
   it('finds nothing on menu.html', () => {
-    expect(changedLines(cp2.before['menu.html'], cp2.after['menu.html'])).toEqual([])
+    expect(changedLines(cp2.files['menu.html'], project.files['menu.html'])).toEqual([])
   })
 })
 
 function hoursId(): string {
-  return Object.values(cp2.blocks!.blocks).find(b => b.name === 'Opening hours')!.id
+  return Object.values(cp2.canvas.blocks).find(b => b.name === 'Opening hours')!.id
 }
 
 describe('blockMarks', () => {
@@ -59,7 +59,7 @@ describe('findBlockCode', () => {
 describe('blockInfo', () => {
   it('reads Blocks gone from the Project from the newest Checkpoint', () => {
     expect(blockInfo(hoursId(), project, checkpoints)).toEqual({ name: 'Opening hours', category: 'ui' })
-    const hero = Object.values(cp1.blocks!.blocks).find(b => b.type === 'hero')!
+    const hero = Object.values(cp1.canvas.blocks).find(b => b.type === 'hero')!
     expect(project.blocks[hero.id]).toBeUndefined()
     expect(blockInfo(hero.id, project, checkpoints)).toEqual({ name: 'Big welcome', category: 'ui' })
   })
@@ -70,7 +70,7 @@ describe('blockInfo', () => {
   })
 
   it('gives Instances the my category', () => {
-    const inst = Object.values(cp1.blocks!.blocks).find(b => b.inst)!
+    const inst = Object.values(cp1.canvas.blocks).find(b => b.inst)!
     expect(blockInfo(inst.id, project, checkpoints)?.category).toBe('my')
   })
 

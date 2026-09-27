@@ -70,17 +70,16 @@ export interface Project {
   files: Files          // the current Prototype code, including .builds/build-N.md
   chat: ChatMessage[]
   updated: number
-  checkpoint?: number   // the Checkpoint the current code came from; unset before Build 1
+  checkpoint?: number   // the Checkpoint last saved, restored or built from; unset before the first
   checkpointNames?: Record<number, string> // names the user gave Checkpoints, by number
 }
-export interface BuiltBlocks { top: string[]; blocks: Record<string, Block>; traits: Record<string, Trait>; defs: Record<string, CustomBlockDef> }
+export type CheckpointCanvas = Pick<Project, 'blocks' | 'traits' | 'defs' | 'assets'>
 export interface Checkpoint {
   projectId: string
   number: number        // 1, 2, …; the list only grows
-  label: string         // "Checkpoint 2", "Before loading Checkpoint 1"
-  from: number | null   // the Checkpoint the Build started from; null on Build 1 or a remake
-  before: Files
-  after: Files
-  blocks: BuiltBlocks | null // null on code-only Checkpoints
+  saved?: string        // set when saved by hand: "Saved by you", "Saved before restoring Checkpoint 3"; unset on a Build's
+  from?: number         // the Checkpoint the Project was on when this one was saved
+  files: Files          // the code at that moment; a Build's Checkpoint is saved before Bob starts
+  canvas: CheckpointCanvas // the Blocks, Traits, Custom Blocks and Library at that moment
   time: number
 }

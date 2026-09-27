@@ -21,6 +21,6 @@
 | `t_purpose` → `gear` | `t_fakedata` → `dice-five` | `t_text` → `pencil-simple-line` |
 | `t_image` → `image-square` | `t_sound` → `speaker-high` (Stretch) | `t_video` → `video-camera` |
 | `t_tellbob` → `chat-circle-dots` | `t_bobpicks` → `lightbulb` | `flag` → `flag` (the Build button) |
-| `checkpoint` → `lock` (the Checkpoint Block and locked Pages) | | |
+| `checkpoint` → `lock` (locked Pages; the Checkpoint Block uses `site`) | | |
 
 Tab icons: Canvas `puzzle-piece`, Library `image`, Checkpoints `clock-counter-clockwise`. Menu bar and zoom icons: New Project `plus`, Demo `cake`, Download code `download-simple`, Undo `arrow-counter-clockwise`, Redo `arrow-clockwise`, Show me around `question`, zoom `plus` / `minus` / `equals`, fold `caret-down`, ticks `check`, Preview full size `arrows-out` / `arrows-in`. Always icons, never characters: ✓ → `check`, × and ✕ → `x`, ↻ → `arrow-clockwise`. Plain text characters: ⟨ ⟩ ‹ › ← ✎ + ◧ ⤢ ⤡ ▾ ● ⚠, and the "!" and "?" in alert circles. A button whose spec names no icon has none.

@@ -106,14 +106,14 @@ describe('builtSite()', () => {
     expect(checkpoints).toHaveLength(2)
     expect(checkpoints[0].number).toBe(1)
     expect(checkpoints[1].number).toBe(2)
-    expect(checkpoints[0].from).toBeNull()
+    expect(checkpoints[0].from).toBeUndefined()
     expect(checkpoints[1].from).toBe(1)
   })
 
   it('checkpoints blocks hold more than 20 marks', () => {
     const { checkpoints } = builtSite()
-    const cp1 = checkpoints[0].blocks
-    const cp2 = checkpoints[1].blocks
+    const cp1 = checkpoints[0].canvas
+    const cp2 = checkpoints[1].canvas
     const allIds = new Set([
       ...Object.keys(cp1?.blocks ?? {}),
       ...Object.keys(cp2?.blocks ?? {}),

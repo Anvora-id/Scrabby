@@ -1,10 +1,11 @@
 import {
   addBlock,
   addTrait,
+  canvasOf,
   emptyProject,
   makeInstance,
 } from '../model/project.ts'
-import type { Asset, BuiltBlocks, Checkpoint, Files, Project } from '../model/types.ts'
+import type { Asset, Checkpoint, Files, Project } from '../model/types.ts'
 
 // Served from public/demo/ (credits in public/demo/CREDITS.md); all 1200×800 JPEGs.
 export const DEMO_PHOTOS = ['cupcakes.jpg', 'layer-cake.jpg', 'cookies.jpg', 'bake-stall.jpg', 'lemon-drizzle.jpg', 'brownie.jpg']
@@ -110,32 +111,6 @@ export function demoProject(): Project {
   p.blocks[site].layout = { d: 'col', k: [{ d: 'row', k: [home, menu, quiz] }] }
 
   return p
-}
-
-// ── builtBlocks helper ────────────────────────────────────────────────────────
-
-export function builtBlocks(p: Project, topIds: string[]): BuiltBlocks {
-  const blocks: BuiltBlocks['blocks'] = {}
-  const traits: BuiltBlocks['traits'] = {}
-
-  function walkBlock(id: string): void {
-    const b = p.blocks[id]
-    if (!b) return
-    blocks[id] = structuredClone(b)
-    for (const tid of b.traits) {
-      if (p.traits[tid]) traits[tid] = structuredClone(p.traits[tid])
-    }
-    for (const cid of b.children) walkBlock(cid)
-  }
-
-  for (const topId of topIds) walkBlock(topId)
-
-  // also walk every definition Block
-  for (const def of Object.values(p.defs)) {
-    walkBlock(def.blockId)
-  }
-
-  return { top: topIds, blocks, traits, defs: structuredClone(p.defs) }
 }
 
 // ── builtSite ─────────────────────────────────────────────────────────────────
@@ -404,8 +379,28 @@ if (quiz) {
   const v1 = files(false)
   const v2 = files(true)
 
-  // Step 4: cp1Blocks = builtBlocks(p, [site])
-  const cp1Blocks = builtBlocks(p, [site])
+  // Remove every Block and Trait not reachable from the Canvas or a definition
+  function prune(q: Project): Project {
+    const reachable = new Set<string>()
+    const reachableTraits = new Set<string>()
+    const walk = (id: string): void => {
+      if (reachable.has(id)) return
+      reachable.add(id)
+      const b = q.blocks[id]
+      if (!b) return
+      for (const tid of b.traits) reachableTraits.add(tid)
+      for (const cid of b.children) walk(cid)
+    }
+    walk('canvas')
+    for (const def of Object.values(q.defs)) walk(def.blockId)
+    for (const id of Object.keys(q.blocks)) if (!reachable.has(id)) delete q.blocks[id]
+    for (const id of Object.keys(q.traits)) if (!reachableTraits.has(id)) delete q.traits[id]
+    return q
+  }
+  const snapshot = () => canvasOf(prune(structuredClone(p)))
+
+  // Step 4: the Canvas before Build 1
+  const cp1Canvas = snapshot()
 
   // Step 5: Consume by hand
   // Delete site and the three Page Blocks, replace with locked Built pages
@@ -421,37 +416,11 @@ if (quiz) {
   // The site becomes the Checkpoint Block
   p.blocks[site] = { id: site, type: 'checkpoint', name: "Maya's bake sale", note: '', traits: [], children: [home, menu, quiz], locked: true, pos: { x: 40, y: 40 } }
 
-  // Step 6: home.children = [hours]; cp2Blocks; then cleanup
+  // Step 6: the Canvas before Build 2 has Opening hours in Home; then cleanup
   p.blocks[home].children = [hours]
-  const cp2Blocks = builtBlocks(p, [site])
+  const cp2Canvas = snapshot()
   p.blocks[home].children = []
-
-  // Remove every Block and Trait not reachable from the Canvas or a definition
-  const reachable = new Set<string>()
-  const reachableTraits = new Set<string>()
-
-  function walkReachable(id: string): void {
-    if (reachable.has(id)) return
-    reachable.add(id)
-    const b = p.blocks[id]
-    if (!b) return
-    for (const tid of b.traits) reachableTraits.add(tid)
-    for (const cid of b.children) walkReachable(cid)
-  }
-
-  // Canvas and all its children
-  walkReachable('canvas')
-  // Definitions
-  for (const def of Object.values(p.defs)) {
-    walkReachable(def.blockId)
-  }
-
-  for (const id of Object.keys(p.blocks)) {
-    if (!reachable.has(id)) delete p.blocks[id]
-  }
-  for (const id of Object.keys(p.traits)) {
-    if (!reachableTraits.has(id)) delete p.traits[id]
-  }
+  prune(p)
 
   // Step 7: Assemble the final project
   p.files = v2
@@ -459,26 +428,8 @@ if (quiz) {
 
   const time = Date.UTC(2026, 8, 25, 10)
   const checkpoints: Checkpoint[] = [
-    {
-      projectId: p.id,
-      number: 1,
-      label: 'Checkpoint 1',
-      from: null,
-      before: {},
-      after: v1,
-      blocks: cp1Blocks,
-      time,
-    },
-    {
-      projectId: p.id,
-      number: 2,
-      label: 'Checkpoint 2',
-      from: 1,
-      before: v1,
-      after: v2,
-      blocks: cp2Blocks,
-      time: time + 600_000,
-    },
+    { projectId: p.id, number: 1, files: {}, canvas: cp1Canvas, time },
+    { projectId: p.id, number: 2, from: 1, files: v1, canvas: cp2Canvas, time: time + 600_000 },
   ]
 
   return { project: p, checkpoints }

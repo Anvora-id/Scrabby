@@ -84,19 +84,18 @@ The user moves through three **Steps**, one on screen at a time: **Plan › Buil
 4. **The next Build** edits the existing code and keeps the hand edits.
 
 **A Build consumes its Blocks** (ADR 0005, TDD §0):
-- A finished Build saves a **Checkpoint**: the code and the Blocks that made it. Its Blocks leave the Canvas. The Canvas then holds one locked **Checkpoint Block** that stands for the built site, with one locked Page Block per `.html` file, plus any loose ideas.
+- Every Build first saves a **Checkpoint**: the code and the whole Canvas, as they are before Bob starts. A finished Build's Blocks leave the Canvas. The Canvas then holds one locked **Checkpoint Block** that stands for the built site, with one locked Page Block per `.html` file, plus any loose ideas.
 - The next Build's Blocks go inside the Checkpoint Block and ask only for what they add or change. New Blocks drop into a locked Page; new Page Blocks drop into the Checkpoint Block. A Trait dropped on a locked Page is a change request for that page; on the Checkpoint Block, for the whole site. There are no locked Blocks deeper than a page: a detail inside a built page changes by hand, with the Assistant, or with a page-level request.
 - Users never see the text Bob reads. There is no "built" badge: built Blocks are no longer on the Canvas.
 - **▶ Build** is only in Plan. When no new Blocks were added since the last Build, it is greyed out with the hint "Nothing new to build. To redo a Build, open **Checkpoints**"; the link opens the Checkpoints tab.
 
 **Checkpoints tab** (ticket 06): a third tab in Plan, next to Canvas and Library.
-- Each entry shows "Checkpoint N", the time, and a gist of what it added (from its Blocks' names). The current one is marked, with "+ unsaved hand edits" when the code changed since.
-- **Go back to this:** the code becomes the code after that Build, and the Canvas holds that Checkpoint's Block.
-- **Edit its Blocks:** the code goes back to how it was before that Build, and that Build's Blocks come back editable inside the previous Checkpoint Block. Building then retries that step; the result may differ. On Checkpoint 1 this clears the code and brings the Site Block back.
-- Both actions show a warning first, because the code reverts. If the Assistant has changes the user hasn't accepted, the warning adds "The Assistant's unaccepted changes will be dropped."
-- Before loading, if the code has hand edits that no Checkpoint holds, the app saves it as "Before loading Checkpoint N". These code-only Checkpoints offer only Go back to this.
-- Unbuilt Blocks on the Canvas become loose ideas when a Checkpoint loads. Loading never changes the Library.
-- The list only grows. A Build made after loading an older Checkpoint is labelled "from Checkpoint N" (or "remade from scratch").
+- A Checkpoint is the code plus the whole Canvas (Blocks, Traits, Custom Blocks and the Library list) at one moment. Every Build saves one before Bob starts; **Save Checkpoint** at the top of the tab saves one by hand. Save Checkpoint is greyed out ("Nothing new to save.") while the Project matches a Checkpoint, and while a Build runs. After a save, the new Checkpoint's name field opens.
+- Each entry shows "Checkpoint N", the time, and a gist: "Before Build: adds Footer, Contact form." or "Saved by you." The one the Project is on is marked, with "+ changes" when the code or the Canvas changed since.
+- **Restore:** the code and the Canvas go back to exactly that Checkpoint. Building from a Build's Checkpoint retries that Build; the result may differ.
+- Restore shows a warning first. If the Project has changes no Checkpoint holds, it asks: **Save and restore** saves them first as "Saved before restoring Checkpoint N"; **Restore without saving** drops them. If the Assistant has changes the user hasn't accepted, the warning adds "The Assistant's unaccepted changes will be dropped."
+- A Build with nothing changed since a Checkpoint (Try again, say) builds from that Checkpoint instead of saving a copy.
+- The list only grows. A Checkpoint saved after restoring an older one is labelled "from Checkpoint N".
 
 Moving between the Canvas and the code: "See its code" on a Block in the Checkpoints tab's Block list, and Block chips in the code (ticket 02). A Block chip opens the Checkpoints tab at the Build that made that code, with its Block highlighted.
 
@@ -142,7 +141,7 @@ Build in this order:
 | Must | "Bob picks" on each Trait (§11) |
 | Must | Warnings: marks on Blocks and Traits, and the stepper (§10) |
 | Must | Build: the Blocks turned into the text Bob reads (never shown to users); Bob writes the code; the Build step shows progress; the Build consumes its Blocks into a Checkpoint and the locked Checkpoint Block (§4) |
-| Must | Checkpoints tab: Go back to this, Edit its Blocks (§4) |
+| Must | Checkpoints tab: Save Checkpoint, Restore (§4) |
 | Must | Preview: redraws a moment after typing stops, with a "Pause live updates" switch; the changed parts flash after a Build or an accepted change (W-16, W-17) |
 | Must | Code editor; the next Build keeps hand edits |
 | Must | Library, images and video, with the image and video Traits |
@@ -232,7 +231,7 @@ The judges open the link cold, so the first visit has to work without help.
 
 Ticket 29, settled 2026-09-25.
 
-- **All or nothing.** A Build writes files only when it finishes. A failed Build writes nothing, saves no Checkpoint, and leaves its Blocks on the Canvas, editable. The Block chips lit during the run go back to dim.
+- **All or nothing.** A Build writes files only when it finishes. A failed Build writes no code and leaves its Blocks on the Canvas, editable; the Checkpoint it saved before Bob started stays. The Block chips lit during the run go back to dim.
 - **The failed Build card** stays on the Build step. Title: "Build N did not finish". Under it: "Nothing changed: your code and Blocks are as they were." Then the failing line, red, in plain words:
   - Time cap: "Bob took too long, so this Build was stopped."
   - Step cap (40 tool rounds): "Bob ran out of steps before finishing, so this Build was stopped."
