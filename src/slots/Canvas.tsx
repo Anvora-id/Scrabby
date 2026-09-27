@@ -282,9 +282,13 @@ export default function Canvas() {
       // The lift is 3%, but at most 8px, so a big Block doesn't balloon.
       a.style.setProperty('--lift', String(Math.min(1.03, 1 + 8 / Math.max(el.offsetWidth, el.offsetHeight))))
       a.classList.remove(parts.over)
-      // Keeps the size it had where it was grabbed, e.g. a palette Trait's wider padding.
-      a.style.width = `${el.offsetWidth}px`
-      if (worldRef.current?.contains(el)) a.style.transform = `scale(${view.current.z})`
+      // On the Canvas everything is sized max-content, like .placed: a fixed width a hair too small
+      // shrinks the inner Blocks and wraps their Traits. The palette keeps the width it had there,
+      // e.g. a palette Trait's wider padding.
+      if (worldRef.current?.contains(el)) {
+        a.style.width = 'max-content'
+        a.style.transform = `scale(${view.current.z})`
+      } else a.style.width = `${el.offsetWidth}px`
       document.body.append(a)
       avatar.current = a
       source.current = el
