@@ -10,24 +10,27 @@
 }
 
 .greeting {
-  width: 560px;
+  width: 600px;
   max-width: calc(100% - 32px);
   overflow: hidden;
   background: var(--surface);
-  border: 2px solid var(--line);
+  border: 2px solid var(--brand-dark);
   border-radius: var(--r-card);
-  box-shadow: 0 6px 0 #0000002e;
+  box-shadow: 0 6px 0 var(--brand-dark);
   color: var(--text);
   text-align: center;
   animation: pop var(--t-pop) var(--spring);
 }
 
-/* The paper stage: the Canvas's dotted paper, with the logo and a few toy Blocks on it. */
+/* The paper stage: the Canvas's dotted paper, with the logo and a few toy Blocks on it.
+   It fades into the white part below instead of ending on a line. */
 .stage {
   position: relative;
   padding: 28px 40px 24px;
-  background: var(--ws) radial-gradient(circle, var(--ws-dot) 1.6px, transparent 1.8px) 0 0 / 24px 24px;
-  border-bottom: 2px solid var(--line-soft);
+  background:
+    linear-gradient(transparent 55%, var(--surface)),
+    radial-gradient(circle, var(--ws-dot) 1.6px, transparent 1.8px) 0 0 / 24px 24px,
+    var(--ws);
 }
 
 /* The logo: the wordmark centered on Bob's middle. Positioned, so it paints over the toys. */
@@ -62,7 +65,8 @@
   inset: 0;
 }
 
-/* A toy Block: its category's frame color and darker bottom edge, straight (only Notes tilt). */
+/* A toy Block: its category's frame color and darker bottom edge. It floats on `translate`;
+   its 3D tilt toward the pointer is set on `transform` from the script. */
 .toy {
   position: absolute;
   display: grid;
@@ -73,15 +77,14 @@
   border-radius: 10px;
   box-shadow: 0 3px 0 var(--c3);
   color: var(--ink);
-  transition: translate var(--t-settle) var(--ease);
   animation: float 3.6s ease-in-out infinite alternate;
 }
 
-.toy:nth-child(1) { left: 24px; top: 22px; width: 46px; animation-duration: 3.4s; }
-.toy:nth-child(2) { left: 30px; bottom: 26px; width: 38px; animation-duration: 4.1s; animation-delay: -1.2s; }
-.toy:nth-child(3) { right: 28px; top: 28px; width: 42px; animation-duration: 3.8s; animation-delay: -2s; }
-.toy:nth-child(4) { right: 46px; bottom: 22px; width: 34px; animation-duration: 3.2s; animation-delay: -.6s; }
-.toy:nth-child(5) { left: 60%; top: 12px; width: 36px; animation-duration: 4.4s; animation-delay: -2.8s; }
+.toy:nth-child(1) { left: 24px; top: 22px; width: 60px; animation-duration: 3.4s; }
+.toy:nth-child(2) { left: 30px; bottom: 26px; width: 52px; animation-duration: 4.1s; animation-delay: -1.2s; }
+.toy:nth-child(3) { right: 28px; top: 28px; width: 58px; animation-duration: 3.8s; animation-delay: -2s; }
+.toy:nth-child(4) { right: 46px; bottom: 22px; width: 48px; animation-duration: 3.2s; animation-delay: -.6s; }
+.toy:nth-child(5) { left: 60%; top: 12px; width: 50px; animation-duration: 4.4s; animation-delay: -2.8s; }
 
 .lower {
   padding: 24px 32px 32px;
@@ -216,8 +219,8 @@
 }
 
 @keyframes float {
-  from { transform: translateY(-3px); }
-  to { transform: translateY(3px); }
+  from { translate: 0 -3px; }
+  to { translate: 0 3px; }
 }
 
 /* ── buttons (speech bubbles) ───────────────────────────────────────────────── */
