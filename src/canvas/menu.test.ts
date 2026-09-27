@@ -46,12 +46,19 @@ describe('menu', () => {
     expect(labels(p, cpId)).toEqual(['Add Note'])
   })
 
-  it('Built page → Add Note only', () => {
+  it('Built page → Add Note, Delete Page that warns and takes its file', () => {
     const p = demo()
     const pageId = addBlock(p, 'page', 'Contact')
     p.blocks[pageId].locked = true
     p.blocks['canvas'].children.push(pageId)
-    expect(labels(p, pageId)).toEqual(['Add Note'])
+    const file = p.blocks[pageId].file!
+    p.files[file] = '<html></html>'
+    expect(labels(p, pageId)).toEqual(['Add Note', 'Delete Page'])
+    const del = menuItems(p, pageId).find(i => i.label === 'Delete Page')!
+    expect(del.warn).toBeDefined()
+    del.change!(p)
+    expect(p.blocks[pageId]).toBeUndefined()
+    expect(file in p.files).toBe(false)
   })
 
   it('Add Note sets noteOn; Delete Note when note || noteOn', () => {

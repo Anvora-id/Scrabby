@@ -71,10 +71,6 @@
   color: var(--ink);
 }
 
-.saved {
-  background: var(--note-bg);
-}
-
 .hereTag {
   background: var(--brand);
   color: #fff;
@@ -260,4 +256,18 @@
 
 @media (prefers-reduced-motion: reduce) {
   .primary, .primary:active, .ghost, .ghost:active { transition: none; transform: none; }
+}
+
+/* The header matches the Library's */
+.head { composes: head from './Library.module.css'; }
+.heading { composes: heading from './Library.module.css'; }
+.hint { composes: hint from './Library.module.css'; }
+.save { composes: upload from './Library.module.css'; }
+
+.save:disabled,
+.ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }

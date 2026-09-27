@@ -203,7 +203,7 @@ export default function BuildCard() {
   }
 
   const failed = run.state === 'failed'
-  const notStarted = failed && (run.reason === 'limit' || run.reason === 'start')
+  const notStarted = failed && (run.reason === 'limit' || run.reason === 'start' || run.reason === 'save')
   for (const c of run.chips) {
     const b = p.blocks[c.id]
     if (b && b.type !== 'canvas') icons.current[c.id] = b.inst ? 'custom' : BLOCK_TYPES[b.type].icon

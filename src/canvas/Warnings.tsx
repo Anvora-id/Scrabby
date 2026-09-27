@@ -13,9 +13,10 @@ export const MarksContext = createContext<{ marks: Map<string, Warning[]>; busy:
 export function Mark({ id }: { id: string }) {
   const { marks, busy, open } = useContext(MarksContext)
   const ws = marks.get(id)
-  if (!ws || busy === id) return null
+  if (!ws) return null
+  // Hidden, not removed, so the item keeps its width and its row doesn't reflow on a click.
   return (
-    <button className={styles.badge} data-badge={id} title={ws.map(w => w.text).join('\n')} onClick={() => open(id)}>
+    <button className={busy === id ? `${styles.badge} ${styles.hidden}` : styles.badge} data-badge={id} title={ws.map(w => w.text).join('\n')} onClick={() => open(id)}>
       {badgeOf(ws)}
     </button>
   )

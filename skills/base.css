@@ -229,8 +229,11 @@ main > section {
 }
 
 /* A section whose whole content sits on one middle line: add .centered to its .container.
+   A group inside a card, such as a quiz result, can take .centered too.
    Never center one part under a left-aligned heading. */
 .centered {
+  /* Buttons and badges read this, so they follow the words to the middle */
+  --part-align: center;
   text-align: center;
 }
 .centered,
@@ -246,12 +249,9 @@ main > section {
 .centered > * {
   margin-inline: auto;
 }
-.centered .button,
-.centered .badge {
-  align-self: center;
-}
-/* Words inside cards, forms and next to a picture stay left-aligned */
-.centered :is(.card, .form, .split) {
+/* Words inside cards, forms and next to a picture stay left-aligned, unless that part is .centered itself */
+.centered :is(.card, .form, .split):not(.centered) {
+  --part-align: start;
   text-align: start;
 }
 
@@ -353,9 +353,9 @@ main > section {
   color: var(--brand-800);
   font-size: var(--text-sm);
   font-weight: 600;
-  /* Its own width in a column or a grid */
-  align-self: flex-start;
-  justify-self: start;
+  /* Its own width in a column or a grid, on the side its words line up to */
+  align-self: var(--part-align, start);
+  justify-self: var(--part-align, start);
 }
 
 /* Top bar: name on the left, links on the right, on one line */
@@ -431,6 +431,11 @@ main > section {
   justify-content: space-between;
   gap: var(--space-2);
 }
+/* A footer with one line only: that line sits in the middle, not alone on the left */
+.site-footer .container > :only-child {
+  margin-inline: auto;
+  text-align: center;
+}
 
 /* Buttons: .button is the main action, .button-secondary every other one */
 .button {
@@ -447,9 +452,9 @@ main > section {
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
-  /* Keep its own width in a column or a grid; fill the width only with a rule that asks */
-  align-self: flex-start;
-  justify-self: start;
+  /* Keep its own width in a column or a grid, on the side its words line up to; fill the width only with a rule that asks */
+  align-self: var(--part-align, start);
+  justify-self: var(--part-align, start);
   box-shadow: var(--shadow-1);
   transition: background-color 150ms ease-out, box-shadow 150ms ease-out, transform 120ms ease-out;
 }

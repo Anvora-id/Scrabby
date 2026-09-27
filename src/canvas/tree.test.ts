@@ -10,6 +10,7 @@ import {
   onClickOptions,
   parentMap,
   removeItem,
+  repairLayout,
 } from './tree.ts'
 
 // Helper: get a fresh demo project
@@ -97,7 +98,7 @@ describe('tree', () => {
     const button = p.blocks[bar].children[0]
     dropItem(p, { kind: 'block', id: quiz }, { id: 'canvas', pos: { x: 0, y: 0 } })
     expect(p.blocks[button].folded).toBe(true)
-    expect(p.blocks[bar].folded).toBeUndefined()
+    expect(p.blocks[bar].folded).toBe(false)
   })
 
   it('an open Block stays open when moved', () => {
@@ -105,7 +106,18 @@ describe('tree', () => {
     const home = bid(p, 'Home')
     const heroId = p.blocks[home].children.find(id => p.blocks[id]?.type === 'hero')!
     dropItem(p, { kind: 'block', id: heroId }, { id: 'canvas', pos: { x: 0, y: 0 } })
-    expect(p.blocks[heroId].folded).toBeUndefined()
+    expect(p.blocks[heroId].folded).toBe(false)
+  })
+
+  it('an open Block moved past the fold depth stays open', () => {
+    const p = demo()
+    const home = bid(p, 'Home')
+    const heroId = p.blocks[home].children.find(id => p.blocks[id]?.type === 'hero')!
+    const box = addBlock(p, 'box')
+    p.blocks[home].children.push(box)
+    dropItem(p, { kind: 'block', id: box }, { id: heroId })
+    expect(p.blocks[heroId].children).toContain(box)
+    expect(p.blocks[box].folded).toBe(false)
   })
 
   it('Traits at an index', () => {
@@ -180,6 +192,11 @@ describe('tree', () => {
     expect(canDrop(p, { kind: 'block', id: builtPage.id }, pageParent)).toBe(true)
     // Moving locked page to canvas (not its parent) is not allowed
     expect(canDrop(p, { kind: 'block', id: builtPage.id }, 'canvas')).toBe(false)
+  })
+
+  it('Built pages sit three to a row in the Checkpoint Block', () => {
+    const cp = { ...Object.values(builtSite().project.blocks).find(b => b.type === 'checkpoint')!, children: ['a', 'b', 'c', 'd'], layout: undefined }
+    expect(repairLayout(cp)).toEqual({ d: 'col', k: [{ d: 'row', k: ['a', 'b', 'c'] }, 'd'] })
   })
 
   it('a Built page reorders only inside its Checkpoint Block and stays locked', () => {

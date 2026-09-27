@@ -41,14 +41,14 @@ beforeEach(() => { vi.useFakeTimers() })
 afterEach(() => { vi.useRealTimers() })
 
 describe('runBuild', () => {
-  it('Build 1 saves Checkpoint 1 and turns the Site into the Checkpoint Block', async () => {
+  it('Build 1 saves Checkpoint 1 before Bob starts and turns the Site into the Checkpoint Block', async () => {
     const p = demoProject()
     const loose = addBlock(p, 'section', 'Idea')
     p.blocks[loose].pos = { x: 600, y: 40 }
     p.blocks.canvas.children.push(loose)
     const site = p.blocks.canvas.children[0]
     const pages = [...p.blocks[site].children]
-    const v1 = builtSite().checkpoints[0].after
+    const v1 = builtSite().checkpoints[1].files
     const doc = instructionDocument(p) as { document: string }
     start(p, [], [{ type: 'start' }, { type: 'block', id: pages[0] }, { type: 'block', id: pages[0] }, { type: 'files', files: v1 }])
 
@@ -56,9 +56,10 @@ describe('runBuild', () => {
 
     expect(fake.requests).toEqual([{ kind: 'build', document: doc.document, files: {} }])
     expect(fake.saved).toHaveLength(1)
-    expect(fake.saved[0]).toMatchObject({ number: 1, label: 'Checkpoint 1', from: null, before: {} })
-    expect(fake.saved[0].after['.builds/build-1.md']).toBe(doc.document)
-    expect(fake.saved[0].blocks?.top).toEqual([site])
+    expect(fake.saved[0]).toMatchObject({ number: 1, files: {} })
+    expect(fake.saved[0].from).toBeUndefined()
+    expect(fake.saved[0].saved).toBeUndefined()
+    expect(fake.saved[0].canvas.blocks[site]).toMatchObject({ type: 'site', children: pages })
 
     const q = getProject()
     expect(q.blocks[site]).toMatchObject({ type: 'checkpoint', locked: true, name: "Maya's bake sale", children: pages, traits: [] })
@@ -71,7 +72,7 @@ describe('runBuild', () => {
     expect(q.blocks[loose]).toBeDefined()
     expect(q.checkpoint).toBe(1)
     expect(q.files['style.css']).toBe(guardImages(v1)['style.css'])
-    expect(q.files).toEqual(fake.saved[0].after)
+    expect(q.files['.builds/build-1.md']).toBe(doc.document)
 
     expect(getBuild()).toMatchObject({ n: 1, state: 'done', loose: 1, lit: [pages[0], pages[0]] })
     expect(flashBlocks).toHaveBeenLastCalledWith([pages[0], pages[0]])
@@ -82,7 +83,7 @@ describe('runBuild', () => {
     expect(getUi().step).toBe('try')
   })
 
-  it('a limit changes nothing and shows its message on a failed card on Build', async () => {
+  it('a limit leaves the Project as it was and shows its message on a failed card on Build', async () => {
     start(demoProject(), [], [{ type: 'limit', message: "You've used this hour's 10 Builds. Try again in 5 minutes." }])
     const p = getProject()
 
@@ -90,7 +91,7 @@ describe('runBuild', () => {
     expect(getProject()).toBe(p)
     expect(getUi().step).toBe('build')
     expect(getBuild()).toMatchObject({ n: 1, state: 'failed', reason: 'limit', message: "You've used this hour's 10 Builds. Try again in 5 minutes." })
-    expect(fake.saved).toHaveLength(0)
+    expect(fake.saved).toHaveLength(1)
   })
 
   it('a plan problem on Try again shows a failed card with its words', async () => {
@@ -140,7 +141,7 @@ describe('runBuild', () => {
     log.mockRestore()
   })
 
-  it('a failed Build changes nothing and stays on Build', async () => {
+  it('a failed Build leaves the Project as it was, keeps its Checkpoint and stays on Build', async () => {
     const d = demoProject()
     const home = d.blocks[d.blocks.canvas.children[0]].children[0]
     start(d, [], [{ type: 'start' }, { type: 'block', id: home }, { type: 'error', reason: 'time' }])
@@ -148,14 +149,25 @@ describe('runBuild', () => {
 
     expect(await runBuild()).toBeUndefined()
     expect(getProject()).toBe(p)
-    expect(fake.saved).toHaveLength(0)
+    expect(fake.saved).toHaveLength(1)
     expect(getBuild()).toMatchObject({ n: 1, state: 'failed', reason: 'time', lit: [home] })
     vi.advanceTimersByTime(2000)
     expect(getUi().step).toBe('build')
   })
 
-  it('a Checkpoint that fails to save changes nothing and fails the Build', async () => {
-    start(demoProject(), [], [{ type: 'start' }, { type: 'files', files: builtSite().checkpoints[0].after }])
+  it('Try again with nothing changed builds from the same Checkpoint', async () => {
+    const d = demoProject()
+    start(d, [], [{ type: 'start' }, { type: 'error', reason: 'time' }])
+    await runBuild()
+    fake.events = [{ type: 'start' }, { type: 'files', files: builtSite().checkpoints[1].files }]
+    await runBuild()
+    expect(fake.saved).toHaveLength(1)
+    expect(getBuild()).toMatchObject({ n: 1, state: 'done' })
+    expect(getProject().checkpoint).toBe(1)
+  })
+
+  it('a Checkpoint that fails to save stops the Build before Bob starts', async () => {
+    start(demoProject(), [], [{ type: 'start' }, { type: 'files', files: builtSite().checkpoints[1].files }])
     const p = getProject()
     vi.mocked(addCheckpoint).mockRejectedValueOnce(new Error('QuotaExceededError'))
     vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -163,6 +175,7 @@ describe('runBuild', () => {
     expect(await runBuild()).toBeUndefined()
     expect(getProject()).toBe(p)
     expect(getBuild()).toMatchObject({ n: 1, state: 'failed', reason: 'save' })
+    expect(fake.requests).toHaveLength(0)
     vi.advanceTimersByTime(2000)
     expect(getUi().step).toBe('build')
   })
@@ -181,9 +194,11 @@ describe('runBuild', () => {
     await runBuild()
 
     expect(fake.requests[0].files['style.css']).toContain('/* my hand edit */')
-    expect(fake.saved[2]).toMatchObject({ number: 3, label: 'Checkpoint 3', from: 2 })
-    expect(fake.saved[2].after['.builds/build-3.md']).toBeDefined()
+    expect(fake.saved[2]).toMatchObject({ number: 3, from: 2 })
+    expect(fake.saved[2].files['style.css']).toContain('/* my hand edit */')
+    expect(fake.saved[2].canvas.blocks[home].children).toEqual([section])
     const q = getProject()
+    expect(q.files['.builds/build-3.md']).toBeDefined()
     expect(q.files['style.css']).toContain('/* my hand edit */')
     expect(q.blocks[section]).toBeUndefined()
     expect(q.blocks[home].children).toEqual([])

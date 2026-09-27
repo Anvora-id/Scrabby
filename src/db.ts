@@ -28,13 +28,24 @@ let dbPromise: Promise<IDBPDatabase<ScrabbyDB>> | null = null
 
 function getDb(): Promise<IDBPDatabase<ScrabbyDB>> {
   if (!dbPromise) {
-    dbPromise = openDB<ScrabbyDB>('scrabby', 1, {
-      upgrade(db) {
-        db.createObjectStore('projects', { keyPath: 'id' })
-        const checkpoints = db.createObjectStore('checkpoints', { keyPath: ['projectId', 'number'] })
-        checkpoints.createIndex('projectId', 'projectId')
-        const assets = db.createObjectStore('assets', { keyPath: ['projectId', 'id'] })
-        assets.createIndex('projectId', 'projectId')
+    dbPromise = openDB<ScrabbyDB>('scrabby', 2, {
+      async upgrade(db, from, _, tx) {
+        if (from < 1) {
+          db.createObjectStore('projects', { keyPath: 'id' })
+          const checkpoints = db.createObjectStore('checkpoints', { keyPath: ['projectId', 'number'] })
+          checkpoints.createIndex('projectId', 'projectId')
+          const assets = db.createObjectStore('assets', { keyPath: ['projectId', 'id'] })
+          assets.createIndex('projectId', 'projectId')
+          return
+        }
+        // Version 1 Checkpoints held code and built Blocks apart; they can't be restored, so they go, with the Project's links to them.
+        await tx.objectStore('checkpoints').clear()
+        const projects = tx.objectStore('projects')
+        for (const p of await projects.getAll()) {
+          delete p.checkpoint
+          delete p.checkpointNames
+          await projects.put(p)
+        }
       },
     })
   }
@@ -85,9 +96,14 @@ export async function listAssets(projectId: string): Promise<AssetBlob[]> {
   return db.getAllFromIndex('assets', 'projectId', projectId)
 }
 
-export async function deleteAsset(projectId: string, id: string): Promise<void> {
+/** Deletes the Blobs of Assets that neither the Project nor any of its Checkpoints lists, so a restore finds its pictures. */
+export async function pruneAssets(p: Project): Promise<void> {
   const db = await getDb()
-  await db.delete('assets', [projectId, id])
+  const cps = await db.getAllFromIndex('checkpoints', 'projectId', p.id)
+  const keep = new Set([p, ...cps.map(c => c.canvas)].flatMap(x => x.assets.map(a => a.id)))
+  for (const b of await db.getAllFromIndex('assets', 'projectId', p.id)) {
+    if (!keep.has(b.id)) await db.delete('assets', [p.id, b.id])
+  }
 }
 
 // re-export Asset type for consumers that import from db

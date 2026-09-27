@@ -104,6 +104,17 @@
   outline: none;
 }
 
+.ctxDelete,
+.ctxDelete:hover,
+.ctxDelete:focus {
+  color: var(--alert);
+}
+
+.ctxDelete:hover,
+.ctxDelete:focus {
+  background: var(--alert-bg);
+}
+
 /* Tooltip */
 
 .tip {

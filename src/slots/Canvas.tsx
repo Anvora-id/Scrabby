@@ -23,7 +23,7 @@ const MIN_ZOOM = 0.3
 const MAX_ZOOM = 2
 const CORNER = 40
 const DOTS = 24
-const DWELL = 250 // ms the pointer rests on a spot before a Block's gap moves there
+const DWELL = 75 // ms the pointer rests on a spot before a Block's gap moves there
 const HOLD = [[12, 0], [-12, 0], [0, 12], [0, -12]] // a chosen spot holds while any of these nudges still picks it
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n))
@@ -282,9 +282,13 @@ export default function Canvas() {
       // The lift is 3%, but at most 8px, so a big Block doesn't balloon.
       a.style.setProperty('--lift', String(Math.min(1.03, 1 + 8 / Math.max(el.offsetWidth, el.offsetHeight))))
       a.classList.remove(parts.over)
-      // Keeps the size it had where it was grabbed, e.g. a palette Trait's wider padding.
-      a.style.width = `${el.offsetWidth}px`
-      if (worldRef.current?.contains(el)) a.style.transform = `scale(${view.current.z})`
+      // On the Canvas everything is sized max-content, like .placed: a fixed width a hair too small
+      // shrinks the inner Blocks and wraps their Traits. The palette keeps the width it had there,
+      // e.g. a palette Trait's wider padding.
+      if (worldRef.current?.contains(el)) {
+        a.style.width = 'max-content'
+        a.style.transform = `scale(${view.current.z})`
+      } else a.style.width = `${el.offsetWidth}px`
       document.body.append(a)
       avatar.current = a
       source.current = el
@@ -326,7 +330,9 @@ export default function Canvas() {
       const under = document.elementFromPoint(x, y)
       if (under?.closest('[data-palette]')) return { target: null, trash: canTrash(p, d.item) }
       if (!under || !viewportRef.current?.contains(under) || !rects.current) return { target: null, trash: false }
-      if (!under.closest('[data-bid]')) return { target: !getUi().editing && canDrop(p, d.item, 'canvas') ? { id: 'canvas' } : null, trash: false }
+      // In the edit view only the definition itself can land on empty space, which moves it.
+      const free = getUi().editing ? d.item.kind === 'block' && !!p.blocks[d.item.id]?.defines : canDrop(p, d.item, 'canvas')
+      if (!under.closest('[data-bid]')) return { target: free ? { id: 'canvas' } : null, trash: false }
       return { target: targetAt(p, rects.current, d.item, x, y), trash: false }
     }
 
@@ -381,11 +387,14 @@ export default function Canvas() {
     }
 
     // Ends the drag and hands back what was dragged, its copy and the element it was grabbed from; null when nothing was dragged.
+    // A release before the gap has moved still aims at the spot under the pointer, not the old gap.
     function takeDrag() {
       takePending()
+      const next = dwell.current?.next
       stopDwell()
-      const d = getDrag()
-      if (!d) return null
+      const drag = getDrag()
+      if (!drag) return null
+      const d = next ? { ...drag, ...next } : drag
       snap()
       const a = avatar.current!, el = source.current!
       avatar.current = source.current = null
@@ -420,6 +429,14 @@ export default function Canvas() {
         to.pos = {
           x: Math.round((e.clientX - grab.current.x - r.left - v.x) / v.z),
           y: Math.round((e.clientY - grab.current.y - r.top - v.y) / v.z),
+        }
+        // The definition stays out of the Canvas tree; only its spot in the edit view changes.
+        const dId = item.kind === 'block' && p.blocks[item.id]?.defines
+        if (dId && p.defs[dId]) {
+          a.remove()
+          const was = p.defs[dId].pos
+          if (was?.x !== to.pos.x || was?.y !== to.pos.y) updateProject(q => { q.defs[dId].pos = to.pos })
+          return land(item.id)
         }
       }
       const dry = structuredClone(p)
@@ -536,7 +553,7 @@ export default function Canvas() {
       <div ref={worldRef} className={styles.world}>
         <MarksContext.Provider value={editingId ? { marks: new Map(), busy: null, open: () => {} } : { marks, busy, open: openPop }}>
         {editingId && defBlockId ? (
-          <div className={styles.placed} style={{ left: 40, top: 70 }}>
+          <div className={styles.placed} style={{ left: def!.pos?.x ?? 40, top: def!.pos?.y ?? 70 }}>
             <BlockView p={p} id={defBlockId} />
           </div>
         ) : (

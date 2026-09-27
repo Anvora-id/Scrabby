@@ -74,24 +74,18 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
         p.blocks.canvas.children.includes(id) && !site && !checkpoint && styles.loose,
       )}
       style={def && customColor(def.color)}
-      onPointerDown={b.defines ? undefined : dragSource({ kind: 'block', id })}
+      onPointerDown={dragSource({ kind: 'block', id })}
       onContextMenu={e => openMenu(e, id)}
     >
       <div className={cx(styles.header, !drag && styles.pressable)} data-tip={`b:${id}`}
-        onBlur={site ? e => { if (e.target instanceof HTMLInputElement) fillBlankName(e.target) } : undefined}>
+        onBlur={site || checkpoint ? e => { if (e.target instanceof HTMLInputElement) fillBlankName(e.target) } : undefined}>
         {!checkpoint && (
           <button className={o.fold} title={folded ? 'Open this Block' : 'Fold this Block'}
             onClick={() => updateProject(d => { d.blocks[id].folded = !folded })}>
             <ICONS.fold weight="fill" size={12} className={cx(o.chevron, folded && o.turned)} />
           </button>
         )}
-        {checkpoint ? (
-          <>
-            <ICONS.checkpoint weight="fill" size={16} />
-            {p.checkpoint ? checkpointTitle(p, p.checkpoint) : 'Checkpoint'}
-            <span className={styles.hint}>the built site</span>
-          </>
-        ) : b.locked ? (
+        {b.locked && !checkpoint ? (
           <>
             <ICONS.checkpoint weight="fill" size={16} />
             Page "{b.name}"
@@ -101,11 +95,12 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
           <>
             <span className={styles.type}>
               <Icon weight="fill" size={16} />
-              {b.inst ? p.blocks[def?.blockId ?? '']?.name : b.defines ? 'Custom Block' : type.label}
+              {b.inst ? p.blocks[def?.blockId ?? '']?.name : b.defines ? 'Custom Block'
+                : checkpoint ? `Site (${p.checkpoint ? checkpointTitle(p, p.checkpoint) : 'Checkpoint'})` : type.label}
             </span>
-            {/* The Site's name is the Project name (applyChange copies it onto the Site) */}
+            {/* The Site's name is the Project name (applyChange copies it onto the Site or Checkpoint Block) */}
             <TextField className={styles.name} value={b.name} onChange={v => updateProject(d => {
-              if (site) d.name = v
+              if (site || checkpoint) d.name = v
               else d.blocks[id].name = v
             })} />
             {b.inst && (
@@ -154,7 +149,7 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
                 <div className={styles.emptyHint}>
                   Drag a Page into your Site to start.
                 </div>
-              ) : b.locked && b.type === 'page' && <span className={styles.dropHint}>drop Blocks or Traits here</span>}
+              ) : b.locked && b.type === 'page' && b.traits.length === 0 && <span className={styles.dropHint}>drop Blocks or Traits here</span>}
             </div>
           )}
         </>

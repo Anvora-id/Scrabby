@@ -2,12 +2,15 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { PencilSimpleIcon } from '@phosphor-icons/react'
 import { ICONS } from '../icons.ts'
 import { BLOCK_TYPES } from '../model/catalogue.ts'
-import type { BuiltBlocks, Checkpoint } from '../model/types.ts'
+import type { Checkpoint } from '../model/types.ts'
 import { listCheckpoints } from '../db.ts'
-import { buildOf, checkpointTitle, fromTag, gist, loadCheckpoint, renameCheckpoint, sameFiles, warning, type LoadMode } from '../checkpoints.ts'
+import { holding } from '../model/project.ts'
+import { buildOf, checkpointTitle, fromTag, gist, renameCheckpoint, restoreCheckpoint, saveCheckpoint, warning } from '../checkpoints.ts'
+import { topBlock } from '../instructions/warnings.ts'
+import { useBuild, useStarting } from '../build.ts'
 import { findBlockCode } from '../code/code.ts'
 import { clearCheckpointFocus, seeItsCode, useCheckpointFocus } from '../code/navigation.ts'
-import { getProject, setPlanTab, updateProject, useProject } from '../store.ts'
+import { getProject, updateProject, useProject } from '../store.ts'
 import { cx } from '../canvas/cx.ts'
 import { Warning } from '../shell/Warning.tsx'
 import styles from './Checkpoints.module.css'
@@ -17,11 +20,13 @@ interface Picked { n: number; id: string; flash?: boolean }
 export default function Checkpoints() {
   const p = useProject()
   const focus = useCheckpointFocus()
+  const starting = useStarting()
+  const building = useBuild()?.state === 'running' || starting
   const [cps, setCps] = useState<Checkpoint[] | null>(null)
   const [reload, setReload] = useState(0)
   const [open, setOpen] = useState<number | null>(null)
   const [picked, setPicked] = useState<Picked | null>(null)
-  const [ask, setAsk] = useState<{ c: Checkpoint; mode: LoadMode } | null>(null)
+  const [ask, setAsk] = useState<Checkpoint | null>(null)
   const [renaming, setRenaming] = useState<number | null>(null)
   const [draft, setDraft] = useState('')
   const [refocus, setRefocus] = useState<number | null>(null) // after Enter or Escape, keyboard focus returns to that rename button
@@ -45,16 +50,27 @@ export default function Checkpoints() {
     if (picked?.flash) flashRow.current?.scrollIntoView({ block: 'center' })
   }, [picked])
 
-  async function confirm(c: Checkpoint, mode: LoadMode) {
+  async function restore(c: Checkpoint, save: boolean) {
     setAsk(null)
     try {
-      await loadCheckpoint(c.number, mode)
+      await restoreCheckpoint(c.number, save)
     } catch (e) {
-      console.error('Loading the Checkpoint failed', e)
+      console.error('Restoring the Checkpoint failed', e)
       return
     }
     setReload(r => r + 1)
-    if (mode === 'edit') setPlanTab('canvas')
+  }
+
+  async function save() {
+    let n: number
+    try {
+      n = await saveCheckpoint()
+    } catch (e) {
+      console.error('Saving the Checkpoint failed', e)
+      return
+    }
+    setReload(r => r + 1)
+    startRename(n)
   }
 
   function startRename(n: number) {
@@ -69,8 +85,8 @@ export default function Checkpoints() {
     if (save && draft.trim() !== (getProject().checkpointNames?.[n] ?? '')) updateProject(d => renameCheckpoint(d, n, draft))
   }
 
-  function tree(n: number, bb: BuiltBlocks, id: string): ReactNode {
-    const b = bb.blocks[id]
+  function tree(n: number, blocks: Checkpoint['canvas']['blocks'], id: string): ReactNode {
+    const b = blocks[id]
     if (!b || b.type === 'canvas') return null
     const Icon = ICONS[b.locked ? 'checkpoint' : b.inst ? 'custom' : BLOCK_TYPES[b.type].icon]
     const cat = b.inst ? 'my' : BLOCK_TYPES[b.type].category
@@ -91,25 +107,34 @@ export default function Checkpoints() {
             <button className={styles.see} onClick={e => { e.stopPropagation(); seeItsCode(id) }}>{'</> See its code'}</button>
           )}
         </span>
-        {b.children.length > 0 && <ul>{b.children.map(c => tree(n, bb, c))}</ul>}
+        {b.children.length > 0 && <ul>{b.children.map(c => tree(n, blocks, c))}</ul>}
       </li>
     )
   }
 
   if (!cps) return <div className={styles.panel} />
 
+  const current = holding(p, cps)
   return (
     <div className={styles.panel}>
+      <div className={styles.head}>
+        <div>
+          <h2 className={styles.heading}>Checkpoints</h2>
+          <p className={styles.hint}>Saved versions of your Blocks and code. Every Build saves one first.</p>
+        </div>
+        <button className={styles.save} disabled={!!current || building} title={current ? 'Nothing new to save.' : undefined} onClick={save}>Save Checkpoint</button>
+      </div>
       {cps.length === 0 && (
         <div className={styles.empty}>
           <img className={styles.bob} src="/bob-head.svg" alt="" />
-          No Checkpoints yet. Every Build saves one here.
+          No Checkpoints yet. Save one, or Build, and it shows up here.
         </div>
       )}
       {[...cps].reverse().map(c => {
         const here = p.checkpoint === c.number
         const tag = fromTag(c, p)
         const isOpen = open === c.number
+        const top = topBlock(c.canvas)
         return (
           <article key={c.number} className={cx(styles.entry, here && styles.here)}>
             <div className={styles.title}>
@@ -140,37 +165,33 @@ export default function Checkpoints() {
               )}
               <span className={styles.time}>{new Date(c.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               {tag && <span className={styles.tag}>{tag}</span>}
-              {!c.blocks && <span className={cx(styles.tag, styles.saved)}>saved for you</span>}
-              {here && <span className={cx(styles.tag, styles.hereTag)}>you are here{!sameFiles(p.files, c.after) && ' + hand edits'}</span>}
+              {here && <span className={cx(styles.tag, styles.hereTag)}>you are here{current !== c && ' + changes'}</span>}
             </div>
             <p className={styles.gist}>{gist(c, p)}</p>
             <div className={styles.actions}>
-              <button className={styles.ghost} onClick={() => setAsk({ c, mode: 'goBack' })}>Go back to this</button>
-              {c.blocks && (
-                <>
-                  <button className={styles.ghost} onClick={() => setAsk({ c, mode: 'edit' })}>Edit its Blocks</button>
-                  <button
-                    className={styles.link}
-                    aria-expanded={isOpen}
-                    onClick={() => setOpen(isOpen ? null : c.number)}
-                  >
-                    {isOpen ? 'Hide its Blocks' : 'Show its Blocks'}
-                  </button>
-                </>
+              <button className={styles.ghost} disabled={building} onClick={() => setAsk(c)}>Restore</button>
+              {top && (
+                <button
+                  className={styles.link}
+                  aria-expanded={isOpen}
+                  onClick={() => setOpen(isOpen ? null : c.number)}
+                >
+                  {isOpen ? 'Hide its Blocks' : 'Show its Blocks'}
+                </button>
               )}
             </div>
-            {isOpen && c.blocks && <ul className={styles.tree}>{tree(c.number, c.blocks, c.blocks.top[0])}</ul>}
+            {isOpen && top && <ul className={styles.tree}>{tree(c.number, c.canvas.blocks, top.id)}</ul>}
           </article>
         )
       })}
-      {ask && (
-        <Warning
-          icon={ICONS.tab_checkpoints}
-          {...warning(p, cps, ask.c, ask.mode)}
-          onCancel={() => setAsk(null)}
-          onConfirm={() => confirm(ask.c, ask.mode)}
-        />
-      )}
+      {ask && (() => {
+        const { title, lines, unsaved } = warning(p, cps, ask)
+        const icon = ICONS.tab_checkpoints
+        return unsaved
+          ? <Warning icon={icon} title={title} lines={lines} confirm="Save and restore" onConfirm={() => restore(ask, true)}
+              extra={{ label: 'Restore without saving', onClick: () => restore(ask, false) }} onCancel={() => setAsk(null)} />
+          : <Warning icon={icon} title={title} lines={lines} confirm="Restore" onConfirm={() => restore(ask, false)} onCancel={() => setAsk(null)} />
+      })()}
     </div>
   )
 }

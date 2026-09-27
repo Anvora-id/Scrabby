@@ -63,7 +63,11 @@ function keepLeaves(n: Layout | string, keep: (id: string) => boolean): Layout |
 
 export function repairLayout(b: Block): Layout {
   const childSet = new Set(b.children)
-  const filtered = keepLeaves(b.layout ?? { d: 'col', k: [] }, id => childSet.has(id))
+  // A Build leaves the Checkpoint Block without a layout; its Built pages then sit three to a row.
+  const start: Layout = b.layout ?? (b.type === 'checkpoint'
+    ? { d: 'col', k: Array.from({ length: Math.ceil(b.children.length / 3) }, (_, i) => ({ d: 'row', k: b.children.slice(i * 3, i * 3 + 3) })) }
+    : { d: 'col', k: [] })
+  const filtered = keepLeaves(start, id => childSet.has(id))
   const l = norm(filtered, true)
   const layout: Layout = typeof l === 'string' ? { d: 'col', k: [l] } : l
   // append any child not already in the layout
@@ -231,7 +235,8 @@ export function dropItem(p: Project, item: DragItem, at: Drop): string {
   } else {
     id = item.id
     // A Block shown folded, or as a chip in a folded parent, stays folded where it lands.
-    // So do the Blocks inside it: moving up a level must not unfold them.
+    // The moved Block and the Blocks inside it keep the fold they showed: moving up a level
+    // must not unfold them, and moving past the fold depth must not fold them.
     if (item.kind === 'block') {
       const parents = parentMap(p), up = parents.get(id)
       const parent = up && up !== 'canvas' ? p.blocks[up] : undefined
@@ -239,7 +244,7 @@ export function dropItem(p: Project, item: DragItem, at: Drop): string {
       const pin = (bid: string, depth: number): void => {
         const b = p.blocks[bid]
         if (!b) return
-        if (isFolded(b, depth)) b.folded = true
+        b.folded = isFolded(b, depth)
         for (const c of b.children) pin(c, depth + 1)
       }
       pin(id, depthOf(parents, id))

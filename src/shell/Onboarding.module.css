@@ -286,7 +286,6 @@
   position: fixed;
   z-index: 49;
   outline: 3px solid var(--bob);
-  outline-offset: 3px;
   pointer-events: none;
 }
 
@@ -307,23 +306,25 @@
   animation: pop var(--t-pop) var(--spring);
 }
 
-/* Under the text, over the bubble's own border, so the tail joins the bubble. */
+/* Under the text, over the bubble's own border, so the tail joins the bubble with no seam. It hangs
+   from the bubble's inner edge at --tail and turns to point at the target. */
 .tail {
   position: absolute;
   z-index: -1;
-  box-sizing: border-box;
-  width: 20px;
-  height: 20px;
-  background: var(--surface);
-  border: 0 solid var(--bob);
-  transform: rotate(45deg);
+  top: 100%;
+  left: calc(var(--tail) - 12px);
+  width: 24px;
+  height: 14px;
+  transform-origin: 50% 0;
+  fill: var(--surface);
+  stroke: var(--bob);
+  stroke-width: 2.5px;
 }
 
-.bubble[data-side='right'] .tail { left: -10px; top: calc(var(--tail) - 10px); border-width: 0 0 2.5px 2.5px; }
-.bubble[data-side='left'] .tail { right: -10px; top: calc(var(--tail) - 10px); border-width: 2.5px 2.5px 0 0; }
-.bubble[data-side='below'] .tail { top: -10px; left: calc(var(--tail) - 10px); border-width: 2.5px 0 0 2.5px; }
-.bubble[data-side='above'] .tail { bottom: -10px; left: calc(var(--tail) - 10px); border-width: 0 2.5px 2.5px 0; }
-.bubble[data-side='inside'] .tail { display: none; }
+[data-side='below'] .tail { top: 0; transform: rotate(180deg); }
+[data-side='right'] .tail { top: var(--tail); left: -12px; transform: rotate(90deg); }
+[data-side='left'] .tail { top: var(--tail); left: calc(100% - 12px); transform: rotate(-90deg); }
+[data-side='inside'] .tail { display: none; }
 
 /* Bob stands on the top corner away from the target. */
 .bob {

@@ -4,7 +4,7 @@ import { getProject, updateProject, useProject } from '../store.ts'
 import {
   addAsset, deleteWarning, formatBytes, removeAsset, renameAsset, renamedFile, renameProblem, uploadKind,
 } from '../model/library.ts'
-import { deleteAsset, listAssets, putAsset } from '../db.ts'
+import { listAssets, putAsset } from '../db.ts'
 import type { Asset, AssetKind } from '../model/types.ts'
 import { Warning } from '../shell/Warning.tsx'
 import styles from './Library.module.css'
@@ -122,7 +122,6 @@ export default function Library() {
     const { a } = ask
     if (ask.kind === 'rename') return updateProject(d => renameAsset(d, a.id, ask.typed))
     updateProject(d => removeAsset(d, a.id))
-    deleteAsset(projectId, a.id).catch(e => console.error('Deleting an Asset failed', e))
   }
 
   return (
