@@ -34,7 +34,7 @@ Scrabby is a web IDE: users plan a website as nested Blocks and Traits on a Canv
 1. `pnpm typecheck` and `pnpm test` both pass. Fix what you broke; do not edit tests of other issues to make them pass. Run only these two commands to check your work: never start `pnpm dev`, `pnpm build` or a browser. The issue's in-browser checks under **Done when** are for the human.
 2. Tick the issue's checkboxes, set `Status: done`, and add a short `## Answer` (at most 5 lines) with anything the next issue must know. Keep your chat replies short too.
 3. Commit with a Conventional Commits message: `feat: <what the user can now do> (issue NN)`.
-4. The human saves this task's session summary screenshot and exported history in `bob_sessions/` (`scrabby_taskNN_<slug>_summary.png`).
+4. The human saves this task's session summary screenshot in `bob_sessions/`, as the hackathon rules require (`anvora_scrabby_ticketNN_<slug>.png`).
 
 ## Safety rules
 
