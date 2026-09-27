@@ -232,13 +232,22 @@ function Dropdown({ value, options, onChange, onBobPicks, title }: {
   )
 }
 
-function ColorMenu({ at, value, onChange, onBobPicks, onClose }: {
+function ColorMenu({ at, value, onDrag, onChange, onBobPicks, onClose }: {
   at: At
   value: string
+  onDrag: (v: string) => void
   onChange: (v: string) => void
   onBobPicks: () => void
   onClose: () => void
 }) {
+  // React's onChange fires on every step of a drag; the native change event fires once, on release.
+  const picker = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    const el = picker.current!
+    const done = () => onChange(el.value.toUpperCase())
+    el.addEventListener('change', done)
+    return () => el.removeEventListener('change', done)
+  }, [onChange])
   return (
     <Popover at={at} title="Colors" onClose={onClose}>
       <div className={styles.swatches}>
@@ -255,9 +264,10 @@ function ColorMenu({ at, value, onChange, onBobPicks, onClose }: {
       <div className={styles.anyColor}>
         Any color
         <input
+          ref={picker}
           type="color"
           value={/^#[0-9a-f]{6}$/i.test(value) ? value.toLowerCase() : '#000000'}
-          onChange={e => onChange(e.target.value.toUpperCase())}
+          onChange={e => onDrag(e.target.value.toUpperCase())}
         />
         <span className={styles.hex}>{value.toUpperCase()}</span>
       </div>
@@ -268,8 +278,13 @@ function ColorMenu({ at, value, onChange, onBobPicks, onClose }: {
 }
 
 // The chip is the chosen color itself, so its name or hex sits on it.
-function ColorField({ value, onChange, onBobPicks, title }: { value: string; onChange: (v: string) => void; onBobPicks: () => void; title: string }) {
+function ColorField({ value: saved, onChange, onBobPicks, title }: { value: string; onChange: (v: string) => void; onBobPicks: () => void; title: string }) {
   const [at, setAt] = useState<At | null>(null)
+  // While the picker is dragged only this chip repaints; the Project changes once, on release.
+  const [draft, setDraft] = useState<string | null>(null)
+  const value = draft ?? saved
+  const commit = (v: string) => { setDraft(null); onChange(v) }
+  const close = () => { if (draft) commit(draft); setAt(null) }
   const name = COLOR_PRESETS.find(c => c.hex === value.toUpperCase())?.name
   return (
     <>
@@ -280,11 +295,11 @@ function ColorField({ value, onChange, onBobPicks, title }: { value: string; onC
         aria-expanded={!!at}
         // While open, keep the menu's outside listener from closing it before this click toggles it.
         onPointerDown={e => { if (at) e.nativeEvent.stopImmediatePropagation() }}
-        onClick={e => setAt(at ? null : under(e.currentTarget))}
+        onClick={e => at ? close() : setAt(under(e.currentTarget))}
       >
         {name ?? <span className={styles.hex}>{value.toUpperCase()}</span>}
       </button>
-      {at && <ColorMenu at={at} value={value} onChange={onChange} onBobPicks={onBobPicks} onClose={() => setAt(null)} />}
+      {at && <ColorMenu at={at} value={value} onDrag={setDraft} onChange={commit} onBobPicks={onBobPicks} onClose={close} />}
     </>
   )
 }
