@@ -72,7 +72,7 @@ export function tipFor(p: Project, key: string): Tip | null {
     if (b.type === 'canvas') return null
 
     if (b.type === 'checkpoint') {
-      return { icon: 'checkpoint', title: 'Checkpoint', text: BLOCK_TYPES.checkpoint.tooltip, cat: null }
+      return { icon: 'site', title: 'Checkpoint', text: BLOCK_TYPES.checkpoint.tooltip, cat: null }
     }
     if (b.locked) {
       return { icon: 'checkpoint', title: 'Built page', text: BUILT_PAGE.tooltip, cat: null }

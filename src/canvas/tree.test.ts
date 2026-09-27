@@ -10,6 +10,7 @@ import {
   onClickOptions,
   parentMap,
   removeItem,
+  repairLayout,
 } from './tree.ts'
 
 // Helper: get a fresh demo project
@@ -180,6 +181,11 @@ describe('tree', () => {
     expect(canDrop(p, { kind: 'block', id: builtPage.id }, pageParent)).toBe(true)
     // Moving locked page to canvas (not its parent) is not allowed
     expect(canDrop(p, { kind: 'block', id: builtPage.id }, 'canvas')).toBe(false)
+  })
+
+  it('Built pages sit three to a row in the Checkpoint Block', () => {
+    const cp = { ...Object.values(builtSite().project.blocks).find(b => b.type === 'checkpoint')!, children: ['a', 'b', 'c', 'd'], layout: undefined }
+    expect(repairLayout(cp)).toEqual({ d: 'col', k: [{ d: 'row', k: ['a', 'b', 'c'] }, 'd'] })
   })
 
   it('a Built page reorders only inside its Checkpoint Block and stays locked', () => {

@@ -63,7 +63,11 @@ function keepLeaves(n: Layout | string, keep: (id: string) => boolean): Layout |
 
 export function repairLayout(b: Block): Layout {
   const childSet = new Set(b.children)
-  const filtered = keepLeaves(b.layout ?? { d: 'col', k: [] }, id => childSet.has(id))
+  // A Build leaves the Checkpoint Block without a layout; its Built pages then sit three to a row.
+  const start: Layout = b.layout ?? (b.type === 'checkpoint'
+    ? { d: 'col', k: Array.from({ length: Math.ceil(b.children.length / 3) }, (_, i) => ({ d: 'row', k: b.children.slice(i * 3, i * 3 + 3) })) }
+    : { d: 'col', k: [] })
+  const filtered = keepLeaves(start, id => childSet.has(id))
   const l = norm(filtered, true)
   const layout: Layout = typeof l === 'string' ? { d: 'col', k: [l] } : l
   // append any child not already in the layout
