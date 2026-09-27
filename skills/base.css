@@ -199,6 +199,11 @@ main > section {
   /* Decorative shapes may stick out; the page never scrolls sideways */
   overflow-x: clip;
 }
+/* Parts in one section never touch, such as a countdown and the picture under it.
+   Margins collapse, so a section-head keeps its own space. No specificity, so style.css wins. */
+:where(main > section:not(.page-head) > .container:not(.hero)) > :where(* + *) {
+  margin-top: var(--space-4);
+}
 
 /* Band colors. Change them section by section: plain, tint, plain, dark at most once. */
 .band-tint {

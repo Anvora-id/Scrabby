@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { blockInfo, blockMarks, changedLines, findBlockCode, newFileProblem } from './code.ts'
+import { blockInfo, blockMarks, changedLines, findBlockCode, newFileProblem, tabOrder } from './code.ts'
 import { builtSite } from '../fixtures/fixtures.ts'
 
 const { project, checkpoints } = builtSite()
@@ -94,5 +94,12 @@ describe('newFileProblem', () => {
 
   it('rejects a taken name', () => {
     expect(newFileProblem('index.html', files)).toBe('index.html already exists.')
+  })
+})
+
+describe('tabOrder', () => {
+  it('puts index.html first, then html, css and js', () => {
+    expect(tabOrder(['base.css', 'style.css', 'script.js', 'quiz.html', 'index.html', 'menu.html']))
+      .toEqual(['index.html', 'menu.html', 'quiz.html', 'base.css', 'style.css', 'script.js'])
   })
 })

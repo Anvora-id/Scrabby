@@ -12,7 +12,7 @@ The middle column of Try & tweak ([Screen layout](#screen-layout)). CodeMirror 6
 }
 ```
 
-- **File tabs:** a strip in `--ed-tabs`, one tab per Prototype file. Tab: no border except a 1px `--ed-rule` right edge, `--ed-tab-text` weight 700 12.5px, padding 9px 14px. Open tab: `--ed-bg` fill, white text. A file the last Build changed gets an `--ed-dot` "●" after its name (tooltip "changed by the last Build").
+- **File tabs:** a strip in `--ed-tabs`, one tab per Prototype file, in this order: `index.html`, other `.html`, `.css`, then `.js`, A to Z inside each group. Too many tabs scroll sideways; `+`, Undo and Redo stay in view. Tab: no border except a 1px `--ed-rule` right edge, `--ed-tab-text` weight 700 12.5px, padding 9px 14px. Open tab: `--ed-bg` fill, white text. A file the last Build changed gets an `--ed-dot` "●" after its name (tooltip "changed by the last Build").
 - **Undo and Redo:** two small buttons at the right end of the tab strip, "↶" (tooltip "Undo (Ctrl+Z)") and "↷" (tooltip "Redo (Ctrl+Y)"), in the tab text style, acting on the open file's own history and dimmed when there is nothing to undo or redo. Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z do the same inside the editor and never reach the app's Undo.
 - **New file:** a "+" button after the last tab (tooltip "New file") opens an inline field in the tab strip (placeholder "name.html, .css or .js"); Enter creates the file and opens it, Escape or leaving the field cancels. A wrong or taken name shows one line under the strip in `--ed-tab-text`: "Use a name like about.html, extra.css or games.js." or "<name> already exists."
 - **Before the first Build:** no file tabs; the editor area shows "No code yet. Build your website first." centered (`--ed-tab-text`, `--font`, weight 700 `--fs-md`).
