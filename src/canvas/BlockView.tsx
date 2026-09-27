@@ -74,7 +74,7 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
         p.blocks.canvas.children.includes(id) && !site && !checkpoint && styles.loose,
       )}
       style={def && customColor(def.color)}
-      onPointerDown={b.defines ? undefined : dragSource({ kind: 'block', id })}
+      onPointerDown={dragSource({ kind: 'block', id })}
       onContextMenu={e => openMenu(e, id)}
     >
       <div className={cx(styles.header, !drag && styles.pressable)} data-tip={`b:${id}`}

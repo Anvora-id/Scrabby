@@ -330,7 +330,9 @@ export default function Canvas() {
       const under = document.elementFromPoint(x, y)
       if (under?.closest('[data-palette]')) return { target: null, trash: canTrash(p, d.item) }
       if (!under || !viewportRef.current?.contains(under) || !rects.current) return { target: null, trash: false }
-      if (!under.closest('[data-bid]')) return { target: !getUi().editing && canDrop(p, d.item, 'canvas') ? { id: 'canvas' } : null, trash: false }
+      // In the edit view only the definition itself can land on empty space, which moves it.
+      const free = getUi().editing ? d.item.kind === 'block' && !!p.blocks[d.item.id]?.defines : canDrop(p, d.item, 'canvas')
+      if (!under.closest('[data-bid]')) return { target: free ? { id: 'canvas' } : null, trash: false }
       return { target: targetAt(p, rects.current, d.item, x, y), trash: false }
     }
 
@@ -427,6 +429,14 @@ export default function Canvas() {
         to.pos = {
           x: Math.round((e.clientX - grab.current.x - r.left - v.x) / v.z),
           y: Math.round((e.clientY - grab.current.y - r.top - v.y) / v.z),
+        }
+        // The definition stays out of the Canvas tree; only its spot in the edit view changes.
+        const dId = item.kind === 'block' && p.blocks[item.id]?.defines
+        if (dId && p.defs[dId]) {
+          a.remove()
+          const was = p.defs[dId].pos
+          if (was?.x !== to.pos.x || was?.y !== to.pos.y) updateProject(q => { q.defs[dId].pos = to.pos })
+          return land(item.id)
         }
       }
       const dry = structuredClone(p)
@@ -543,7 +553,7 @@ export default function Canvas() {
       <div ref={worldRef} className={styles.world}>
         <MarksContext.Provider value={editingId ? { marks: new Map(), busy: null, open: () => {} } : { marks, busy, open: openPop }}>
         {editingId && defBlockId ? (
-          <div className={styles.placed} style={{ left: 40, top: 70 }}>
+          <div className={styles.placed} style={{ left: def!.pos?.x ?? 40, top: def!.pos?.y ?? 70 }}>
             <BlockView p={p} id={defBlockId} />
           </div>
         ) : (

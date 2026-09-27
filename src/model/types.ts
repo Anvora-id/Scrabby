@@ -39,7 +39,7 @@ export interface Trait {
   ov?: { value?: true; note?: true } // `value` covers bobPicks
 }
 
-export interface CustomBlockDef { id: string /* d1, d2, … */; blockId: string; color: { h: number; s: number; l: number } }
+export interface CustomBlockDef { id: string /* d1, d2, … */; blockId: string; color: { h: number; s: number; l: number }; pos?: Pos /* where the edit view shows it */ }
 export type AssetKind = 'image' | 'video' | 'sound'
 export interface Asset { id: string /* a1, … */; file: string /* path is assets/<file> */; kind: AssetKind; mime: string; bytes: number; width?: number; height?: number; seconds?: number }
 export type Files = Record<string, string> // path → text
