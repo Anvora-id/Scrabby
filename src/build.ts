@@ -1,6 +1,6 @@
 import type { Category } from './model/catalogue.ts'
 import type { Block, Files, Project } from './model/types.ts'
-import { addBlock, holding, makeCheckpoint } from './model/project.ts'
+import { addBlock, holding, makeCheckpoint, nextNumber } from './model/project.ts'
 import { instructionDocument } from './instructions/document.ts'
 import { topBlock } from './instructions/warnings.ts'
 import { blockInfo } from './code/code.ts'
@@ -114,7 +114,7 @@ async function build(): Promise<void> {
     const chips = requestBlocks(p, top).map(b => ({ id: b.id, ...blockInfo(b.id, p, [])! }))
     // Nothing changed since a Checkpoint (a Try again, say): build from that one instead of saving a copy.
     const held = holding(p, saved)
-    const from = held ?? makeCheckpoint(p, saved.length + 1)
+    const from = held ?? makeCheckpoint(p, nextNumber(saved))
     base = { ...base, n: saved.filter(c => !c.saved && c.number < from.number).length + 1, chips, skipped: doc.skipped }
     return { doc, top, from, fresh: !held }
   })().catch((e: unknown) => {

@@ -428,6 +428,12 @@ export function holding(p: Project, cps: Checkpoint[]): Checkpoint | undefined {
   return cps.find(c => key(c.files, c.canvas) === k)
 }
 
+// The next number follows the newest, so it never repeats a Checkpoint still kept after one was deleted.
+// ponytail: deleting the newest frees its number for the next save; keep a counter on the Project if that matters.
+export function nextNumber(cps: Checkpoint[]): number {
+  return (cps.at(-1)?.number ?? 0) + 1
+}
+
 export function makeCheckpoint(p: Project, number: number, saved?: string): Checkpoint {
   return { projectId: p.id, number, saved, from: p.checkpoint, files: structuredClone(p.files), canvas: canvasOf(p), time: Date.now() }
 }

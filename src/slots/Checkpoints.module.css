@@ -166,6 +166,18 @@
   text-decoration: underline;
 }
 
+.delete {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.delete:hover:not(:disabled) {
+  background: var(--alert-bg);
+  border-radius: var(--r-btn);
+}
+
 .ghost:focus-visible,
 .link:focus-visible,
 .pick:focus-visible,
@@ -265,7 +277,8 @@
 .save { composes: upload from './Library.module.css'; }
 
 .save:disabled,
-.ghost:disabled {
+.ghost:disabled,
+.link:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;

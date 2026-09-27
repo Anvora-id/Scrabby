@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { PencilSimpleIcon } from '@phosphor-icons/react'
+import { PencilSimpleIcon, TrashIcon } from '@phosphor-icons/react'
 import { ICONS } from '../icons.ts'
 import { BLOCK_TYPES } from '../model/catalogue.ts'
 import type { Checkpoint } from '../model/types.ts'
 import { listCheckpoints } from '../db.ts'
 import { holding } from '../model/project.ts'
-import { buildOf, checkpointTitle, fromTag, gist, renameCheckpoint, restoreCheckpoint, saveCheckpoint, warning } from '../checkpoints.ts'
+import { buildOf, checkpointTitle, fromTag, gist, removeCheckpoint, renameCheckpoint, restoreCheckpoint, saveCheckpoint, warning } from '../checkpoints.ts'
 import { topBlock } from '../instructions/warnings.ts'
 import { useBuild, useStarting } from '../build.ts'
 import { findBlockCode } from '../code/code.ts'
@@ -27,6 +27,7 @@ export default function Checkpoints() {
   const [open, setOpen] = useState<number | null>(null)
   const [picked, setPicked] = useState<Picked | null>(null)
   const [ask, setAsk] = useState<Checkpoint | null>(null)
+  const [askDelete, setAskDelete] = useState<Checkpoint | null>(null)
   const [renaming, setRenaming] = useState<number | null>(null)
   const [draft, setDraft] = useState('')
   const [refocus, setRefocus] = useState<number | null>(null) // after Enter or Escape, keyboard focus returns to that rename button
@@ -56,6 +57,18 @@ export default function Checkpoints() {
       await restoreCheckpoint(c.number, save)
     } catch (e) {
       console.error('Restoring the Checkpoint failed', e)
+      return
+    }
+    setReload(r => r + 1)
+  }
+
+  async function remove(c: Checkpoint) {
+    setAskDelete(null)
+    if (open === c.number) setOpen(null)
+    try {
+      await removeCheckpoint(c.number)
+    } catch (e) {
+      console.error('Deleting the Checkpoint failed', e)
       return
     }
     setReload(r => r + 1)
@@ -179,6 +192,14 @@ export default function Checkpoints() {
                   {isOpen ? 'Hide its Blocks' : 'Show its Blocks'}
                 </button>
               )}
+              <button
+                className={cx(styles.link, styles.delete)}
+                disabled={here || building}
+                title={here ? 'You are on this Checkpoint. Restore or save another one first.' : undefined}
+                onClick={() => setAskDelete(c)}
+              >
+                <TrashIcon size={14} weight="fill" />Delete
+              </button>
             </div>
             {isOpen && top && <ul className={styles.tree}>{tree(c.number, c.canvas.blocks, top.id)}</ul>}
           </article>
@@ -192,6 +213,17 @@ export default function Checkpoints() {
               extra={{ label: 'Restore without saving', onClick: () => restore(ask, false) }} onCancel={() => setAsk(null)} />
           : <Warning icon={icon} title={title} lines={lines} confirm="Restore" onConfirm={() => restore(ask, false)} onCancel={() => setAsk(null)} />
       })()}
+      {askDelete && (
+        <Warning
+          icon={TrashIcon}
+          title={`Delete ${checkpointTitle(p, askDelete.number)}?`}
+          lines={['It is gone for good: you can no longer restore it.']}
+          confirm="Delete"
+          danger
+          onCancel={() => setAskDelete(null)}
+          onConfirm={() => remove(askDelete)}
+        />
+      )}
     </div>
   )
 }

@@ -89,7 +89,7 @@ function Greeting() {
           </div>
         </div>
         <div className={styles.lower}>
-          <h1 className={styles.slogan}>Ideas are best blocked out.</h1>
+          <h1 className={styles.slogan}>Build your ideas block by block.</h1>
           <p className={styles.pitch}>Snap your idea together. Bob builds it for real.</p>
           {empty ? (
             <div className={styles.bento}>

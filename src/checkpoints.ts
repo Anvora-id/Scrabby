@@ -1,8 +1,8 @@
 import type { Block, Checkpoint, Project } from './model/types.ts'
-import { holding, makeCheckpoint } from './model/project.ts'
+import { holding, makeCheckpoint, nextNumber } from './model/project.ts'
 import { topBlock } from './instructions/warnings.ts'
 import { requestBlocks } from './build.ts'
-import { addCheckpoint, listCheckpoints } from './db.ts'
+import { addCheckpoint, deleteCheckpoint, listCheckpoints } from './db.ts'
 import { dropPending, hasPending } from './assistant.ts'
 import { flashBlocks } from './preview.ts'
 import { getProject, updateProject, updateProjectWithoutUndo } from './store.ts'
@@ -29,7 +29,7 @@ export function renameCheckpoint(p: Project, n: number, name: string): void {
 
 export async function saveCheckpoint(saved = 'Saved by you'): Promise<number> {
   const p = getProject()
-  const number = (await listCheckpoints(p.id)).length + 1
+  const number = nextNumber(await listCheckpoints(p.id))
   await addCheckpoint(makeCheckpoint(p, number, saved))
   updateProjectWithoutUndo(d => { d.checkpoint = number })
   return number
@@ -48,6 +48,12 @@ export async function restoreCheckpoint(number: number, save: boolean): Promise<
   updateProject(d => applyRestore(d, c), null)
   if (hasPending(getProject())) dropPending('Code went back to Checkpoint ' + number)
   flashBlocks([])
+}
+
+export async function removeCheckpoint(number: number): Promise<void> {
+  await deleteCheckpoint(getProject().id, number)
+  // The save that follows also drops Library pictures only this Checkpoint held.
+  updateProjectWithoutUndo(d => { delete d.checkpointNames?.[number] })
 }
 
 export function warning(p: Project, cps: Checkpoint[], c: Checkpoint): { title: string; lines: string[]; unsaved: boolean } {

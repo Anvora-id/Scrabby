@@ -81,6 +81,11 @@ export async function addCheckpoint(c: Checkpoint): Promise<void> {
   await db.add('checkpoints', c)
 }
 
+export async function deleteCheckpoint(projectId: string, number: number): Promise<void> {
+  const db = await getDb()
+  await db.delete('checkpoints', [projectId, number])
+}
+
 export async function putAsset(a: AssetBlob): Promise<void> {
   const db = await getDb()
   await db.put('assets', a)
