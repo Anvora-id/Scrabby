@@ -59,3 +59,9 @@ export function newFileProblem(name: string, files: Files): string | null {
   if (name in files) return `${name} already exists.`
   return null
 }
+
+// Tab order: index.html, then other pages, then styles, then scripts; A to Z inside each group.
+export function tabOrder(files: string[]): string[] {
+  const rank = (f: string) => f === 'index.html' ? 0 : f.endsWith('.html') ? 1 : f.endsWith('.css') ? 2 : f.endsWith('.js') ? 3 : 4
+  return [...files].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b))
+}

@@ -6,7 +6,7 @@ import { getProject, updateProject, useProject } from '../store.ts'
 import { listCheckpoints } from '../db.ts'
 import { cardState, decide, openFiles } from '../assistant.ts'
 import type { Checkpoint, Files } from '../model/types.ts'
-import { blockInfo, blockMarks, changedLines, newFileProblem } from '../code/code.ts'
+import { blockInfo, blockMarks, changedLines, newFileProblem, tabOrder } from '../code/code.ts'
 import { setup } from '../code/setup.ts'
 import { clearJump, editorSelection, openCheckpointsAtBlock, openFile, useEditorUi } from '../code/navigation.ts'
 import MergeReview from '../code/MergeReview.tsx'
@@ -208,10 +208,10 @@ export default function CodeEditor() {
   const proposal = review === undefined ? undefined : project.chat.find(m => m.time === review)?.proposal
   const state = proposal && cardState(proposal, project.files)
   const reviewFiles = proposal && (state === 'open' || state === 'reviewing') ? openFiles(proposal) : []
-  const tabs = [
+  const tabs = tabOrder([
     ...Object.keys(project.files).filter(f => !f.startsWith('.builds/')),
     ...reviewFiles.filter(f => !(f in project.files)),
-  ]
+  ])
   const file = ui.file !== undefined && tabs.includes(ui.file) ? ui.file : tabs[0]
 
   if (file === undefined) {

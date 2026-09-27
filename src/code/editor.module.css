@@ -17,13 +17,14 @@
   display: flex;
   flex: none;
   align-items: center;
-  overflow-x: auto;
   background: var(--ed-tabs);
 }
 
 .tabs {
   display: flex;
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-x: auto;
   align-self: stretch;
 }
 
@@ -153,29 +154,29 @@
 
 /* dark scrollbars in the editor, the merge view and the tab strip */
 .codeEditor :global(.cm-scroller),
-.strip {
+.tabs {
   scrollbar-width: thin;
   scrollbar-color: #4A5068 var(--ed-bg);
 }
 
 .codeEditor :global(.cm-scroller)::-webkit-scrollbar,
-.strip::-webkit-scrollbar {
+.tabs::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 .codeEditor :global(.cm-scroller)::-webkit-scrollbar-track,
-.strip::-webkit-scrollbar-track {
+.tabs::-webkit-scrollbar-track {
   background: var(--ed-bg);
 }
 
 .codeEditor :global(.cm-scroller)::-webkit-scrollbar-thumb,
-.strip::-webkit-scrollbar-thumb {
+.tabs::-webkit-scrollbar-thumb {
   background: #4A5068;
   border-radius: 8px;
 }
 
 .codeEditor :global(.cm-scroller)::-webkit-scrollbar-thumb:hover,
-.strip::-webkit-scrollbar-thumb:hover {
+.tabs::-webkit-scrollbar-thumb:hover {
   background: #5B6278;
 }
