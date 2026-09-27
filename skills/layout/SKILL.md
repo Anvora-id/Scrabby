@@ -61,6 +61,7 @@ Where things go and how they line up. Every site starts from `base.css`, which i
 | Heading and its lead line | `--space-2` ✓ (`section-head`, `page-head`) |
 | Lead line and the buttons under it | `--space-3` ✓ (`hero-text`) |
 | Section heading group and the section's content | `--space-4` ✓ (`section-head`) |
+| One part and the next in a section, such as a countdown and a picture | `--space-4` ✓ (`container`) |
 | Cards in a grid | `--space-3` ✓ (`grid`) |
 | Inside a card: its edge and its content | `--space-3` ✓ |
 | Inside a card: title, text and price | `--space-1` ✓ |
