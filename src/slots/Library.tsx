@@ -6,7 +6,10 @@ import {
 } from '../model/library.ts'
 import { deleteAsset, listAssets, putAsset } from '../db.ts'
 import type { Asset, AssetKind } from '../model/types.ts'
+import { Warning } from '../shell/Warning.tsx'
 import styles from './Library.module.css'
+
+type Ask = { kind: 'rename'; a: Asset; typed: string; to: string } | { kind: 'delete'; a: Asset }
 
 const ACCEPT = 'image/png,image/jpeg,image/gif,image/webp,video/mp4,video/webm'
 
@@ -65,6 +68,7 @@ export default function Library() {
   const [renaming, setRenaming] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const [renameErr, setRenameErr] = useState<string | null>(null)
+  const [ask, setAsk] = useState<Ask | null>(null)
   // Bumped after a Blob is stored: the Asset appears in the Project before its Blob does.
   const [saved, setSaved] = useState(0)
 
@@ -109,14 +113,14 @@ export default function Library() {
     const problem = renameProblem(p, a.id, typed)
     if (problem) return setRenameErr(problem)
     setRenaming(null)
-    if (renamedFile(p, a.id, typed) === a.file) return
-    if (confirm(`Rename ${a.file}?\nCode that references assets/${a.file} won't be updated and will break. You can ask the Assistant to fix the references.`)) {
-      updateProject(d => renameAsset(d, a.id, typed))
-    }
+    const to = renamedFile(p, a.id, typed)
+    if (to !== a.file) setAsk({ kind: 'rename', a, typed, to })
   }
 
-  function remove(a: Asset) {
-    if (!confirm(deleteWarning(getProject(), a.id))) return
+  function go(ask: Ask) {
+    setAsk(null)
+    const { a } = ask
+    if (ask.kind === 'rename') return updateProject(d => renameAsset(d, a.id, ask.typed))
     updateProject(d => removeAsset(d, a.id))
     deleteAsset(projectId, a.id).catch(e => console.error('Deleting an Asset failed', e))
   }
@@ -176,7 +180,7 @@ export default function Library() {
                   <button title="Rename" aria-label={`Rename ${a.file}`} onClick={() => startRename(a)}>
                     <PencilSimpleIcon size={14} weight="fill" />
                   </button>
-                  <button title="Delete" aria-label={`Delete ${a.file}`} onClick={() => remove(a)}>
+                  <button title="Delete" aria-label={`Delete ${a.file}`} onClick={() => setAsk({ kind: 'delete', a })}>
                     <TrashIcon size={14} weight="fill" />
                   </button>
                 </div>
@@ -187,6 +191,28 @@ export default function Library() {
       )}
 
       {storage && <p className={styles.storage}>{storage}</p>}
+
+      {ask?.kind === 'rename' && (
+        <Warning
+          icon={PencilSimpleIcon}
+          title={`Rename ${ask.a.file} to ${ask.to}?`}
+          lines={[`Code that references assets/${ask.a.file} won't be updated and will break. You can ask the Assistant to fix the references.`]}
+          confirm="Rename"
+          onCancel={() => setAsk(null)}
+          onConfirm={() => go(ask)}
+        />
+      )}
+      {ask?.kind === 'delete' && (
+        <Warning
+          icon={TrashIcon}
+          title={`Delete ${ask.a.file}?`}
+          lines={[deleteWarning(project, ask.a.id)]}
+          confirm="Delete"
+          danger
+          onCancel={() => setAsk(null)}
+          onConfirm={() => go(ask)}
+        />
+      )}
     </div>
   )
 }
