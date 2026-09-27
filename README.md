@@ -9,7 +9,7 @@
   <img alt="Built with IBM Bob" src="https://img.shields.io/badge/Built%20with-IBM%20Bob-315DFB?style=flat-square">
 </p>
 
-<p align="center"><strong>Plan it. Build it. Click it.</strong></p>
+<p align="center"><strong>Build your ideas block by block.</strong></p>
 
 Scrabby is a web IDE that lets young developers plan a website the way they already code: by snapping Blocks and Traits together on a Canvas. Bob, powered by IBM Bob, turns that plan into a real website in plain HTML, CSS and JavaScript that they can click through, edit and ask questions about.
 
