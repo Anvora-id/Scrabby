@@ -287,7 +287,8 @@ export function withFallback(primary: Model, fallback: Model | null, label: stri
       switched = true
       onSwitch(label)
       // Gemini 3 answers 400 when a step earlier in the run has no thought signature, and Bob's steps never have one.
-      // ponytail: assumes the fallback is Gemini; another provider behind FALLBACK_BASE_URL may reject extra_content.
+      // Set in place: every later round resends these same messages.
+      // ponytail: assumes the fallback is Gemini; set it only for Gemini if another provider rejects extra_content.
       for (const m of args.messages) {
         if (m.role === 'assistant' && m.tool_calls?.length) {
           m.tool_calls[0].extra_content = { google: { thought_signature: 'skip_thought_signature_validator' } }
