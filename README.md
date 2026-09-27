@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.png" alt="Scrabby. Ideas are best blocked out. An open-source project for the lablab.ai IBM Bob 2.0 Hackathon, from the Anvora.id team." width="100%">
+  <img src="assets/banner.png" alt="Scrabby. Build your ideas block by block. An open-source project for the lablab.ai IBM Bob 2.0 Hackathon, from the Anvora.id team." width="100%">
 </p>
 
 <p align="center">
