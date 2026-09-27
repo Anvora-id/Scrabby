@@ -37,6 +37,11 @@ describe('readAgentStream', () => {
     ])
   })
 
+  it("skips the server's heartbeat blank lines, also split across chunks", async () => {
+    const res = chunked(['data: {"type":"start"}\n\n', '\n\n', '\n', '\n', 'data: {"type":"block","id":"b1"}\n\n\n\n', 'data: {"type":"files","files":{}}\n\n'])
+    expect(await collect(readAgentStream(res))).toEqual([{ type: 'start' }, { type: 'block', id: 'b1' }, { type: 'files', files: {} }])
+  })
+
   it('a stream ending early or a 500 ends with unreachable', async () => {
     const early = chunked(['data: {"type":"start"}\n\ndata: {"type":"blo'])
     expect(await collect(readAgentStream(early))).toEqual([{ type: 'start' }, { type: 'error', reason: 'unreachable' }])

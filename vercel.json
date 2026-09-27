@@ -1,1 +1,1 @@
-{ "functions": { "api/agent.ts": { "maxDuration": 300, "includeFiles": "skills/**" } } }
+{ "functions": { "api/agent.ts": { "maxDuration": 300, "includeFiles": "skills/**", "supportsCancellation": true } } }

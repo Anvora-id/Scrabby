@@ -195,7 +195,7 @@ export const DEV_DEPENDENCIES: Record<string, string> = {
   'vitest': '^5.0.2',
 }
 
-const EXPECTED_VERCEL_JSON = '{"functions":{"api/agent.ts":{"maxDuration":300,"includeFiles":"skills/**"}}}'
+const EXPECTED_VERCEL_JSON = '{"functions":{"api/agent.ts":{"maxDuration":300,"includeFiles":"skills/**","supportsCancellation":true}}}'
 
 const GITIGNORE_LINES = [
   '.env',
