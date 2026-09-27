@@ -432,13 +432,29 @@ describe('withFallback', () => {
     expect(events.filter((e) => e.type === 'model')).toEqual([{ type: 'model', label: 'Gemini' }])
     expect(events[1]).toEqual({ type: 'model', label: 'Gemini' })
     expect(primary.got).toHaveLength(failAt + 1)
-    expect(fallback.got[0]).toEqual(primary.got[failAt])
+    // The same messages; the placeholder signature on Bob's steps is checked in the next test.
+    expect(fallback.got[0]).toMatchObject(primary.got[failAt])
     expect(fallback.got).toHaveLength(2)
     const last = events[events.length - 1]
     expect(last.type === 'files' && Object.keys(last.files).sort()).toEqual(
       ['base.css', ...Array.from({ length: failAt }, (_, i) => `bob${i + 1}.html`), 'gem.html'].sort(),
     )
     expect(log).toHaveBeenCalledWith('[agent] Bob failed, switching to Gemini:', 'model answered 403: blocked')
+  })
+
+  it("a switch marks the first call of each of Bob's steps for Gemini, keeps it in later rounds and leaves Gemini's own steps alone", async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    let rounds = 0
+    const primary: Model = async () => {
+      if (++rounds > 2) throw new Error('model answered 503: down')
+      return tools(call('create', { path: `bob${rounds}.html`, file_text: 'x' }), call('view', { path: '.' }))
+    }
+    const fallback = fake([tools(call('create', { path: 'gem.html', file_text: 'y' })), say('Done.')])
+    await collect(runLoop(build(), withFallback(primary, fallback.model, 'Gemini', () => {})))
+    const skip = { google: { thought_signature: 'skip_thought_signature_validator' } }
+    const signatures = (got: ChatMsg[]) => got.flatMap((m) => (m.role === 'assistant' ? [m.tool_calls?.map((c) => c.extra_content)] : []))
+    expect(signatures(fallback.got[0])).toEqual([[skip, undefined], [skip, undefined]])
+    expect(signatures(fallback.got[1])).toEqual([[skip, undefined], [skip, undefined], [undefined]])
   })
 
   it('without a fallback Bob failing ends with unreachable', async () => {

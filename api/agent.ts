@@ -6,7 +6,12 @@ import type { Files } from '../src/model/types.ts'
 export const MAX_ROUNDS = 40
 export const MAX_MS = 240_000
 
-export type ToolCall = { id: string; type: 'function'; function: { name: string; arguments: string } }
+export type ToolCall = {
+  id: string
+  type: 'function'
+  function: { name: string; arguments: string }
+  extra_content?: { google?: { thought_signature?: string } }
+}
 export type ChatMsg =
   | { role: 'system' | 'user'; content: string }
   | { role: 'assistant'; content: string | null; tool_calls?: ToolCall[] }
@@ -281,6 +286,14 @@ export function withFallback(primary: Model, fallback: Model | null, label: stri
       console.error(`[agent] Bob failed, switching to ${label}:`, e instanceof Error ? e.message : String(e))
       switched = true
       onSwitch(label)
+      // Gemini 3 answers 400 when a step earlier in the run has no thought signature, and Bob's steps never have one.
+      // Set in place: every later round resends these same messages.
+      // ponytail: assumes the fallback is Gemini; set it only for Gemini if another provider rejects extra_content.
+      for (const m of args.messages) {
+        if (m.role === 'assistant' && m.tool_calls?.length) {
+          m.tool_calls[0].extra_content = { google: { thought_signature: 'skip_thought_signature_validator' } }
+        }
+      }
       return fallback(args)
     }
   }
