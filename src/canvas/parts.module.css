@@ -413,6 +413,12 @@
   margin-left: auto;
 }
 
+/* A long list scrolls on its own; "Bob picks" and "custom…" stay in view under it. */
+.options {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
 .split {
   height: 2px;
   margin: 4px 6px;
