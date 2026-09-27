@@ -83,7 +83,6 @@ function Greeting() {
     <div ref={backdrop} className={styles.backdrop} inert={ask !== null} data-leaving={afterLeave ? '' : undefined}>
       <div className={styles.greeting} role="dialog" aria-modal="true" aria-label="Scrabby">
         <div className={styles.stage}>
-          <Toys />
           <div className={styles.logo}>
             <img src="/bob.svg" alt="" />
             <Wordmark />
@@ -94,10 +93,10 @@ function Greeting() {
           <p className={styles.pitch}>Snap your idea together. Bob builds it for real.</p>
           {empty ? (
             <div className={styles.bento}>
-              <button ref={first} className={styles.big} disabled={off} onClick={askDemo}>
+              <button ref={first} className={`${styles.big} ${styles.wide}`} disabled={off} onClick={askDemo}>
                 <Demo size={24} weight="fill" />Take me to the Demo
               </button>
-              <button className={styles.tile} disabled={off} onClick={() => leave(firstTour)}>
+              <button className={`${styles.tile} ${styles.wide}`} disabled={off} onClick={() => leave(firstTour)}>
                 <New size={20} weight="fill" />Start my own site
               </button>
             </div>
@@ -122,6 +121,11 @@ function Greeting() {
               </button>
             </div>
           )}
+          <div className={styles.toys} aria-hidden="true">
+            {TOYS.map(({ cat, icon: Icon }) => (
+              <span key={cat} className={`${styles.toy} cat-${cat}`}><Icon size={14} weight="fill" /></span>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -150,7 +154,7 @@ function Wordmark() {
   )
 }
 
-// Toy Blocks on the paper stage. Pinned in place, each turns in 3D to face the pointer.
+// A row of toy Blocks under the buttons, like toys left on the desk.
 const TOYS = [
   { cat: 'site', icon: ICONS.site },
   { cat: 'pages', icon: ICONS.page },
@@ -158,81 +162,6 @@ const TOYS = [
   { cat: 'design', icon: ICONS.t_color },
   { cat: 'content', icon: ICONS.image },
 ]
-
-const TILT = 12 // degrees at most
-const FAR = 400 // px between a toy and the pointer at which its tilt is full
-// Springs on each angle: a damped one while it follows the pointer, a loose one (it wobbles) on the way home.
-const FOLLOW = { k: 120, c: 20 }
-const HOME = { k: 160, c: 7 }
-
-const clamp = (v: number) => Math.max(-1, Math.min(1, v))
-
-// They face the pointer anywhere on the page and hold while it rests; they spring back flat when it
-// leaves the window. The float (CSS, on `translate`) runs underneath, so the tilt goes on `transform`.
-function Toys() {
-  const box = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const toys = [...box.current!.children] as HTMLElement[]
-    const s = toys.map(() => ({ x: 0, vx: 0, tx: 0, y: 0, vy: 0, ty: 0 })) // rotateX and rotateY: angle, speed, target
-    let spring = FOLLOW
-    let frame = 0
-    let last = 0
-
-    const tick = (now: number) => {
-      const dt = Math.min((now - last) / 1000, 1 / 30)
-      last = now
-      let moving = false
-      s.forEach((a, i) => {
-        a.vx += (spring.k * (a.tx - a.x) - spring.c * a.vx) * dt
-        a.vy += (spring.k * (a.ty - a.y) - spring.c * a.vy) * dt
-        a.x += a.vx * dt
-        a.y += a.vy * dt
-        if (Math.abs(a.tx - a.x) + Math.abs(a.ty - a.y) + Math.abs(a.vx) + Math.abs(a.vy) > 0.01) moving = true
-        toys[i].style.transform = `perspective(200px) rotateX(${a.x}deg) rotateY(${a.y}deg)`
-      })
-      frame = moving ? requestAnimationFrame(tick) : 0
-    }
-    const run = () => {
-      if (frame) return
-      last = performance.now()
-      frame = requestAnimationFrame(tick)
-    }
-
-    // rotateY > 0 turns the face right and rotateX > 0 turns it up, so each face points at the pointer.
-    const face = (e: PointerEvent) => {
-      const b = box.current!.getBoundingClientRect()
-      toys.forEach((t, i) => {
-        s[i].tx = -TILT * clamp((e.clientY - (b.top + t.offsetTop + t.offsetHeight / 2)) / FAR)
-        s[i].ty = TILT * clamp((e.clientX - (b.left + t.offsetLeft + t.offsetWidth / 2)) / FAR)
-      })
-      spring = FOLLOW
-      run()
-    }
-    const out = (e: MouseEvent) => {
-      if (e.relatedTarget) return
-      s.forEach(a => { a.tx = a.ty = 0 })
-      spring = HOME
-      run()
-    }
-    window.addEventListener('pointermove', face)
-    document.addEventListener('mouseout', out)
-    return () => {
-      cancelAnimationFrame(frame)
-      window.removeEventListener('pointermove', face)
-      document.removeEventListener('mouseout', out)
-    }
-  }, [])
-
-  return (
-    <div ref={box} className={styles.toys} aria-hidden="true">
-      {TOYS.map(({ cat, icon: Icon }) => (
-        <span key={cat} className={`${styles.toy} cat-${cat}`}><Icon size={16} weight="fill" /></span>
-      ))}
-    </div>
-  )
-}
 
 const ASKS = {
   demo: {

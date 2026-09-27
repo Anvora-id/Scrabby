@@ -12,7 +12,7 @@ Settled with the user on the look lab mockup (`prototypes/look-lab.html`). D-Q1 
 - **D-Q20** The mascot is Bob, the builder robot in `assets/Scrabby_2.svg` (a clean vector). The logo is Bob plus the "Scrabby" wordmark. Bob's pose stays exactly as drawn.
 - **D-Q21** Problems are soft tomato `#FF5A4E`, not orange.
 - **D-Q22** No black cartoon outlines in the UI; they stay on Bob's artwork.
-- **D-Q23** Only Notes tilt (−1.6°). (Two exceptions since 2026-09-27: the greeting's toy Blocks turn in 3D toward the pointer, [Screen layout](#screen-layout), and the bricks of a failed Build lie tilted where they fell, [Build button and Build card](#build-button-and-build-card).) Everything else is straight: Blocks, Trait stickers, loose ideas, dragged items, chips, the Build stage's standing pile and Bob. (Tilted stickers and a tilted loose idea were tried in the mockup and dropped.)
+- **D-Q23** Only Notes tilt (−1.6°). (One exception since 2026-09-27: the bricks of a failed Build lie tilted where they fell, [Build button and Build card](#build-button-and-build-card).) Everything else is straight: Blocks, Trait stickers, loose ideas, dragged items, chips, the Build stage's standing pile and Bob. (Tilted stickers and a tilted loose idea were tried in the mockup and dropped.)
 - **D-Q24** The Build step shows a Build stage (Bob hopping beside a pile of bricks that fills and clears itself in a loop), so even when a Build can't light up each Block or Trait as it goes, you can still see that Bob is working. There is no progress bar.
 - **D-Q25** The code editor stays dark, tinted toward Grape.
 - **D-Q26** The Canvas is dotted paper (`--ws` with `--ws-dot`), not graph paper or kraft paper.

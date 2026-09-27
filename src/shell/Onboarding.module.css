@@ -22,20 +22,26 @@
   animation: pop var(--t-pop) var(--spring);
 }
 
-/* The paper stage: the Canvas's dotted paper, with the logo and a few toy Blocks on it.
-   It fades into the white part below instead of ending on a line. */
+/* The paper stage: the Canvas's dotted paper, with the logo on it. The top third is solid
+   paper; below it the paper and its dots fade out on an eased curve (no band shows), reaching
+   white at the stage's bottom, so the white part starts with no seam. */
 .stage {
-  position: relative;
   padding: 32px 40px 24px;
   background:
-    linear-gradient(transparent 55%, var(--surface)),
+    linear-gradient(
+      transparent 33%,
+      color-mix(in srgb, var(--surface) 12%, transparent) 48%,
+      color-mix(in srgb, var(--surface) 40%, transparent) 64%,
+      color-mix(in srgb, var(--surface) 75%, transparent) 80%,
+      color-mix(in srgb, var(--surface) 94%, transparent) 92%,
+      var(--surface)
+    ),
     radial-gradient(circle, var(--ws-dot) 1.6px, transparent 1.8px) 0 0 / 24px 24px,
     var(--ws);
 }
 
-/* The logo: the wordmark centered on Bob's middle. Positioned, so it paints over the toys. */
+/* The logo: the wordmark centered on Bob's middle. */
 .logo {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -60,34 +66,36 @@
   display: inline-block;
 }
 
+/* The toys in one centered row under the buttons. */
 .toys {
-  position: absolute;
-  inset: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
 }
 
-/* A toy Block: its category's frame color and darker bottom edge. It floats on `translate`;
-   its 3D tilt toward the pointer is set on `transform` from the script. */
+/* A toy Block: its category's frame color and darker bottom edge. Each floats on its own
+   period and phase, so the row ripples and never moves in step. */
 .toy {
-  position: absolute;
   display: grid;
   place-items: center;
-  height: 30px;
+  height: 24px;
   background: var(--c1);
   border: 2px solid var(--c3);
-  border-radius: 10px;
+  border-radius: 8px;
   box-shadow: 0 3px 0 var(--c3);
   color: var(--ink);
-  animation: float 3.6s ease-in-out infinite alternate;
+  animation: float 1.8s cubic-bezier(.37, 0, .63, 1) infinite alternate;
 }
 
-.toy:nth-child(1) { left: 24px; top: 36px; width: 60px; animation-duration: 3.4s; }
-.toy:nth-child(2) { left: 30px; bottom: 26px; width: 52px; animation-duration: 4.1s; animation-delay: -1.2s; }
-.toy:nth-child(3) { right: 28px; top: 40px; width: 58px; animation-duration: 3.8s; animation-delay: -2s; }
-.toy:nth-child(4) { right: 46px; bottom: 22px; width: 48px; animation-duration: 3.2s; animation-delay: -.6s; }
-.toy:nth-child(5) { left: 60%; top: 32px; width: 50px; animation-duration: 4.4s; animation-delay: -2.8s; }
+.toy:nth-child(1) { width: 48px; animation-duration: 1.5s; }
+.toy:nth-child(2) { width: 42px; animation-duration: 1.8s; animation-delay: -1.1s; }
+.toy:nth-child(3) { width: 46px; animation-duration: 1.65s; animation-delay: -.4s; }
+.toy:nth-child(4) { width: 38px; animation-duration: 2.1s; animation-delay: -1.6s; }
+.toy:nth-child(5) { width: 40px; animation-duration: 1.9s; animation-delay: -.8s; }
 
 .lower {
-  padding: 24px 32px 32px;
+  padding: 8px 32px 32px;
 }
 
 .slogan {
@@ -103,7 +111,7 @@
   font-weight: 700;
 }
 
-/* Bento: tiles in two equal columns; with three, the big one spans the top row. */
+/* Bento: two equal columns. The big button always spans both; on a first visit, so does its one tile. */
 .bento {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -219,8 +227,8 @@
 }
 
 @keyframes float {
-  from { translate: 0 -3px; }
-  to { translate: 0 3px; }
+  from { translate: 0 -4px; }
+  to { translate: 0 4px; }
 }
 
 /* ── buttons (speech bubbles) ───────────────────────────────────────────────── */
