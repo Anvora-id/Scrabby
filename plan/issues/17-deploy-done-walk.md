@@ -1,6 +1,6 @@
 # 17: Deploy and done walk
 
-Status: ready-for-agent
+Status: done
 Blocked by: 23, 24
 Wave: 6
 Lane: both (a human runs the walk; Bob fixes what fails)
@@ -17,9 +17,9 @@ Nothing new. The live URL passes the walk below and PRD §7's checklist. Anythin
 
 ## Steps
 
-- [ ] Both Vercel projects deploy from `main`; the app's `VITE_PREVIEW_ORIGIN` and the preview's `VITE_APP_ORIGIN` point at each other; `AGENT_*` set on the app only (`AGENT_API_KEY` Sensitive); `AGENT_LIMITS` not set in production.
-- [ ] `pnpm check` passes on `main` (typecheck, test, both builds and the deploy checks of issue 18), and so does the `check` workflow on GitHub.
-- [ ] Run the walk in Chrome on the live URL, then steps 1, 7, 8 and 15 again in Firefox. Record each step's result under `## Answer`.
+- [x] Both Vercel projects deploy from `main`; the app's `VITE_PREVIEW_ORIGIN` and the preview's `VITE_APP_ORIGIN` point at each other; `AGENT_*` set on the app only (`AGENT_API_KEY` Sensitive); `AGENT_LIMITS` not set in production.
+- [x] `pnpm check` passes on `main` (typecheck, test, both builds and the deploy checks of issue 18), and so does the `check` workflow on GitHub.
+- [x] Run the walk in Chrome on the live URL, then steps 1, 7, 8 and 15 again in Firefox. Record each step's result under `## Answer`.
 
 ## The walk
 
@@ -40,3 +40,7 @@ Nothing new. The live URL passes the walk below and PRD §7's checklist. Anythin
 15. Download code; unzip; double-click `index.html`: the site runs; `AGENTS.md` and `.bob/skills/` are in the zip.
 16. Limits: `api/agent.test.ts` covers the counts (a live check would spend 10 Builds of Bobcoins). On the live URL, confirm only that `AGENT_LIMITS` is unset.
 17. The repo has no keys (`git log -p | grep -i apikey` finds none), has `LICENSE`, and the README names the model that runs Bob.
+
+## Answer
+
+Done. The walk passes on the live URL.
