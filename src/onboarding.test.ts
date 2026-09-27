@@ -42,19 +42,19 @@ describe('placeBubble', () => {
   const box = (left: number, top: number, right: number, bottom: number) => ({ left, top, right, bottom })
 
   it('goes right of a tall panel, centered', () => {
-    expect(placeBubble(box(0, 100, 300, 700), 280, 100, W, H)).toEqual({ side: 'right', x: 314, y: 350, tail: 50 })
+    expect(placeBubble(box(0, 100, 300, 700), 280, 100, W, H)).toEqual({ side: 'right', x: 316, y: 350, tail: 50 })
   })
 
   it('goes left when the right has no room', () => {
     const p = placeBubble(box(1200, 680, 1350, 740), 280, 100, W, H)
     expect(p.side).toBe('left')
-    expect(p.x).toBe(906)
+    expect(p.x).toBe(904)
   })
 
   it('goes below a full-width bar', () => {
     const p = placeBubble(box(0, 56, W, 90), 280, 100, W, H)
     expect(p.side).toBe('below')
-    expect(p.y).toBe(104)
+    expect(p.y).toBe(106)
   })
 
   it('goes inside a target bigger than half the screen', () => {
@@ -65,27 +65,27 @@ describe('placeBubble', () => {
   })
 
   it('clamps y and the tail near the bottom edge', () => {
-    expect(placeBubble(box(10, 740, 60, 766), 280, 100, W, H)).toMatchObject({ side: 'right', y: 660, tail: 80 })
+    expect(placeBubble(box(10, 740, 60, 766), 280, 100, W, H)).toMatchObject({ side: 'right', y: 660, tail: 70 })
   })
 
   it('slides along its side to the nearest spot clear of a Block', () => {
     expect(placeBubble(box(0, 100, 300, 700), 280, 100, W, H, [box(320, 300, 700, 460)]))
-      .toEqual({ side: 'right', x: 314, y: 474, tail: 20 })
+      .toEqual({ side: 'right', x: 316, y: 476, tail: 30 })
   })
 
   it('steps outward past a Block too tall to slide around', () => {
     expect(placeBubble(box(0, 100, 300, 700), 280, 100, W, H, [box(320, 0, 700, H)]))
-      .toEqual({ side: 'right', x: 714, y: 350, tail: 50 })
+      .toEqual({ side: 'right', x: 716, y: 350, tail: 50 })
   })
 
   it('stays put when nowhere is clear', () => {
     expect(placeBubble(box(0, 100, 300, 700), 280, 100, W, H, [box(310, 0, W, H)]))
-      .toEqual({ side: 'right', x: 314, y: 350, tail: 50 })
+      .toEqual({ side: 'right', x: 316, y: 350, tail: 50 })
   })
 
   it('slides sideways below a bar', () => {
     expect(placeBubble(box(0, 56, W, 90), 280, 100, W, H, [box(500, 100, 900, 300)]))
-      .toEqual({ side: 'below', x: 206, y: 104, tail: 260 })
+      .toEqual({ side: 'below', x: 204, y: 106, tail: 250 })
   })
 
   it('ignores Blocks when it sits inside the target', () => {

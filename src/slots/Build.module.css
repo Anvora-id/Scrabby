@@ -56,10 +56,18 @@
   box-shadow: 0 1px 0 var(--muted);
 }
 
-.target,
-.target:focus-visible {
+.target {
+  position: relative;
+}
+
+/* The ring fits the button and its bottom edge, a box shadow an outline would leave out. */
+.target::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 -5px;
+  border-radius: inherit;
   outline: 3px solid var(--bob);
-  outline-offset: 3px;
+  pointer-events: none;
 }
 
 .bubble {
@@ -80,20 +88,7 @@
   line-height: 1.4;
   transform-origin: bottom right;
   animation: pop var(--t-pop) var(--spring);
-}
-
-.bubble::after {
-  content: '';
-  position: absolute;
-  right: 40px;
-  bottom: -11.5px;
-  width: 20px;
-  height: 20px;
-  box-sizing: border-box;
-  border-right: 2.5px solid var(--bob);
-  border-bottom: 2.5px solid var(--bob);
-  background: var(--surface);
-  transform: rotate(45deg);
+  --tail: calc(100% - 50px);
 }
 
 .link {

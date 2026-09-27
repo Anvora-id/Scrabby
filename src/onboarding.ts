@@ -145,10 +145,12 @@ export function closeTip(): void { tipStore.set(null) }
 export interface Placement { side: 'right' | 'left' | 'below' | 'above' | 'inside'; x: number; y: number; tail: number }
 export interface Box { left: number; top: number; right: number; bottom: number }
 
-const GAP = 14
+// Room for the tail (11px past the bubble) and the ring (3px), with a little space before the ring.
+const GAP = 16
 const EDGE = 8
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi)
-const along = (c: number, from: number, size: number) => clamp(c - from, 20, size - 20)
+// The tail keeps off the bubble's rounded corners (18px radius, plus the tail's 12px half width).
+const along = (c: number, from: number, size: number) => clamp(c - from, 30, size - 30)
 const nearest = (vs: number[], to: number) => vs.sort((a, b) => Math.abs(a - to) - Math.abs(b - to))[0]
 const flip = (b: Box): Box => ({ left: b.top, top: b.left, right: b.bottom, bottom: b.right })
 

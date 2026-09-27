@@ -237,7 +237,7 @@ function radiusOf(el: Element): string {
 }
 
 // offsetTop, not the drawn position, so Bob's hop doesn't move the bubble.
-function tourAvoid(target: DOMRect, bubble: HTMLElement): Box[] {
+function tourAvoid(target: Box, bubble: HTMLElement): Box[] {
   const canvas = document.querySelector('[data-tour="canvas"]')?.getBoundingClientRect()
   if (!canvas) return []
   const blocks = [...document.querySelectorAll('[data-tour="canvas"] [data-bid]')].map(e => e.getBoundingClientRect())
@@ -266,12 +266,15 @@ function SpeechBubble({ target, text, clearOfBlocks, children }: {
     b.hidden = g.hidden = !el
     if (!el) return
     const r = el.getBoundingClientRect()
+    // A bottom edge drawn as a box shadow (the Build button's) is part of the target the ring fits.
+    const edge = Number(/\) 0px ([\d.]+)px 0px/.exec(getComputedStyle(el).boxShadow)?.[1] ?? 0)
+    const box = { left: r.left, top: r.top, right: r.right, bottom: r.bottom + edge }
     Object.assign(g.style, {
-      left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px`,
+      left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height + edge}px`,
       borderRadius: radiusOf(el),
     })
-    const avoid = clearOfBlocks ? tourAvoid(r, b) : []
-    const p = placeBubble(r, b.offsetWidth, b.offsetHeight, window.innerWidth, window.innerHeight, avoid)
+    const avoid = clearOfBlocks ? tourAvoid(box, b) : []
+    const p = placeBubble(box, b.offsetWidth, b.offsetHeight, window.innerWidth, window.innerHeight, avoid)
     b.style.left = `${p.x}px`
     b.style.top = `${p.y}px`
     b.style.setProperty('--tail', `${p.tail}px`)
@@ -282,11 +285,22 @@ function SpeechBubble({ target, text, clearOfBlocks, children }: {
     <>
       <div ref={ring} className={styles.ring} hidden />
       <div ref={bubble} className={styles.bubble} role="dialog" aria-label="Tip" hidden>
-        <span className={styles.tail} />
+        <Tail />
         <img src="/bob.svg" alt="" className={styles.bob} />
         {text}
         <div className={styles.footer}>{children}</div>
       </div>
     </>
+  )
+}
+
+// The point of a speech bubble, set by the side of the nearest [data-side] (none: the bubble is above
+// its target). The SVG's box cuts off the stroke's ends, which would otherwise show inside the bubble.
+export function Tail() {
+  return (
+    <svg className={styles.tail} viewBox="0 0 24 14" aria-hidden="true">
+      <path d="M-3 -3 L12 12 L27 -3Z" stroke="none" />
+      <path d="M-3 -3 L12 12 L27 -3" fill="none" />
+    </svg>
   )
 }

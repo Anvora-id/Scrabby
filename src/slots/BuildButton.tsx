@@ -4,6 +4,7 @@ import { buildProblem, FAILURE_LINES, nothingNew, runBuild, useBuild, useStartin
 import { cx } from '../canvas/cx.ts'
 import { ICONS } from '../icons.ts'
 import { getProject, setPlanTab, useProject } from '../store.ts'
+import { Tail } from '../shell/Onboarding.tsx'
 import { Warning } from '../shell/Warning.tsx'
 import styles from './Build.module.css'
 
@@ -55,7 +56,7 @@ export default function BuildButton() {
 
   return (
     <span className={styles.holder}>
-      {bubble && <span className={styles.bubble} role="status">{bubble}</span>}
+      {bubble && <span className={styles.bubble} role="status"><Tail />{bubble}</span>}
       <button
         ref={button}
         className={cx(styles.button, nothingNew(p) && styles.greyed, !!bubble && styles.target)}
