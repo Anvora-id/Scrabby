@@ -4,12 +4,13 @@ import { applyChange, emptyProject, holding } from './model/project.ts'
 import { builtSite } from './fixtures/fixtures.ts'
 import { topBlock } from './instructions/warnings.ts'
 import { getProject, setProject } from './store.ts'
-import { applyRestore, buildOf, checkpointTitle, fromTag, gist, renameCheckpoint, restoreCheckpoint, saveCheckpoint, warning, withNames } from './checkpoints.ts'
+import { applyRestore, buildOf, checkpointTitle, fromTag, gist, removeCheckpoint, renameCheckpoint, restoreCheckpoint, saveCheckpoint, warning, withNames } from './checkpoints.ts'
 
 const fake = vi.hoisted(() => ({ saved: [] as Checkpoint[] }))
 vi.mock('./db.ts', () => ({
   listCheckpoints: vi.fn(async () => [...fake.saved]),
   addCheckpoint: vi.fn(async (c: Checkpoint) => { fake.saved.push(c) }),
+  deleteCheckpoint: vi.fn(async (_: string, n: number) => { fake.saved = fake.saved.filter(c => c.number !== n) }),
   saveProject: vi.fn(async () => {}),
   loadLatestProject: vi.fn(async () => undefined),
 }))
@@ -178,5 +179,15 @@ describe('Checkpoint names', () => {
     expect(withNames(names, 'Saved before restoring Checkpoint 3')).toBe('Saved before restoring Checkpoint 3 · Like Checkpoint 2')
     expect(withNames(names, 'Code went back to Checkpoint 12')).toBe('Code went back to Checkpoint 12')
     expect(withNames(names, 'Open Checkpoints')).toBe('Open Checkpoints')
+  })
+})
+
+describe('removeCheckpoint', () => {
+  it('drops the Checkpoint and its name, and the next save never reuses a kept number', async () => {
+    setProject({ ...p, checkpoint: 2, checkpointNames: { 1: 'First try' } })
+    await removeCheckpoint(1)
+    expect(fake.saved.map(c => c.number)).toEqual([2])
+    expect(getProject().checkpointNames).toEqual({})
+    expect(await saveCheckpoint()).toBe(3)
   })
 })
