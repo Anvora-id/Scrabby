@@ -21,12 +21,16 @@
   cursor: pointer;
 }
 
+.hidden {
+  visibility: hidden;
+}
+
 [data-tid] > .badge {
   margin-left: -3px;
 }
 
-[data-bid]:has(> div > .badge),
-[data-tid]:has(> .badge) {
+[data-bid]:has(> div > .badge:not(.hidden)),
+[data-tid]:has(> .badge:not(.hidden)) {
   box-shadow: 0 0 0 3px var(--alert);
 }
 
