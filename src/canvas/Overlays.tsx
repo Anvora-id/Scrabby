@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { TrashIcon } from '@phosphor-icons/react'
 import { ICONS } from '../icons.ts'
 import type { Project } from '../model/types.ts'
 import { updateProject } from '../store.ts'
@@ -9,7 +10,7 @@ import { menuItems } from './menu.ts'
 import type { MenuItem } from './menu.ts'
 import { tipFor } from './tooltip.ts'
 import { cx } from './cx.ts'
-import { Warning } from '../slots/Checkpoints.tsx'
+import { Warning } from '../shell/Warning.tsx'
 import styles from './Overlays.module.css'
 import parts from './parts.module.css'
 
@@ -82,6 +83,7 @@ export function ContextMenu({ p }: { p: Project }) {
 
   if (ask?.warn) return (
     <Warning
+      icon={TrashIcon}
       {...ask.warn}
       confirm={ask.label}
       danger

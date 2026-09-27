@@ -4,7 +4,7 @@ import { buildProblem, FAILURE_LINES, nothingNew, runBuild, useBuild, useStartin
 import { cx } from '../canvas/cx.ts'
 import { ICONS } from '../icons.ts'
 import { getProject, setPlanTab, useProject } from '../store.ts'
-import { Warning } from './Checkpoints.tsx'
+import { Warning } from '../shell/Warning.tsx'
 import styles from './Build.module.css'
 
 export default function BuildButton() {
@@ -68,6 +68,7 @@ export default function BuildButton() {
       </button>
       {warn && (
         <Warning
+          icon={Flag}
           title="Build now?"
           lines={hasPending(p)
             ? ['Bob builds your site from the plan and takes you to the Build step.', "The Assistant has changes you haven't accepted. Building drops them."]

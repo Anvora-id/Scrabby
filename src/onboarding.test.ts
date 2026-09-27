@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isEmptyProject, keepClearOf, placeBubble } from './onboarding.ts'
+import { isEmptyProject, keepClearOf, placeBubble, shortName } from './onboarding.ts'
 import { emptyProject, addBlock } from './model/project.ts'
 import { demoProject } from './fixtures/fixtures.ts'
 
@@ -18,6 +18,21 @@ describe('isEmptyProject', () => {
 
   it('is false once renamed', () => {
     expect(isEmptyProject({ ...emptyProject(), name: "Maya's bakery" })).toBe(false)
+  })
+})
+
+describe('shortName', () => {
+  it('keeps a name of up to 14 characters whole', () => {
+    expect(shortName('Maya bake sale')).toBe('Maya bake sale')
+  })
+
+  it('cuts a longer one at 14 characters, then adds …', () => {
+    expect(shortName("Maya's bake sale website")).toBe("Maya's bake sa…")
+    expect(shortName('Our very long name')).toBe('Our very long…')
+  })
+
+  it('never splits an emoji', () => {
+    expect(shortName('🍰🍰🍰🍰🍰🍰🍰🍰🍰🍰🍰🍰🍰🍰🍰')).toBe('🍰🍰🍰🍰🍰🍰🍰🍰🍰🍰🍰🍰🍰🍰…')
   })
 })
 

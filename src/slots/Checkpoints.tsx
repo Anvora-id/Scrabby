@@ -12,6 +12,7 @@ import { findBlockCode } from '../code/code.ts'
 import { clearCheckpointFocus, seeItsCode, useCheckpointFocus } from '../code/navigation.ts'
 import { getProject, updateProject, useProject } from '../store.ts'
 import { cx } from '../canvas/cx.ts'
+import { Warning } from '../shell/Warning.tsx'
 import styles from './Checkpoints.module.css'
 
 interface Picked { n: number; id: string; flash?: boolean }
@@ -185,34 +186,12 @@ export default function Checkpoints() {
       })}
       {ask && (() => {
         const { title, lines, unsaved } = warning(p, cps, ask)
+        const icon = ICONS.tab_checkpoints
         return unsaved
-          ? <Warning title={title} lines={lines} confirm="Save and restore" onConfirm={() => restore(ask, true)}
-              other={{ label: 'Restore without saving', onClick: () => restore(ask, false) }} onCancel={() => setAsk(null)} />
-          : <Warning title={title} lines={lines} confirm="Restore" onConfirm={() => restore(ask, false)} onCancel={() => setAsk(null)} />
+          ? <Warning icon={icon} title={title} lines={lines} confirm="Save and restore" onConfirm={() => restore(ask, true)}
+              extra={{ label: 'Restore without saving', onClick: () => restore(ask, false) }} onCancel={() => setAsk(null)} />
+          : <Warning icon={icon} title={title} lines={lines} confirm="Restore" onConfirm={() => restore(ask, false)} onCancel={() => setAsk(null)} />
       })()}
     </div>
-  )
-}
-
-interface WarningProps {
-  title: string; lines: string[]; confirm: string; danger?: boolean; onCancel: () => void; onConfirm: () => void
-  other?: { label: string; onClick: () => void } // a second way to go on, left of the confirm
-}
-
-export function Warning({ title, lines, confirm, danger, onCancel, onConfirm, other }: WarningProps) {
-  const ref = useRef<HTMLDialogElement>(null)
-  useEffect(() => { ref.current?.showModal() }, [])
-  return (
-    <dialog ref={ref} className={styles.dialog} onClose={onCancel}>
-      <h2>{title}</h2>
-      <div className={styles.body}>
-        {lines.map(l => <p key={l}>{l}</p>)}
-        <div className={styles.buttons}>
-          <button className={styles.text} onClick={onCancel}>Cancel</button>
-          {other && <button className={styles.ghost} onClick={other.onClick}>{other.label}</button>}
-          <button className={cx(styles.primary, danger && styles.danger)} onClick={onConfirm} autoFocus>{confirm}</button>
-        </div>
-      </div>
-    </dialog>
   )
 }

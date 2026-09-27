@@ -70,6 +70,12 @@ export async function newProject(): Promise<void> {
 /** The greeting shows on every page load. */
 export const greetingStore = createStore(true)
 
+/** The Project name on the greeting's Continue button: 14 characters, then "…". */
+export function shortName(name: string): string {
+  const chars = [...name]
+  return chars.length > 14 ? `${chars.slice(0, 14).join('').trimEnd()}…` : name
+}
+
 // ── replace warnings ──────────────────────────────────────────────────────────
 
 export const askStore = createStore<'demo' | 'new' | null>(null)
