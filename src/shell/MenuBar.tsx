@@ -38,7 +38,7 @@ function MenuButton({
 
 export default function MenuBar() {
   const project = useProject()
-  const { step } = useUi()
+  const { step, planTab } = useUi()
 
   // Keyboard shortcuts: Ctrl+Z undo, Ctrl+Y / Ctrl+Shift+Z redo
   useEffect(() => {
@@ -129,7 +129,7 @@ export default function MenuBar() {
         label="Show me around"
         disabled={step === 'build'}
         title="Show me around"
-        onClick={() => startTour(step === 'try' ? 'try' : 'plan')}
+        onClick={() => startTour(step === 'try' ? 'try' : planTab === 'checkpoints' ? 'checkpoints' : 'plan')}
       />
     </header>
   )

@@ -64,6 +64,7 @@ export default function BlockView({ p, id, depth = 1, inInst = false }: { p: Pro
   return (
     <div
       data-bid={id}
+      data-tour={checkpoint ? 'checkpointBlock' : b.locked ? 'lockedPage' : undefined}
       className={cx(
         styles.block,
         checkpoint ? styles.checkpoint : site ? styles.site : b.locked ? styles.lockedPage : custom ? 'cat-my' : `cat-${type.category}`,

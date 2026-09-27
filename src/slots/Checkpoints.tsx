@@ -125,17 +125,17 @@ export default function Checkpoints() {
     )
   }
 
-  if (!cps) return <div className={styles.panel} />
+  if (!cps) return <div className={styles.panel} data-tour="checkpoints" />
 
   const current = holding(p, cps)
   return (
-    <div className={styles.panel}>
+    <div className={styles.panel} data-tour="checkpoints">
       <div className={styles.head}>
         <div>
           <h2 className={styles.heading}>Checkpoints</h2>
           <p className={styles.hint}>Saved versions of your Blocks and code. Every Build saves one first.</p>
         </div>
-        <button className={styles.save} disabled={!!current || building} title={current ? 'Nothing new to save.' : undefined} onClick={save}>Save Checkpoint</button>
+        <button className={styles.save} data-tour="save" disabled={!!current || building} title={current ? 'Nothing new to save.' : undefined} onClick={save}>Save Checkpoint</button>
       </div>
       {cps.length === 0 && (
         <div className={styles.empty}>
