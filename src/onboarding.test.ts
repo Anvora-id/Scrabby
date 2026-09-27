@@ -91,4 +91,8 @@ describe('keepClearOf', () => {
   it('leaves the bars alone for a target above the Canvas', () => {
     expect(keepClearOf(box(0, 56, 1366, 90), canvas, blocks, 1366, 64)).toEqual([box(320, 150, 700, 464)])
   })
+
+  it('leaves the Blocks alone for a target on the Canvas, so its bubble stays beside it', () => {
+    expect(keepClearOf(box(1200, 700, 1350, 750), canvas, blocks, 1366, 64)).toEqual([box(0, 0, 1366, 214)])
+  })
 })

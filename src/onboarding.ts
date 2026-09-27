@@ -152,7 +152,9 @@ const flip = (b: Box): Box => ({ left: b.top, top: b.left, right: b.bottom, bott
  * Each box reaches `up` lower, since Bob stands on the bubble's top corner and reaches that far above it.
  */
 export function keepClearOf(target: Box, canvas: Box, blocks: Box[], W: number, up: number): Box[] {
-  const boxes = blocks
+  // A target on the Canvas (the Build button) is ringed by Blocks: clearing them would carry its bubble away.
+  const onCanvas = target.left >= canvas.left && target.right <= canvas.right && target.top >= canvas.top && target.bottom <= canvas.bottom
+  const boxes = (onCanvas ? [] : blocks)
     .map(b => ({
       left: Math.max(b.left, canvas.left), top: Math.max(b.top, canvas.top),
       right: Math.min(b.right, canvas.right), bottom: Math.min(b.bottom, canvas.bottom),
