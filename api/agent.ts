@@ -240,6 +240,8 @@ export function fallbackConfig(): ModelConfig | null {
     authScheme: env.FALLBACK_AUTH_SCHEME || 'Bearer',
     model: env.FALLBACK_MODEL || 'gemini-3.8-flash',
     headers: env.FALLBACK_HEADERS || '{}',
+    // Without it Gemini thinks at its default and runs out of max_tokens mid-file.
+    reasoning: env.AGENT_REASONING_EFFORT || 'low',
   }
 }
 
