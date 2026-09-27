@@ -155,11 +155,10 @@ function ListMenu({ at, title, value, options, onPick, onClose }: {
   )
 }
 
-function Dropdown({ value, options, onChange, back, onBobPicks, title }: {
+function Dropdown({ value, options, onChange, onBobPicks, title }: {
   value: string
   options: Option[]
   onChange: (v: string) => void
-  back: string
   onBobPicks?: () => void
   title: string
 }) {
@@ -167,18 +166,45 @@ function Dropdown({ value, options, onChange, back, onBobPicks, title }: {
   const [at, setAt] = useState<At | null>(null)
   const btn = useRef<HTMLButtonElement>(null)
   const current = options.find(o => o.value === value)
-  if (typing || !current) return (
-    <>
-      <TextField value={value} placeholder="type your own" autoFocus={typing} onChange={onChange} />
-      <button className={styles.small} title="Pick from the list" onClick={() => { setTyping(false); onChange(back) }}>▾</button>
-    </>
-  )
+  const custom = typing || !current
 
   const open = () => setAt(under(btn.current!))
   function close() {
     setAt(null)
     btn.current?.focus({ preventScroll: true })
   }
+
+  // The value stays as typed until the user picks something from the list.
+  const menu = at && (
+    <ListMenu at={at} title={title} value={custom ? CUSTOM : value} options={options} onClose={close} onPick={v => {
+      close()
+      if (v === CUSTOM) {
+        if (!custom) onChange('')
+        setTyping(true)
+      } else if (v === BOB_PICKS) {
+        onBobPicks?.()
+      } else {
+        setTyping(false)
+        onChange(v)
+      }
+    }} />
+  )
+
+  if (custom) return (
+    <>
+      <TextField value={value} placeholder="type your own" autoFocus={typing} onChange={onChange} />
+      <button
+        ref={btn}
+        className={styles.small}
+        title="Pick from the list"
+        aria-haspopup="listbox"
+        aria-expanded={!!at}
+        onPointerDown={e => { if (at) e.nativeEvent.stopImmediatePropagation() }}
+        onClick={() => { if (at) setAt(null); else open() }}
+      >▾</button>
+      {menu}
+    </>
+  )
 
   return (
     <>
@@ -201,17 +227,7 @@ function Dropdown({ value, options, onChange, back, onBobPicks, title }: {
       >
         {current.label}
       </button>
-      {at && (
-        <ListMenu at={at} title={title} value={value} options={options} onClose={close} onPick={v => {
-          close()
-          if (v === CUSTOM) {
-            setTyping(true)
-            onChange('')
-          } else if (v === BOB_PICKS) {
-            onBobPicks?.()
-          } else onChange(v)
-        }} />
-      )}
+      {menu}
     </>
   )
 }
@@ -283,17 +299,17 @@ function ValueField({ p, t, onBobPicks }: { p: Project; t: Trait; onBobPicks: ()
     case 'color':
       return <ColorField value={t.value} onChange={set} title={title} onBobPicks={onBobPicks} />
     case 'choice':
-      return <Dropdown value={t.value} onChange={set} title={title} back={type.default} onBobPicks={onBobPicks}
+      return <Dropdown value={t.value} onChange={set} title={title} onBobPicks={onBobPicks}
         options={type.choices!.map(c => ({ value: c, label: c, font: t.type === 'font' ? c : undefined }))} />
     case 'action':
-      return <Dropdown value={t.value} onChange={set} title={title} back={type.default} onBobPicks={onBobPicks} options={onClickOptions(p, t.id)} />
+      return <Dropdown value={t.value} onChange={set} title={title} onBobPicks={onBobPicks} options={onClickOptions(p, t.id)} />
     case 'asset': {
       const options: Option[] = [
         { value: '', label: 'pick from Library' },
         ...p.assets.filter(a => a.kind === t.type).map(a => ({ value: a.id, label: a.file })),
       ]
       if (/^a\d+$/.test(t.value) && !options.some(o => o.value === t.value)) options.push({ value: t.value, label: 'missing file', missing: true })
-      return <Dropdown value={t.value} onChange={set} title={title} back="" onBobPicks={onBobPicks} options={options} />
+      return <Dropdown value={t.value} onChange={set} title={title} onBobPicks={onBobPicks} options={options} />
     }
   }
 }
